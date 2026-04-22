@@ -27,10 +27,13 @@ $(async () => {
     // Filter tabs
     $('.tab[data-filter]').on('click', function () {
         curFilter = String($(this).data('filter'));
-        $('.tab').removeClass('active');
+        $('.tab[data-filter]').removeClass('active');
         $(this).addClass('active');
         renderList();
     });
+
+    // Language / user filter selects
+    $('#filter-lang, #filter-user').on('change', renderList);
 
     // Refresh
     $('#refresh-btn').on('click', loadSubmissions);
@@ -70,16 +73,33 @@ async function loadSubmissions(): Promise<void> {
     $('#sen-list').html('<div class="empty">Loading…</div>');
     try {
         allSugs = await getSubmissions();
+        populateFilters();
         renderList();
     } catch {
         $('#sen-list').html('<div class="empty">Failed to load submissions</div>');
     }
 }
 
+function populateFilters(): void {
+    const langVal = String($('#filter-lang').val() ?? '');
+    const userVal = String($('#filter-user').val() ?? '');
+    const langs = [...new Set(allSugs.map(s => `${s.source_lang}→${s.target_lang}`))];
+    const users = [...new Set(allSugs.map(s => s.username))];
+    $('#filter-lang').html('<option value="">All Languages</option>' +
+        langs.map(l => `<option value="${l}"${l === langVal ? ' selected' : ''}>${escHtml(l)}</option>`).join(''));
+    $('#filter-user').html('<option value="">All Users</option>' +
+        users.map(u => `<option value="${u}"${u === userVal ? ' selected' : ''}>${escHtml(u)}</option>`).join(''));
+}
+
 function renderList(): void {
     let list = allSugs;
-    if (curFilter === 'pending') list = allSugs.filter(s => s.points < 0);
-    else if (curFilter === 'scored') list = allSugs.filter(s => s.points >= 0);
+    if (curFilter === 'pending') list = list.filter(s => s.points < 0);
+    else if (curFilter === 'scored') list = list.filter(s => s.points >= 0);
+
+    const langFilter = String($('#filter-lang').val() ?? '');
+    const userFilter = String($('#filter-user').val() ?? '');
+    if (langFilter) list = list.filter(s => `${s.source_lang}→${s.target_lang}` === langFilter);
+    if (userFilter) list = list.filter(s => s.username === userFilter);
 
     const $el = $('#sen-list');
     if (!list.length) { $el.html('<div class="empty">No submissions here</div>'); return; }
@@ -93,12 +113,23 @@ function renderSug(s: Submission): string {
         return `<button class="score-btn${act}" style="background:${btnColors[p]};color:#fff" data-id="${s.id}" data-points="${p}">${p}</button>`;
     }).join('');
 
+    const trRows = s.translations.map(t => {
+        const badge = t.verified === true
+            ? '<span class="vpill vpill-pass">✓</span>'
+            : t.verified === false
+                ? '<span class="vpill vpill-fail">✗</span>'
+                : '';
+        return `<div class="api-result-row">
+          <span class="api-name">${escHtml(t.api)}</span>
+          <div class="tr-display">${escHtml(t.translation)}</div>
+          ${badge}
+        </div>`;
+    }).join('');
+
     return `<div class="sug-item" id="sug-${s.id}">
         <div class="sug-meta">#${s.id} &middot; <b>${escHtml(s.username)}</b> &middot; ${s.source_lang}&rarr;${s.target_lang} &middot; ${fmtDate(s.created_at)} &middot; ${scoreBadge(s.points)}</div>
-        <div class="sug-texts">
-          <div class="sug-box"><div class="lbl">SOURCE</div>${escHtml(s.source_text)}</div>
-          <div class="sug-box"><div class="lbl">TRANSLATION</div>${escHtml(s.translation)}</div>
-        </div>
+        <div class="sug-box" style="margin-bottom:8px"><div class="lbl">SOURCE</div>${escHtml(s.source_text)}</div>
+        <div style="margin-bottom:8px">${trRows}</div>
         <div class="sug-verify"><b>LLM prompt:</b> <code>${escHtml(s.verification_rule)}</code></div>
         <div class="sug-scoring"><span class="score-label">Score:</span>${btns}</div>
     </div>`;

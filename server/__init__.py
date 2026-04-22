@@ -130,12 +130,18 @@ class VerifyReq(BaseModel):
     verification_rule: str
 
 
+class TranslationEntry(BaseModel):
+    api: str
+    translation: str
+    verified: Optional[bool] = None
+
+
 class SubmissionReq(BaseModel):
     source_text: str
-    translation: str
     source_lang: str = "en"
     target_lang: str = "de"
     verification_rule: str
+    translations: list[TranslationEntry]
 
 
 class ScoreReq(BaseModel):
@@ -327,10 +333,10 @@ def create_submission(req: SubmissionReq, user=Depends(_auth)):
             "user_id": user["id"],
             "username": user["username"],
             "source_text": req.source_text,
-            "translation": req.translation,
             "source_lang": req.source_lang,
             "target_lang": req.target_lang,
             "verification_rule": req.verification_rule,
+            "translations": [t.model_dump() for t in req.translations],
             "points": -1,
             "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
         }
@@ -352,7 +358,13 @@ def get_submissions(user=Depends(_auth)):
             key=lambda s: s["created_at"],
             reverse=True,
         )
-    return rows
+    # Normalize old single-translation entries
+    result = []
+    for s in rows:
+        if "translation" in s and "translations" not in s:
+            s = {**s, "translations": [{"api": "legacy", "translation": s["translation"], "verified": None}]}
+        result.append(s)
+    return result
 
 
 @app.post("/api/submissions/{sid}/score")

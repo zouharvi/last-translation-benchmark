@@ -13,15 +13,21 @@ export interface User {
     total_points: number;
 }
 
+export interface TranslationEntry {
+    api: string;
+    translation: string;
+    verified: boolean | null;
+}
+
 export interface Submission {
     id: number;
     user_id: number;
     username: string;
     source_text: string;
-    translation: string;
     source_lang: string;
     target_lang: string;
     verification_rule: string;
+    translations: TranslationEntry[];
     points: number;
     created_at: string;
 }
@@ -100,10 +106,10 @@ export function getSubmissions() {
 
 export function createSubmission(data: {
     source_text: string;
-    translation: string;
     source_lang: string;
     target_lang: string;
     verification_rule: string;
+    translations: Array<{ api: string; translation: string; verified: boolean | null }>;
 }) {
     return apiCall<{ ok: boolean }>('POST', '/api/submissions', data);
 }
