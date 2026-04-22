@@ -358,13 +358,7 @@ def get_submissions(user=Depends(_auth)):
             key=lambda s: s["created_at"],
             reverse=True,
         )
-    # Normalize old single-translation entries
-    result = []
-    for s in rows:
-        if "translation" in s and "translations" not in s:
-            s = {**s, "translations": [{"api": "legacy", "translation": s["translation"], "verified": None}]}
-        result.append(s)
-    return result
+    return rows
 
 
 @app.post("/api/submissions/{sid}/score")
