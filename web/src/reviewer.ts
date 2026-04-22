@@ -130,7 +130,7 @@ function renderSug(s: Submission): string {
         <div class="sug-meta">#${s.id} &middot; <b>${escHtml(s.username)}</b> &middot; ${s.source_lang}&rarr;${s.target_lang} &middot; ${fmtDate(s.created_at)} &middot; ${scoreBadge(s.points)}</div>
         <div class="sug-box" style="margin-bottom:8px"><div class="lbl">SOURCE</div>${escHtml(s.source_text)}</div>
         <div style="margin-bottom:8px">${trRows}</div>
-        <div class="sug-verify"><b>LLM prompt:</b> <code>${escHtml(s.verification_rule)}</code></div>
+        <div class="sug-box" style="margin-bottom:8px"><div class="lbl">VERIFICATION RULE</div>${escHtml(s.verification_rule)}</div>
         <div class="sug-scoring"><span class="score-label">Score:</span>${btns}</div>
     </div>`;
 }

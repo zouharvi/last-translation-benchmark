@@ -262,7 +262,7 @@ $(async () => {
             }
         });
         if (ownTranslation && !translations.some(t => t.translation === ownTranslation)) {
-            translations.push({ api: 'own', translation: ownTranslation, verified: ownVerified ?? null });
+            translations.push({ api: 'perfect', translation: ownTranslation, verified: ownVerified ?? null });
         }
 
         const source_lang = String($('#src-lang').val());
@@ -270,7 +270,7 @@ $(async () => {
         const verification_rule = String($('#vc-content').val() ?? '').trim();
 
         if (!source_text || translations.length === 0 || !verification_rule) {
-            $('#submit-status').html('<span class="msg-err">Please fill all required fields and translate (or add own) first</span>');
+            $('#submit-status').html('<span class="msg-err">Please fill all required fields, translate and verify translations first</span>');
             return;
         }
         try {
@@ -324,8 +324,12 @@ function renderApiResults(): void {
 async function loadMySubmissions(): Promise<void> {
     try {
         const sugs = await getSubmissions();
-        const $el = $('#my-list');
-        if (!sugs.length) { $el.html('<div class="empty">No submissions yet</div>'); return; }
+        const $el = $('#my-submissions');
+        if (sugs.length == 0) {
+            $el.html('<div class="empty">No submissions yet</div>');
+            return;
+        }
+        console.log("X", sugs.map(renderMySug));
         $el.html(sugs.map(renderMySug).join(''));
     } catch { /* ignore */ }
 }

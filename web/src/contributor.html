@@ -114,10 +114,6 @@
       background: #fff;
       width: 100%;
     }
-
-    textarea {
-      width: calc(100% - 20px);
-    }
   </style>
 </head>
 
@@ -169,7 +165,7 @@
           </div>
 
           <label for="src-text">Input <span class="hint">(the difficult-to-translate text)</span></label>
-          <textarea id="src-text" placeholder="Enter the source text…"></textarea>
+          <textarea style="width: calc(100% - 20px);" id="src-text" placeholder="Enter the source text…"></textarea>
 
           <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
             <button class="btn btn-secondary" id="tr-btn">⟳ Translate by all models</button>
@@ -202,7 +198,7 @@
           </label>
           <textarea id="vc-content"
             placeholder="e.g. Does the translation preserve the pun from the source text? (To use regex, start with #!regex)"
-            style="min-height:56px"></textarea>
+            style="width: calc(100% - 20px); min-height:56px"></textarea>
 
           <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
             <button class="btn btn-secondary" id="verify-btn">✓ Verify translations</button>
@@ -218,7 +214,7 @@
       <div>
         <div id="sidebar-card" class="card">
           <h2>My Submissions</h2>
-          <div id="my-list">
+          <div id="my-submissions">
             <div class="empty">No submissions yet</div>
           </div>
         </div>
