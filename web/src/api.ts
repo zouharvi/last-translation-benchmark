@@ -29,6 +29,7 @@ export interface Submission {
     verification_rule: string;
     translations: TranslationEntry[];
     points: number;
+    reviewer_comment: string;
     created_at: string;
 }
 
@@ -114,6 +115,6 @@ export function createSubmission(data: {
     return apiCall<{ ok: boolean }>('POST', '/api/submissions', data);
 }
 
-export function scoreSubmission(id: number, points: number) {
-    return apiCall<{ ok: boolean }>('POST', `/api/submissions/${id}/score`, { points });
+export function scoreSubmission(id: number, action: 'reject' | 'accept' | 'comment', comment?: string) {
+    return apiCall<{ ok: boolean }>('POST', `/api/submissions/${id}/score`, { action, comment });
 }

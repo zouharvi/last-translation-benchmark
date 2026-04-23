@@ -38,18 +38,30 @@ $(async () => {
     // Refresh
     $('#refresh-btn').on('click', loadSubmissions);
 
-    // Score buttons (event delegation — list re-renders on each load)
+    // Action buttons (event delegation — list re-renders on each load)
     $('#sen-list').on('click', '.score-btn', async function () {
         const id = parseInt(String($(this).data('id')));
-        const points = parseInt(String($(this).data('points')));
+        const action = String($(this).data('action')) as 'reject' | 'accept' | 'comment';
+        if (action === 'comment') {
+            const comment = prompt('Enter comment for contributor:');
+            if (comment === null) return; // cancelled
+            try {
+                await scoreSubmission(id, 'comment', comment);
+                const sug = allSugs.find(s => s.id === id);
+                if (sug) { sug.points = -1; sug.reviewer_comment = comment; }
+                $(`#sug-${id}`).find('.sug-meta .badge').replaceWith(scoreBadge(-1, comment));
+            } catch { alert('Failed to save'); }
+            return;
+        }
         try {
-            await scoreSubmission(id, points);
+            await scoreSubmission(id, action);
+            const points = action === 'accept' ? 1 : 0;
             const sug = allSugs.find(s => s.id === id);
-            if (sug) sug.points = points;
+            if (sug) { sug.points = points; sug.reviewer_comment = ''; }
             const $item = $(`#sug-${id}`);
             $item.find('.score-btn').removeClass('active');
             $(this).addClass('active');
-            $item.find('.sug-meta .badge').replaceWith(scoreBadge(points));
+            $item.find('.sug-meta .badge').replaceWith(scoreBadge(points, ''));
             if (curFilter === 'pending') {
                 setTimeout(() => {
                     $item.fadeOut(250, function () {
@@ -60,7 +72,7 @@ $(async () => {
                     });
                 }, 400);
             }
-        } catch { alert('Failed to save score'); }
+        } catch { alert('Failed to save'); }
     });
 
     // Logout
@@ -107,10 +119,14 @@ function renderList(): void {
 }
 
 function renderSug(s: Submission): string {
-    const btnColors = ['#ef4444', '#f59e0b', '#22c55e'];
-    const btns = ([0, 1, 2] as const).map(p => {
-        const act = s.points === p ? ' active' : '';
-        return `<button class="score-btn${act}" style="background:${btnColors[p]};color:#fff" data-id="${s.id}" data-points="${p}">${p}</button>`;
+    const actions: Array<['reject' | 'accept' | 'comment', string, string]> = [
+        ['reject', '#ef4444', 'Reject'],
+        ['accept', '#22c55e', 'Accept'],
+        ['comment', '#f59e0b', 'Comment'],
+    ];
+    const btns = actions.map(([action, color, label]) => {
+        const act = (action === 'accept' && s.points === 1) || (action === 'reject' && s.points === 0) ? ' active' : '';
+        return `<button class="score-btn${act}" style="background:${color};color:#fff" data-id="${s.id}" data-action="${action}">${label}</button>`;
     }).join('');
 
     const trRows = s.translations.map(t => {
@@ -126,12 +142,17 @@ function renderSug(s: Submission): string {
         </div>`;
     }).join('');
 
+    const commentHtml = s.reviewer_comment
+        ? `<div class="sug-box" style="margin-bottom:8px;border-left:3px solid #f59e0b"><div class="lbl">REVIEWER COMMENT</div>${escHtml(s.reviewer_comment)}</div>`
+        : '';
+
     return `<div class="sug-item" id="sug-${s.id}">
-        <div class="sug-meta">#${s.id} &middot; <b>${escHtml(s.username)}</b> &middot; ${s.source_lang}&rarr;${s.target_lang} &middot; ${fmtDate(s.created_at)} &middot; ${scoreBadge(s.points)}</div>
+        <div class="sug-meta">#${s.id} &middot; <b>${escHtml(s.username)}</b> &middot; ${s.source_lang}&rarr;${s.target_lang} &middot; ${fmtDate(s.created_at)} &middot; ${scoreBadge(s.points, s.reviewer_comment)}</div>
         <div class="sug-box" style="margin-bottom:8px"><div class="lbl">SOURCE</div>${escHtml(s.source_text)}</div>
         <div style="margin-bottom:8px">${trRows}</div>
         <div class="sug-box" style="margin-bottom:8px"><div class="lbl">VERIFICATION RULE</div>${escHtml(s.verification_rule)}</div>
-        <div class="sug-scoring"><span class="score-label">Score:</span>${btns}</div>
+        ${commentHtml}
+        <div class="sug-scoring"><span class="score-label">Action:</span>${btns}</div>
     </div>`;
 }
 
@@ -139,8 +160,11 @@ function escHtml(str: string): string { return $('<div>').text(str).html(); }
 
 function fmtDate(dt: string): string { return (dt ?? '').replace('T', ' ').slice(0, 16); }
 
-function scoreBadge(p: number): string {
-    if (p < 0) return '<span class="badge badge-pending">Pending</span>';
-    const labels = ['0 · Rejected', '1 · Good', '2 · Excellent'];
-    return `<span class="badge badge-score-${p}">${labels[p]}</span>`;
+function scoreBadge(p: number, comment?: string): string {
+    if (p < 0) {
+        if (comment) return '<span class="badge badge-score-1">💬 Commented</span>';
+        return '<span class="badge badge-pending">Pending</span>';
+    }
+    const labels = ['✗ Rejected', '✓ Accepted'];
+    return `<span class="badge badge-score-${p === 1 ? 3 : 0}">${labels[p] ?? String(p)}</span>`;
 }

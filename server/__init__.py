@@ -145,7 +145,8 @@ class SubmissionReq(BaseModel):
 
 
 class ScoreReq(BaseModel):
-    points: int
+    action: str  # "reject" | "accept" | "comment"
+    comment: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
@@ -367,12 +368,18 @@ def score_submission(sid: int, req: ScoreReq, user=Depends(_auth)):
         raise HTTPException(
             status_code=403, detail="Only reviewer users can score submissions"
         )
-    if req.points not in (0, 1, 2):
-        raise HTTPException(status_code=400, detail="Points must be 0, 1, or 2")
+    if req.action not in ("reject", "accept", "comment"):
+        raise HTTPException(status_code=400, detail="Action must be reject, accept, or comment")
     submission = next((s for s in _db["submissions"] if s["id"] == sid), None)
     if submission is None:
         raise HTTPException(status_code=404, detail="Submission not found")
-    submission["points"] = req.points
+    if req.action == "accept":
+        submission["points"] = 1
+    elif req.action == "reject":
+        submission["points"] = 0
+    else:  # comment — stays pending, stores comment for contributor
+        submission["points"] = -1
+    submission["reviewer_comment"] = req.comment or ""
     _save_data()
     return {"ok": True}
 

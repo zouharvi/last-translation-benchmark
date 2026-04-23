@@ -338,6 +338,9 @@ function renderMySug(s: Submission): string {
     const srcPreview = s.source_text.length > 60 ? s.source_text.slice(0, 60) + '…' : s.source_text;
     const firstTr = s.translations[0]?.translation ?? '';
     const trPreview = firstTr.length > 60 ? firstTr.slice(0, 60) + '…' : firstTr;
+    const commentHtml = s.reviewer_comment
+        ? `<div class="sug-mini-comment">💬 ${escHtml(s.reviewer_comment)}</div>`
+        : '';
     return `<div class="sug-mini">
         <div class="sug-mini-meta">#${s.id} &middot; ${s.source_lang}&rarr;${s.target_lang} &middot; ${fmtDate(s.created_at)}</div>
         <div class="sug-mini-text">${escHtml(srcPreview)}</div>
@@ -346,6 +349,7 @@ function renderMySug(s: Submission): string {
           <code class="sug-mini-vc">${escHtml(s.verification_rule)}</code>
           ${scoreBadge(s.points)}
         </div>
+        ${commentHtml}
     </div>`;
 }
 
@@ -355,6 +359,6 @@ function fmtDate(dt: string): string { return (dt ?? '').replace('T', ' ').slice
 
 function scoreBadge(p: number): string {
     if (p < 0) return '<span class="badge badge-pending">Pending</span>';
-    const labels = ['0 · Rejected', '1 · Good', '2 · Excellent'];
-    return `<span class="badge badge-score-${p}">${labels[p]}</span>`;
+    const labels = ['✗ Rejected', '✓ Accepted'];
+    return `<span class="badge badge-score-${p === 1 ? 3 : 0}">${labels[p] ?? String(p)}</span>`;
 }
