@@ -169,7 +169,7 @@ $(async () => {
     }
 
     $('#ann-info').text(`${currentUser.username} · Contributor`);
-    renderStats(currentUser.quota_remaining, currentUser.daily_quota, currentUser.total_points);
+    renderStats(currentUser.quota_remaining, currentUser.contributor_quota, currentUser.total_points);
     loadMySubmissions();
 
 
@@ -187,7 +187,7 @@ $(async () => {
             );
             lastResults = data.results;
             currentUser!.quota_remaining = data.quota_remaining;
-            renderStats(data.quota_remaining, currentUser!.daily_quota, currentUser!.total_points);
+            renderStats(data.quota_remaining, currentUser!.contributor_quota, currentUser!.total_points);
             renderApiResults();
             lastResults.forEach(r => r.verified = null);
             ownVerified = null;

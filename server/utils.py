@@ -18,6 +18,6 @@ def get_config(key: str, default: Any = "") -> Any:
     return config_data.get(key) or os.getenv(key, default)
 
 
-DAILY_QUOTA = get_config("DAILY_QUOTA", 10)
+CONTRIBUTOR_QUOTA = get_config("CONTRIBUTOR_QUOTA", 10)
 DATA_PATH = get_config("DATA_PATH", "data/db.json")
 OPENAI_API_KEY = get_config("OPENAI_API_KEY", "")

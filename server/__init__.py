@@ -7,7 +7,7 @@ import json
 import os
 import re
 import secrets
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import Depends, FastAPI, Header, HTTPException
@@ -15,18 +15,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from .utils import (
-    DAILY_QUOTA,
-    DATA_PATH,
-)
 from .services import (
-    translate_google,
-    translate_mymemory,
     translate_gemini2_5flash,
     translate_gemma4,
-    translate_qwen3p6,
+    translate_google,
     translate_gpt4p1nano,
+    translate_mymemory,
+    translate_qwen3p6,
     verify_llm,
+)
+from .utils import (
+    CONTRIBUTOR_QUOTA,
+    DATA_PATH,
 )
 
 # ---------------------------------------------------------------------------
@@ -60,7 +60,6 @@ def _load_data() -> None:
                     "magic_token": secrets.token_urlsafe(24),
                     "role": role,
                     "quota_used": 0,
-                    "quota_date": "",
                 }
             )
         _save_data()
@@ -188,8 +187,7 @@ def logout(user=Depends(_auth), authorization: Optional[str] = Header(None)):
 
 @app.get("/api/me")
 def me(user=Depends(_auth)):
-    today = date.today().isoformat()
-    quota_used = user["quota_used"] if user["quota_date"] == today else 0
+    quota_used = user["quota_used"]
     total_points = sum(
         s["points"]
         for s in _db["submissions"]
@@ -199,8 +197,8 @@ def me(user=Depends(_auth)):
         "username": user["username"],
         "role": user["role"],
         "quota_used": quota_used,
-        "quota_remaining": max(0, DAILY_QUOTA - quota_used),
-        "daily_quota": DAILY_QUOTA,
+        "quota_remaining": max(0, CONTRIBUTOR_QUOTA - quota_used),
+        "contributor_quota": CONTRIBUTOR_QUOTA,
         "total_points": total_points,
     }
 
@@ -217,10 +215,9 @@ def translate_submission(req: TranslateReq, user=Depends(_auth)):
             status_code=403, detail="Only contributors can use translation quota"
         )
 
-    today = date.today().isoformat()
-    quota_used = user["quota_used"] if user["quota_date"] == today else 0
-    if quota_used >= DAILY_QUOTA:
-        raise HTTPException(status_code=429, detail="Daily quota exceeded")
+    quota_used = user["quota_used"]
+    if quota_used >= CONTRIBUTOR_QUOTA:
+        raise HTTPException(status_code=429, detail="Quota exceeded")
 
     async def _run_translate(name: str, func, *args):
         try:
@@ -274,16 +271,15 @@ def translate_submission(req: TranslateReq, user=Depends(_auth)):
     results = asyncio.run(_run_all())
 
     user["quota_used"] = quota_used + 1
-    user["quota_date"] = today
     _save_data()
-    return {"results": results, "quota_remaining": DAILY_QUOTA - quota_used - 1}
+    return {"results": results, "quota_remaining": CONTRIBUTOR_QUOTA - quota_used - 1}
 
 
 @app.post("/api/verify-submission")
 def verify_submission(req: VerifyReq, user=Depends(_auth)):
     content_stripped = req.verification_rule.strip()
 
-    # TODO: verify daily quota here as well
+    # TODO: verify quota here as well
 
     if content_stripped.startswith("#!regex"):
         lines = content_stripped.split("\n", 1)
@@ -374,7 +370,9 @@ def score_submission(sid: int, req: ScoreReq, user=Depends(_auth)):
             status_code=403, detail="Only reviewer users can score submissions"
         )
     if req.action not in ("reject", "accept", "comment"):
-        raise HTTPException(status_code=400, detail="Action must be reject, accept, or comment")
+        raise HTTPException(
+            status_code=400, detail="Action must be reject, accept, or comment"
+        )
     submission = next((s for s in _db["submissions"] if s["id"] == sid), None)
     if submission is None:
         raise HTTPException(status_code=404, detail="Submission not found")

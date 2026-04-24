@@ -9,7 +9,7 @@ export interface User {
     role: 'contributor' | 'reviewer';
     quota_used: number;
     quota_remaining: number;
-    daily_quota: number;
+    contributor_quota: number;
     total_points: number;
 }
 

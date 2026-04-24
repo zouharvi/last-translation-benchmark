@@ -1,7 +1,8 @@
-from deep_translator import DeeplTranslator, GoogleTranslator
 import httpx
-from .utils import get_config
+from deep_translator import DeeplTranslator, GoogleTranslator
 from openrouter import OpenRouter
+
+from .utils import get_config
 
 
 def translate_google(text: str, src: str, tgt: str) -> str:
