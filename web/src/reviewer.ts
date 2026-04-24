@@ -16,7 +16,7 @@ $(async () => {
         const user = await getMe();
         renderRoleSwitcher(user.roles);
         if (!user.roles.includes('reviewer')) {
-            document.body.innerHTML = `<div style="padding: 2rem; text-align: center; font-family: sans-serif;">
+            document.body.innerHTML = `<div style="padding: 2rem; text-align: center;">
                 <h2>Access Denied</h2>
                 <p>You have the following roles: ${user.roles.join(', ')}, which does not match "reviewer" which you're trying to access.</p>
             </div>`;
