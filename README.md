@@ -11,7 +11,7 @@ There are three user roles:
 ## Quick start
 
 ```bash
-# requires python >=3.10, node >= 20
+# requires python >=3.12, node >= 20
 npm install --prefix web
 npm run build --prefix web/
 pip install -e .
