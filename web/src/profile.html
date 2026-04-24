@@ -51,6 +51,17 @@
       margin-top: 10px;
       min-height: 1.2em;
     }
+
+    input {
+      width: 300px;
+      margin: 0;
+      margin-bottom: 10px;
+      padding: 8px;
+    }
+
+    label {
+      margin-top: 10px;
+    }
   </style>
 </head>
 
@@ -68,7 +79,7 @@
       <p class="sub">This information is required before you can contribute.</p>
 
       <label for="name">Name</label>
-      <input type="text" id="name" placeholder="(first name first)">
+      <input type="text" id="name" placeholder="First name then last name">
 
       <label for="affiliation">Affiliation</label>
       <input type="text" id="affiliation" placeholder="University / Company">
@@ -78,12 +89,14 @@
 
       <div class="check-row">
         <input type="checkbox" id="credit-consent">
-        <label for="credit-consent">I wish to be credited non-anonymously in any resulting publication under the above name &amp; affiliation.</label>
+        <label for="credit-consent">I wish to be credited non-anonymously in any resulting publication under the above
+          name &amp; affiliation.</label>
       </div>
 
       <div class="check-row">
         <input type="checkbox" id="terms">
-        <label for="terms">By continuing I consent to the terms of use and agree that the contributed data may be used in research under the MIT license.</label>
+        <label for="terms">By continuing I consent to the terms of use and agree that the contributed data may be used
+          in research under the MIT license.</label>
       </div>
 
       <button class="btn btn-success btn-full" id="save-btn">Save &amp; Continue</button>
