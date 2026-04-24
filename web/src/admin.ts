@@ -38,9 +38,9 @@ function renderTable(users: AdminUser[]): void {
     }
     const rows = users.map(u => {
         const roles = u.roles.map(r => `<span class="role-tag">${escHtml(r)}</span>`).join('');
-        const hasProfile = u.first_name || u.email;
+        const hasProfile = u.name || u.email;
         const name = hasProfile
-            ? escHtml(`${u.first_name} ${u.last_name}`.trim())
+            ? escHtml(u.name)
             : '<span class="no-profile">—</span>';
         const affiliation = u.affiliation
             ? escHtml(u.affiliation)

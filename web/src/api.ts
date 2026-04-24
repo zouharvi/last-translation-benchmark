@@ -9,8 +9,7 @@ export interface User {
     quota_remaining: number;
     contributor_quota: number;
     total_points: number;
-    first_name: string;
-    last_name: string;
+    name: string;
     affiliation: string;
     email: string;
     credit_consent: boolean;
@@ -114,8 +113,7 @@ export function scoreSubmission(id: number, action: 'reject' | 'accept' | 'comme
 }
 
 export function updateProfile(data: {
-    first_name: string;
-    last_name: string;
+    name: string;
     affiliation: string;
     email: string;
     credit_consent: boolean;
@@ -127,8 +125,7 @@ export interface AdminUser {
     id: number;
     username: string;
     roles: string[];
-    first_name: string;
-    last_name: string;
+    name: string;
     affiliation: string;
     email: string;
     credit_consent: boolean;
@@ -136,6 +133,7 @@ export interface AdminUser {
 
 export function getAdminUsers() {
     return apiCall<AdminUser[]>('GET', '/api/admin/users');
+}
 
 export function addComment(id: number, comment: string) {
     return apiCall<{ ok: boolean }>('POST', `/api/submissions/${id}/comment`, { comment });

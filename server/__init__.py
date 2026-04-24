@@ -161,8 +161,7 @@ class ScoreReq(BaseModel):
     comment: Optional[str] = None
 
 class ProfileReq(BaseModel):
-    first_name: str
-    last_name: str
+    name: str
     affiliation: str
     email: str
     credit_consent: bool
@@ -194,8 +193,7 @@ def me(user=Depends(_auth)):
         "quota_remaining": max(0, CONTRIBUTOR_QUOTA - quota_used),
         "contributor_quota": CONTRIBUTOR_QUOTA,
         "total_points": total_points,
-        "first_name": user.get("first_name", ""),
-        "last_name": user.get("last_name", ""),
+        "name": user.get("name", ""),
         "affiliation": user.get("affiliation", ""),
         "email": user.get("email", ""),
         "credit_consent": user.get("credit_consent", False),
@@ -205,8 +203,7 @@ def me(user=Depends(_auth)):
 @app.put("/api/profile")
 def update_profile(req: ProfileReq, user=Depends(_auth)):
     user.update({
-        "first_name": req.first_name,
-        "last_name": req.last_name,
+        "name": req.name,
         "affiliation": req.affiliation,
         "email": req.email,
         "credit_consent": req.credit_consent,
@@ -224,8 +221,7 @@ def admin_users(user=Depends(_auth)):
             "id": u["id"],
             "username": u["username"],
             "roles": u.get("roles", []),
-            "first_name": u.get("first_name", ""),
-            "last_name": u.get("last_name", ""),
+            "name": u.get("name", ""),
             "affiliation": u.get("affiliation", ""),
             "email": u.get("email", ""),
             "credit_consent": u.get("credit_consent", False),
