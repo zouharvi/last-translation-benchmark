@@ -20,6 +20,9 @@ dependencies = [
     "openrouter >= 0.9.1",
 ]
 
+[project.optional-dependencies]
+dev = ["pytest"]
+
 [project.urls]
 Repository = "https://github.com/zouharvi/last-translation-benchmark"
 Issues = "https://github.com/zouharvi/last-translation-benchmark/issues"

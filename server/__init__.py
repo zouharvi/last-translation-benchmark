@@ -43,7 +43,7 @@ def _load_data() -> None:
         with open(DATA_PATH, "r", encoding="utf-8") as f:
             _db = json.load(f)
     else:
-        _db = {"users": [], "submissions": [], "tokens": {}}
+        _db = {"users": [], "submissions": []}
 
     # Seed default users on first run
     if not _db["users"]:
@@ -103,7 +103,7 @@ def _print_magic_links() -> None:
     print("\n=== Magic login links ===")
     for user in _db["users"]:
         print(
-            f"  {user['username']:12s}  /?user={user['username']}&token={user['magic_token']}"
+            f"  {user['username']:12s}  http://127.0.0.1:8000/?user={user['username']}&token={user['magic_token']}"
         )
     print("=========================\n")
 
@@ -117,10 +117,7 @@ def _auth(authorization: Optional[str] = Header(None)) -> dict:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Not authenticated")
     token = authorization[7:]
-    user_id = _db["tokens"].get(token)
-    if user_id is None:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    user = next((u for u in _db["users"] if u["id"] == user_id), None)
+    user = next((u for u in _db["users"] if secrets.compare_digest(u.get("magic_token", ""), token)), None)
     if user is None:
         raise HTTPException(status_code=401, detail="Invalid token")
     return user
@@ -166,23 +163,7 @@ class ScoreReq(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-@app.get("/api/magic-auth")
-def magic_auth(user: str, token: str):
-    u = next((u for u in _db["users"] if u["username"] == user), None)
-    if not u or not secrets.compare_digest(u.get("magic_token", ""), token):
-        raise HTTPException(status_code=401, detail="Invalid magic link")
-    session_token = secrets.token_hex(32)
-    _db["tokens"][session_token] = u["id"]
-    _save_data()
-    return {"token": session_token, "role": u["role"], "username": u["username"]}
-
-
-@app.post("/api/logout")
-def logout(user=Depends(_auth), authorization: Optional[str] = Header(None)):
-    token = authorization[7:]
-    _db["tokens"].pop(token, None)
-    _save_data()
-    return {"ok": True}
+# Removed magic-auth and logout routes since auth is stateless and token is in URL.
 
 
 @app.get("/api/me")

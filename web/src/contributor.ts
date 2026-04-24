@@ -1,7 +1,7 @@
 import './style.css';
 import $ from 'jquery';
 import {
-    getToken, clearToken, getMe, logout,
+    getToken, getMe,
     translate, verify, createSubmission, getSubmissions,
     User, Submission,
 } from './api';
@@ -163,7 +163,6 @@ $(async () => {
             return;
         }
     } catch {
-        clearToken();
         window.location.href = '/';
         return;
     }
@@ -286,11 +285,6 @@ $(async () => {
         } catch (err) {
             $('#submit-status').html(`<span class="msg-err">${escHtml(String(err))}</span>`);
         }
-    });
-
-    // Logout
-    $('#logout-btn').on('click', async () => {
-        try { await logout(); } finally { clearToken(); window.location.href = '/'; }
     });
 });
 

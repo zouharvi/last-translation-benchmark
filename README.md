@@ -21,11 +21,13 @@ Then open <http://localhost:8000>.
 
 ### Default accounts
 
-| Username | Password | Role        |
-|----------|----------|-------------|
-| `r1`     | `r1`     | Reviewer    |
-| `c1`     | `c1`     | Contributor |
-| `c2`     | `c2`     | Contributor |
+Each account is associated with a magic link that can be used to login from anywhere.
+
+| Username | Role        |
+|----------|-------------|
+| `r1`     | Reviewer    |
+| `c1`     | Contributor |
+| `c2`     | Contributor |
 
 ### Environment variables
 

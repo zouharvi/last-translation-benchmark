@@ -1,7 +1,5 @@
 import $ from 'jquery';
 
-const TOKEN_KEY = 'ltb_token';
-
 // ---------- Types ----------
 
 export interface User {
@@ -36,15 +34,8 @@ export interface Submission {
 // ---------- Token helpers ----------
 
 export function getToken(): string | null {
-    return localStorage.getItem(TOKEN_KEY);
-}
-
-export function setToken(token: string): void {
-    localStorage.setItem(TOKEN_KEY, token);
-}
-
-export function clearToken(): void {
-    localStorage.removeItem(TOKEN_KEY);
+    const params = new URLSearchParams(window.location.search);
+    return params.get('token');
 }
 
 // ---------- Generic fetch ----------
@@ -70,16 +61,6 @@ function apiCall<T>(method: string, url: string, data?: object): Promise<T> {
 }
 
 // ---------- API calls ----------
-
-export function magicAuth(username: string, token: string) {
-    return apiCall<{ token: string; role: string; username: string }>(
-        'GET', `/api/magic-auth?user=${encodeURIComponent(username)}&token=${encodeURIComponent(token)}`
-    );
-}
-
-export function logout() {
-    return apiCall<{ ok: boolean }>('POST', '/api/logout');
-}
 
 export function getMe() {
     return apiCall<User>('GET', '/api/me');

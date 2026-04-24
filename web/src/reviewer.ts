@@ -1,7 +1,7 @@
 import './style.css';
 import $ from 'jquery';
 import {
-    getToken, clearToken, getMe, logout,
+    getToken, getMe,
     getSubmissions, scoreSubmission,
     Submission,
 } from './api';
@@ -17,7 +17,6 @@ $(async () => {
         if (user.role !== 'reviewer') { window.location.href = '/contributor.html'; return; }
         $('#sen-info').text(`${user.username} · Reviewer Reviewer`);
     } catch {
-        clearToken();
         window.location.href = '/';
         return;
     }
@@ -73,11 +72,6 @@ $(async () => {
                 }, 400);
             }
         } catch { alert('Failed to save'); }
-    });
-
-    // Logout
-    $('#logout-btn').on('click', async () => {
-        try { await logout(); } finally { clearToken(); window.location.href = '/'; }
     });
 });
 
