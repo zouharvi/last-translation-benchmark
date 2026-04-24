@@ -3,7 +3,6 @@ Last Translation Benchmark — FastAPI backend
 """
 
 import asyncio
-import hashlib
 import json
 import os
 import re
@@ -49,21 +48,30 @@ def _load_data() -> None:
     # Seed default users on first run
     if not _db["users"]:
         default_users = [
-            ("r1", "r1", "reviewer"),
-            ("c1", "c1", "contributor"),
-            ("c2", "c2", "contributor"),
+            ("r1", "reviewer"),
+            ("c1", "contributor"),
+            ("c2", "contributor"),
         ]
-        for uid, (username, password, role) in enumerate(default_users, start=1):
+        for uid, (username, role) in enumerate(default_users, start=1):
             _db["users"].append(
                 {
                     "id": uid,
                     "username": username,
-                    "password_hash": hashlib.sha256(password.encode()).hexdigest(),
+                    "magic_token": secrets.token_urlsafe(24),
                     "role": role,
                     "quota_used": 0,
                     "quota_date": "",
                 }
             )
+        _save_data()
+
+    # Migrate existing users that don't have a magic_token yet
+    changed = False
+    for user in _db["users"]:
+        if not user.get("magic_token"):
+            user["magic_token"] = secrets.token_urlsafe(24)
+            changed = True
+    if changed:
         _save_data()
 
 
@@ -91,6 +99,16 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+def _print_magic_links() -> None:
+    print("\n=== Magic login links ===")
+    for user in _db["users"]:
+        print(
+            f"  {user['username']:12s}  /?user={user['username']}&token={user['magic_token']}"
+        )
+    print("=========================\n")
+
+
 # ---------------------------------------------------------------------------
 # Auth dependency
 # ---------------------------------------------------------------------------
@@ -112,11 +130,6 @@ def _auth(authorization: Optional[str] = Header(None)) -> dict:
 # ---------------------------------------------------------------------------
 # Pydantic models
 # ---------------------------------------------------------------------------
-
-
-class LoginReq(BaseModel):
-    username: str
-    password: str
 
 
 class TranslateReq(BaseModel):
@@ -154,23 +167,15 @@ class ScoreReq(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-@app.post("/api/login")
-def login(req: LoginReq):
-    phash = hashlib.sha256(req.password.encode()).hexdigest()
-    user = next(
-        (
-            u
-            for u in _db["users"]
-            if u["username"] == req.username and u["password_hash"] == phash
-        ),
-        None,
-    )
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    token = secrets.token_hex(32)
-    _db["tokens"][token] = user["id"]
+@app.get("/api/magic-auth")
+def magic_auth(user: str, token: str):
+    u = next((u for u in _db["users"] if u["username"] == user), None)
+    if not u or not secrets.compare_digest(u.get("magic_token", ""), token):
+        raise HTTPException(status_code=401, detail="Invalid magic link")
+    session_token = secrets.token_hex(32)
+    _db["tokens"][session_token] = u["id"]
     _save_data()
-    return {"token": token, "role": user["role"], "username": user["username"]}
+    return {"token": session_token, "role": u["role"], "username": u["username"]}
 
 
 @app.post("/api/logout")

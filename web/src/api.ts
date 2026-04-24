@@ -71,9 +71,9 @@ function apiCall<T>(method: string, url: string, data?: object): Promise<T> {
 
 // ---------- API calls ----------
 
-export function login(username: string, password: string) {
+export function magicAuth(username: string, token: string) {
     return apiCall<{ token: string; role: string; username: string }>(
-        'POST', '/api/login', { username, password }
+        'GET', `/api/magic-auth?user=${encodeURIComponent(username)}&token=${encodeURIComponent(token)}`
     );
 }
 

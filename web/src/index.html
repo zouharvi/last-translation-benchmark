@@ -7,65 +7,58 @@
   <title>Last Translation Benchmark</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <style>
-    input {
-      width: calc(100% - 22px);
-      padding: 7px 10px;
-      border: 1px solid #d1d5db;
-      border-radius: 5px;
-      font-size: 0.92em;
-      margin-bottom: 12px;
-      background: #fff;
+    .hero {
+      max-width: 680px;
+      margin: 80px auto 0;
+      padding: 0 24px;
     }
 
-
-    .login-wrap {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-
-    .login-box {
-      background: #fff;
-      padding: 40px;
-      border-radius: 10px;
-      box-shadow: 0 4px 18px rgba(0, 0, 0, .12);
-      width: 380px;
-    }
-
-    .login-box h1 {
-      margin: 0 0 6px;
-      font-size: 1.35em;
+    .hero h1 {
+      font-size: 1.8em;
       color: #1e293b;
+      margin: 0 0 8px;
     }
 
-    .login-box .sub {
+    .hero .tagline {
       color: #64748b;
-      font-size: 0.88em;
-      margin: 0 0 24px;
+      font-size: 1em;
+      margin: 0 0 32px;
     }
 
-    .demo-hint {
-      font-size: 0.78em;
-      color: #94a3b8;
-      margin-top: 18px;
+    .hero p {
+      color: #334155;
+      line-height: 1.7;
+      margin: 0 0 16px;
+    }
+
+    .auth-error {
+      display: none;
+      margin-top: 24px;
+      padding: 12px 16px;
+      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      border-radius: 6px;
+      color: #b91c1c;
+      font-size: 0.9em;
     }
   </style>
 </head>
 
 <body>
-  <div class="login-wrap">
-    <div class="login-box">
-      <h1>🪨 Last Translation Benchmark</h1>
-      <p class="sub">a large-scale effort to collect difficult-to-translate inputs</p>
-      <form id="login-form">
-        <label for="l-user">Username</label>
-        <input type="username" id="l-user" placeholder="username" autocomplete="username">
-        <label for="l-pass">Password</label>
-        <input type="password" id="l-pass" placeholder="password" autocomplete="current-password">
-        <button type="submit" class="btn btn-primary btn-full">Sign in</button>
-        <p id="l-err" class="msg-err" style="display:none;text-align:center;margin-top:8px"></p>
-      </form>
+  <div class="hero">
+    <h1>🪨 Last Translation Benchmark</h1>
+    <p class="tagline">A large-scale effort to collect difficult-to-translate inputs</p>
+    <p>
+      This platform gathers sentences that are challenging for machine translation systems.
+      Contributors submit source texts with multiple MT outputs and a verification rule.
+      Reviewers then score submissions based on their quality and difficulty.
+    </p>
+    <p>
+      To access the platform, use the magic link you received. If you don't have one,
+      contact the project administrators.
+    </p>
+    <div id="auth-error" class="auth-error">
+      Invalid or expired magic link. Please request a new one from the administrators.
     </div>
   </div>
 </body>
