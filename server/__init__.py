@@ -160,13 +160,15 @@ class ScoreReq(BaseModel):
     action: str  # "reject" | "accept" | "comment"
     comment: Optional[str] = None
 
-
 class ProfileReq(BaseModel):
     first_name: str
     last_name: str
     affiliation: str
     email: str
     credit_consent: bool
+
+class CommentReq(BaseModel):
+    comment: str
 
 
 # ---------------------------------------------------------------------------
@@ -412,6 +414,57 @@ def score_submission(sid: int, req: ScoreReq, user=Depends(_auth)):
     else:  # comment — stays pending, stores comment for contributor
         submission["points"] = -1
     submission["reviewer_comment"] = req.comment or ""
+    
+    if req.comment:
+        if "comments" not in submission:
+            submission["comments"] = []
+        submission["comments"].append({
+            "author": user["username"],
+            "role": "reviewer",
+            "text": req.comment,
+            "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        })
+
+    _save_data()
+    return {"ok": True}
+
+
+@app.post("/api/submissions/{sid}/comment")
+def add_comment(sid: int, req: CommentReq, user=Depends(_auth)):
+    submission = next((s for s in _db["submissions"] if s["id"] == sid), None)
+    if submission is None:
+        raise HTTPException(status_code=404, detail="Submission not found")
+
+    is_reviewer = "reviewer" in user.get("roles", [])
+    is_owner = submission["user_id"] == user["id"]
+
+    if not (is_reviewer or is_owner):
+        raise HTTPException(status_code=403, detail="Not authorized to comment")
+
+    if "comments" not in submission:
+        submission["comments"] = []
+        if submission.get("reviewer_comment"):
+            submission["comments"].append({
+                "author": "Reviewer",
+                "role": "reviewer",
+                "text": submission["reviewer_comment"],
+                "timestamp": submission["created_at"]
+            })
+
+    if not is_reviewer and not submission["comments"]:
+        raise HTTPException(status_code=403, detail="Reviewer must comment first")
+
+    submission["comments"].append({
+        "author": user["username"],
+        "role": "reviewer" if is_reviewer else "contributor",
+        "text": req.comment,
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    })
+
+    if is_reviewer:
+        submission["points"] = -1
+        submission["reviewer_comment"] = req.comment
+
     _save_data()
     return {"ok": True}
 

@@ -2,7 +2,7 @@ import './style.css';
 import $ from 'jquery';
 import {
     getToken, getMe,
-    getSubmissions, scoreSubmission, renderRoleSwitcher,
+    getSubmissions, scoreSubmission, addComment, renderRoleSwitcher,
     Submission,
 } from './api';
 
@@ -30,11 +30,9 @@ $(async () => {
 
     await loadSubmissions();
 
-    // Filter tabs
-    $('.tab[data-filter]').on('click', function () {
-        curFilter = String($(this).data('filter'));
-        $('.tab[data-filter]').removeClass('active');
-        $(this).addClass('active');
+    // Status filter dropdown
+    $('#filter-status').on('change', function () {
+        curFilter = String($(this).val());
         renderList();
     });
 
@@ -48,17 +46,18 @@ $(async () => {
     $('#sen-list').on('click', '.score-btn', async function () {
         const id = parseInt(String($(this).data('id')));
         const action = String($(this).data('action')) as 'reject' | 'accept' | 'comment';
+        if (!['reject', 'accept', 'comment'].includes(action)) return;
         if (action === 'comment') {
-            const comment = prompt('Enter comment for contributor:');
-            if (comment === null) return; // cancelled
-            try {
-                await scoreSubmission(id, 'comment', comment);
-                const sug = allSugs.find(s => s.id === id);
-                if (sug) { sug.points = -1; sug.reviewer_comment = comment; }
-                $(`#sug-${id}`).find('.sug-meta .badge').replaceWith(scoreBadge(-1, comment));
-            } catch { alert('Failed to save'); }
+            // Toggle inline comment box instead of using prompt()
+            const $box = $(`#comment-box-${id}`);
+            const visible = $box.css('display') !== 'none';
+            $box.css('display', visible ? 'none' : 'flex');
+            if (!visible) {
+                $box.find('.comment-input').trigger('focus');
+            }
             return;
         }
+
         try {
             await scoreSubmission(id, action);
             const points = action === 'accept' ? 1 : 0;
@@ -79,6 +78,31 @@ $(async () => {
                 }, 400);
             }
         } catch { alert('Failed to save'); }
+    });
+
+    // Send comment from inline box
+    $('#sen-list').on('click', '.comment-send-btn', async function () {
+        const id = parseInt(String($(this).data('id')));
+        const $input = $(`#comment-box-${id} .comment-input`);
+        const text = String($input.val() ?? '').trim();
+        if (!text) return;
+
+        $(this).prop('disabled', true).text('Sending…');
+        try {
+            await scoreSubmission(id, 'comment', text);
+            const sug = allSugs.find(s => s.id === id);
+            if (sug) {
+                sug.points = -1;
+                sug.reviewer_comment = text;
+                if (!sug.comments) sug.comments = [];
+                sug.comments.push({ author: 'You', role: 'reviewer', text, timestamp: new Date().toISOString().slice(0, 16).replace('T', ' ') });
+            }
+            $input.val('');
+            $(`#comment-box-${id}`).hide();
+            $(`#sug-${id} .sug-meta .badge`).replaceWith(scoreBadge(-1, text));
+            $(`#comment-thread-${id}`).html(renderCommentThread(sug?.comments ?? []));
+        } catch { alert('Failed to save'); }
+        $(this).prop('disabled', false).text('Send');
     });
 });
 
@@ -119,16 +143,30 @@ function renderList(): void {
     $el.html(list.map(renderSug).join(''));
 }
 
+function renderCommentThread(comments: Submission['comments']): string {
+    if (!comments || !comments.length) return '';
+    // On the reviewer screen, reviewer = "own" → right; contributor = "foreign" → left
+    const classFor = (role: string) =>
+        role === 'reviewer' ? 'comment-msg-contributor' : 'comment-msg-reviewer';
+    return `<div class="comment-thread">${comments.map(c => `
+        <div class="comment-msg ${classFor(c.role)}">
+            <span class="comment-author">${escHtml(c.author)}</span>
+            <span class="comment-ts">${escHtml(c.timestamp)}</span>
+            <div class="comment-body">${escHtml(c.text)}</div>
+        </div>`).join('')}</div>`;
+}
+
 function renderSug(s: Submission): string {
-    const actions: Array<['reject' | 'accept' | 'comment', string, string]> = [
+    const scoreActions: Array<['reject' | 'accept', string, string]> = [
         ['reject', '#ef4444', 'Reject'],
         ['accept', '#22c55e', 'Accept'],
-        ['comment', '#f59e0b', 'Comment'],
     ];
-    const btns = actions.map(([action, color, label]) => {
+    const scoreBtns = scoreActions.map(([action, color, label]) => {
         const act = (action === 'accept' && s.points === 1) || (action === 'reject' && s.points === 0) ? ' active' : '';
         return `<button class="score-btn${act}" style="background:${color};color:#fff" data-id="${s.id}" data-action="${action}">${label}</button>`;
     }).join('');
+    const commentBtn = `<button class="score-btn" style="background:#64748b;color:#fff" data-id="${s.id}" data-action="comment">Comment</button>`;
+    const btns = scoreBtns + commentBtn;
 
     const trRows = s.translations.map(t => {
         const badge = t.verified === true
@@ -143,17 +181,19 @@ function renderSug(s: Submission): string {
         </div>`;
     }).join('');
 
-    const commentHtml = s.reviewer_comment
-        ? `<div class="sug-box" style="margin-bottom:8px;border-left:3px solid #f59e0b"><div class="lbl">REVIEWER COMMENT</div>${escHtml(s.reviewer_comment)}</div>`
-        : '';
+    const threadHtml = renderCommentThread(s.comments);
 
     return `<div class="sug-item" id="sug-${s.id}">
         <div class="sug-meta">#${s.id} &middot; <b>${escHtml(s.username)}</b> &middot; ${s.source_lang}&rarr;${s.target_lang} &middot; ${fmtDate(s.created_at)} &middot; ${scoreBadge(s.points, s.reviewer_comment)}</div>
         <div class="sug-box" style="margin-bottom:8px"><div class="lbl">SOURCE</div>${escHtml(s.source_text)}</div>
         <div style="margin-bottom:8px">${trRows}</div>
         <div class="sug-box" style="margin-bottom:8px"><div class="lbl">VERIFICATION RULE</div>${escHtml(s.verification_rule)}</div>
-        ${commentHtml}
-        <div class="sug-scoring"><span class="score-label">Action:</span>${btns}</div>
+        <div id="comment-thread-${s.id}">${threadHtml}</div>
+        <div id="comment-box-${s.id}" style="display:none;margin-top:8px;flex-direction:row;align-items:flex-start;gap:6px">
+            <textarea class="comment-input" placeholder="Write a comment for the contributor…" rows="2" style="flex:1;margin-bottom:0"></textarea>
+            <button class="comment-send-btn score-btn" style="background:#64748b;color:#fff;align-self:stretch" data-id="${s.id}">Send</button>
+        </div>
+        <div class="sug-scoring">${btns}</div>
     </div>`;
 }
 

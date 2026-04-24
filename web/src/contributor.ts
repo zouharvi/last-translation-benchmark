@@ -2,7 +2,7 @@ import './style.css';
 import $ from 'jquery';
 import {
     getToken, getMe,
-    translate, verify, createSubmission, getSubmissions, renderRoleSwitcher,
+    translate, verify, createSubmission, getSubmissions, addComment, renderRoleSwitcher,
     User, Submission,
 } from './api';
 
@@ -290,6 +290,24 @@ $(async () => {
             $('#submit-status').html(`<span class="msg-err">${escHtml(String(err))}</span>`);
         }
     });
+
+    // Send a contributor reply from the sidebar
+    $('#my-submissions').on('click', '.contrib-send-btn', async function () {
+        const id = parseInt(String($(this).data('id')));
+        const $input = $(`#contrib-reply-${id}`);
+        const text = String($input.val() ?? '').trim();
+        if (!text) return;
+        $(this).prop('disabled', true).text('Sending…');
+        try {
+            await addComment(id, text);
+            $input.val('');
+            // Refresh sidebar to show new comment
+            loadMySubmissions();
+        } catch (err) {
+            alert('Failed to send: ' + String(err));
+        }
+        $(this).prop('disabled', false).text('Reply');
+    });
 });
 
 // ---- Stats bar ----
@@ -334,9 +352,26 @@ function renderMySug(s: Submission): string {
     const srcPreview = s.source_text.length > 60 ? s.source_text.slice(0, 60) + '…' : s.source_text;
     const firstTr = s.translations[0]?.translation ?? '';
     const trPreview = firstTr.length > 60 ? firstTr.slice(0, 60) + '…' : firstTr;
-    const commentHtml = s.reviewer_comment
-        ? `<div class="sug-mini-comment">💬 ${escHtml(s.reviewer_comment)}</div>`
+
+    const comments = s.comments ?? [];
+    const threadHtml = comments.length
+        ? `<div class="comment-thread comment-thread-mini">${comments.map(c =>
+            `<div class="comment-msg comment-msg-${c.role}">
+                <span class="comment-author">${escHtml(c.author)}</span>
+                <span class="comment-ts">${escHtml(c.timestamp)}</span>
+                <div class="comment-body">${escHtml(c.text)}</div>
+            </div>`).join('')}</div>`
         : '';
+
+    const replyHtml = comments.length
+        ? `<div class="comment-reply-row">
+            <textarea id="contrib-reply-${s.id}" class="comment-input" placeholder="Reply…" rows="2"></textarea>
+            <div style="text-align:right;margin-top:4px">
+                <button class="contrib-send-btn score-btn" style="background:#64748b;color:#fff" data-id="${s.id}">Reply</button>
+            </div>
+           </div>`
+        : '';
+
     return `<div class="sug-mini">
         <div class="sug-mini-meta">#${s.id} &middot; ${s.source_lang}&rarr;${s.target_lang} &middot; ${fmtDate(s.created_at)}</div>
         <div class="sug-mini-text">${escHtml(srcPreview)}</div>
@@ -345,7 +380,8 @@ function renderMySug(s: Submission): string {
           <code class="sug-mini-vc">${escHtml(s.verification_rule)}</code>
           ${scoreBadge(s.points)}
         </div>
-        ${commentHtml}
+        ${threadHtml}
+        ${replyHtml}
     </div>`;
 }
 

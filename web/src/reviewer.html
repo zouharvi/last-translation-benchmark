@@ -22,16 +22,18 @@
     <div class="card">
       <h2>Review Submissions</h2>
       <div class="tabs">
-        <button class="tab active" data-filter="pending">Pending</button>
-        <button class="tab" data-filter="scored">Scored</button>
-        <button class="tab" data-filter="all">All</button>
-        <select id="filter-lang" class="tab" style="padding:5px 8px;cursor:pointer;width:auto">
+        <select id="filter-status" class="tab" style="width:auto">
+          <option value="pending">Pending</option>
+          <option value="scored">Scored</option>
+          <option value="all">All</option>
+        </select>
+        <select id="filter-lang" class="tab" style="width:auto">
           <option value="">All Languages</option>
         </select>
-        <select id="filter-user" class="tab" style="padding:5px 8px;cursor:pointer;width:auto">
+        <select id="filter-user" class="tab" style="width:auto">
           <option value="">All Users</option>
         </select>
-        <button class="tab refresh-tab" id="refresh-btn">↻ Refresh</button>
+        <button class="tab" style="margin-left:auto" id="refresh-btn">↻ Refresh</button>
       </div>
       <div id="sen-list">
         <div class="empty">Loading…</div>

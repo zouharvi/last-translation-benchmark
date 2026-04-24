@@ -22,6 +22,13 @@ export interface TranslationEntry {
     verified: boolean | null;
 }
 
+export interface Comment {
+    author: string;
+    role: 'reviewer' | 'contributor';
+    text: string;
+    timestamp: string;
+}
+
 export interface Submission {
     id: number;
     user_id: number;
@@ -34,6 +41,7 @@ export interface Submission {
     points: number;
     reviewer_comment: string;
     created_at: string;
+    comments?: Comment[];
 }
 
 // ---------- Token helpers ----------
@@ -128,6 +136,9 @@ export interface AdminUser {
 
 export function getAdminUsers() {
     return apiCall<AdminUser[]>('GET', '/api/admin/users');
+
+export function addComment(id: number, comment: string) {
+    return apiCall<{ ok: boolean }>('POST', `/api/submissions/${id}/comment`, { comment });
 }
 
 // ---------- UI helpers ----------
