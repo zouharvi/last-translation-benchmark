@@ -28,10 +28,9 @@ jobs:
           ruff check server
           ruff check --select=I server
 
-      - name: Run Python tests
+      - name: Install Python dependencies
         run: |
           pip install -e .
-          pytest server/tests/*.py
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -43,3 +42,7 @@ jobs:
 
       - name: Build web
         run: npm run build --prefix web/
+
+      - name: Run Python tests
+        run: |
+          pytest server/tests/*.py
