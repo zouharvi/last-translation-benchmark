@@ -31,7 +31,7 @@ jobs:
       - name: Run Python tests
         run: |
           pip install -e .
-          pytest server/tests/
+          pytest server/tests/*.py
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
