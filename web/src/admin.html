@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Last Translation Benchmark — Admin</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88em;
+    }
+
+    th {
+      text-align: left;
+      padding: 8px 10px;
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 0.82em;
+      font-weight: 600;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: top;
+      color: #334155;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .role-tag {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 10px;
+      font-size: 0.8em;
+      font-weight: 600;
+      background: #e0f2fe;
+      color: #0369a1;
+      margin-right: 3px;
+    }
+
+    .credit-yes {
+      color: #16a34a;
+      font-weight: 600;
+    }
+
+    .credit-no {
+      color: #94a3b8;
+    }
+
+    .no-profile {
+      color: #94a3b8;
+      font-style: italic;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <a href="/" style="text-decoration:none;color:inherit;">
+      <h1>🪨 Last Translation Benchmark</h1>
+    </a>
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <span id="admin-info" class="info"></span>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <h2>Users</h2>
+      <div id="user-table">
+        <div class="empty">Loading…</div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

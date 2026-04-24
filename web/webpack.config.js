@@ -9,6 +9,8 @@ module.exports = (env, argv) => ({
     index: './src/index.ts',
     contributor: './src/contributor.ts',
     reviewer: './src/reviewer.ts',
+    profile: './src/profile.ts',
+    admin: './src/admin.ts',
   },
   output: {
     filename: '[name].bundle.js',
@@ -49,6 +51,18 @@ module.exports = (env, argv) => ({
       template: './src/reviewer.html',
       filename: 'reviewer.html',
       chunks: ['reviewer'],
+      hash: true,
+    }),
+    new HtmlWebpackPlugin({
+      template: './src/profile.html',
+      filename: 'profile.html',
+      chunks: ['profile'],
+      hash: true,
+    }),
+    new HtmlWebpackPlugin({
+      template: './src/admin.html',
+      filename: 'admin.html',
+      chunks: ['admin'],
       hash: true,
     }),
     new CopyWebpackPlugin({

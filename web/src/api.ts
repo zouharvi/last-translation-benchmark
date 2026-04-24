@@ -9,6 +9,11 @@ export interface User {
     quota_remaining: number;
     contributor_quota: number;
     total_points: number;
+    first_name: string;
+    last_name: string;
+    affiliation: string;
+    email: string;
+    credit_consent: boolean;
 }
 
 export interface TranslationEntry {
@@ -100,6 +105,31 @@ export function scoreSubmission(id: number, action: 'reject' | 'accept' | 'comme
     return apiCall<{ ok: boolean }>('POST', `/api/submissions/${id}/score`, { action, comment });
 }
 
+export function updateProfile(data: {
+    first_name: string;
+    last_name: string;
+    affiliation: string;
+    email: string;
+    credit_consent: boolean;
+}) {
+    return apiCall<{ ok: boolean }>('PUT', '/api/profile', data);
+}
+
+export interface AdminUser {
+    id: number;
+    username: string;
+    roles: string[];
+    first_name: string;
+    last_name: string;
+    affiliation: string;
+    email: string;
+    credit_consent: boolean;
+}
+
+export function getAdminUsers() {
+    return apiCall<AdminUser[]>('GET', '/api/admin/users');
+}
+
 // ---------- UI helpers ----------
 
 export function renderRoleSwitcher(roles: string[]): void {
@@ -137,6 +167,14 @@ export function renderRoleSwitcher(roles: string[]): void {
         btn.onclick = () => window.location.href = '/reviewer.html' + search;
         container.appendChild(btn);
     }
+
+    const profileBtn = document.createElement('button');
+    profileBtn.textContent = 'Profile';
+    profileBtn.className = 'btn btn-secondary';
+    profileBtn.style.padding = '3px 8px';
+    profileBtn.style.fontSize = '0.8em';
+    profileBtn.onclick = () => window.location.href = '/profile.html' + search;
+    container.appendChild(profileBtn);
 
     const headerActions = document.querySelector('header > div');
     if (headerActions) {

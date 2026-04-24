@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Last Translation Benchmark — Profile</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <style>
+    .profile-wrap {
+      max-width: 480px;
+      margin: 48px auto 0;
+      padding: 0 20px;
+    }
+
+    .profile-wrap h2 {
+      font-size: 1.1em;
+      color: #1e293b;
+      margin: 0 0 4px;
+    }
+
+    .profile-wrap .sub {
+      font-size: 0.88em;
+      color: #64748b;
+      margin: 0 0 24px;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .check-row input[type=checkbox] {
+      width: auto;
+      margin: 0;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .check-row label {
+      font-weight: 400;
+      font-size: 0.88em;
+      color: #334155;
+      margin: 0;
+    }
+
+    #status-msg {
+      font-size: 0.85em;
+      margin-top: 10px;
+      min-height: 1.2em;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <a href="/" style="text-decoration:none;color:inherit;">
+      <h1>🪨 Last Translation Benchmark</h1>
+    </a>
+    <div></div>
+  </header>
+
+  <div class="container">
+    <div class="card profile-wrap">
+      <h2>Complete your profile</h2>
+      <p class="sub">This information is required before you can contribute.</p>
+
+      <label for="first-name">First Name</label>
+      <input type="text" id="first-name" placeholder="Jane">
+
+      <label for="last-name">Last Name</label>
+      <input type="text" id="last-name" placeholder="Doe">
+
+      <label for="affiliation">Affiliation</label>
+      <input type="text" id="affiliation" placeholder="University / Company">
+
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="jane@example.com">
+
+      <div class="check-row">
+        <input type="checkbox" id="credit-consent">
+        <label for="credit-consent">I wish to be credited non-anonymously in any resulting publication under the above name &amp; affiliation.</label>
+      </div>
+
+      <div class="check-row">
+        <input type="checkbox" id="terms">
+        <label for="terms">By continuing I consent to the terms of use and agree that the contributed data may be used in research under the MIT license.</label>
+      </div>
+
+      <button class="btn btn-success btn-full" id="save-btn">Save &amp; Continue</button>
+      <div id="status-msg"></div>
+    </div>
+  </div>
+</body>
+
+</html>
