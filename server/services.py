@@ -1,3 +1,5 @@
+import re
+
 import httpx
 from deep_translator import DeeplTranslator, GoogleTranslator
 from openrouter import OpenRouter
@@ -53,22 +55,24 @@ def verify_llm(translation: str, rule: str) -> bool:
         f"## Translation\n"
         f"```\n{translation}\n```\n\n"
         f"## Instructions\n"
-        f"**Step 1 — Extract required tokens.**\n"
-        f"Identify every specific word, phrase, or string the constraint requires to appear in the translation.\n\n"
-        f"**Step 2 — Verbatim scan.**\n"
-        f"For each required token, check whether it appears *character-for-character* in the translation.\n"
-        f"Semantic equivalents, synonyms, related words, and near-matches all count as ABSENT.\n"
-        f"**Step 3 — Verdict.**\n"
-        f"If every required token is present verbatim → pass. Otherwise → fail.\n\n"
-        f"Conclude your reasoning with the final verdict on a new line: pass or fail."
+        f"**Step 1 — Parse the constraint structure.**\n"
+        f"Identify whether the constraint uses AND logic (all tokens required) or OR logic (at least one token required).\n"
+        f"Extract every specific word, phrase, or string mentioned.\n\n"
+        f"**Step 2 — Verbatim, case-sensitive scan.**\n"
+        f"For each token, check whether it appears *character-for-character, including exact capitalization* in the translation.\n"
+        f"'Hello' and 'hello' are DIFFERENT. Synonyms, paraphrases, and near-matches are ABSENT.\n\n"
+        f"**Step 3 — Apply logic and verdict.**\n"
+        f"- AND constraint: every token must be present → PASS, otherwise → FAIL\n"
+        f"- OR constraint: at least one token must be present → PASS, otherwise → FAIL\n\n"
+        f"End your response with exactly one word on its own line: PASS or FAIL."
     )
     text = call_llm(
         prompt, model="google/gemini-2.5-flash-lite",
     )
-    if "pass" in text and "fail" in text:
+    verdicts = [v.upper() for v in re.findall(r"^\s*(PASS|FAIL)\s*$", text, re.MULTILINE | re.IGNORECASE)]
+    if "PASS" in verdicts and "FAIL" in verdicts:
         raise ValueError(f"Invalid LLM response: {text}")
-    else:
-        return "pass" in text
+    return "PASS" in verdicts
 
 
 def translate_gemini2_5flash(text: str, src: str, tgt: str) -> str:
