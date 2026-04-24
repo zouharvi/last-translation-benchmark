@@ -46,9 +46,24 @@ def call_llm(prompt: str, model: str = "google/gemini-2.5-flash-lite") -> str:
 
 
 def verify_llm(translation: str, rule: str) -> bool:
+    prompt = (
+        f"You are a strict linguistic auditor verifying whether a translation satisfies a constraint.\n\n"
+        f"## Constraint\n"
+        f"{rule}\n\n"
+        f"## Translation\n"
+        f"```\n{translation}\n```\n\n"
+        f"## Instructions\n"
+        f"**Step 1 — Extract required tokens.**\n"
+        f"Identify every specific word, phrase, or string the constraint requires to appear in the translation.\n\n"
+        f"**Step 2 — Verbatim scan.**\n"
+        f"For each required token, check whether it appears *character-for-character* in the translation.\n"
+        f"Semantic equivalents, synonyms, related words, and near-matches all count as ABSENT.\n"
+        f"**Step 3 — Verdict.**\n"
+        f"If every required token is present verbatim → pass. Otherwise → fail.\n\n"
+        f"Conclude your reasoning with the final verdict on a new line: pass or fail."
+    )
     text = call_llm(
-        f"Criterion: {rule}\n\nTranslation to verify: {translation}\n\nOutput only pass or fail and nothing else.",
-        model="google/gemini-2.5-flash-lite",
+        prompt, model="google/gemini-2.5-flash-lite",
     )
     if "pass" in text and "fail" in text:
         raise ValueError(f"Invalid LLM response: {text}")
