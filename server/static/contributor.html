@@ -1,0 +1,398 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Last Translation Benchmark</title><link rel="icon" href="favicon.svg" type="image/svg+xml"><link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet"><style>/* ---------- two-column contributor layout ---------- */
+    #contributor-layout {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 800px) {
+      #contributor-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    #main-col .card {
+      margin-bottom: 0;
+    }
+
+    #sidebar-card {
+      height: calc(100vh - 140px);
+      overflow-y: auto;
+      position: sticky;
+      top: 20px;
+    }
+
+    /* ---------- sidebar mini-submission ---------- */
+    .sug-mini {
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 8px;
+      font-size: 0.85em;
+    }
+
+    .sug-mini-meta {
+      font-size: 0.75em;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+
+    .sug-mini-text {
+      color: #1e293b;
+      font-weight: 500;
+      margin-bottom: 2px;
+      word-break: break-word;
+    }
+
+    .sug-mini-tr {
+      color: #475569;
+      font-size: 0.88em;
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+
+    .sug-mini-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .sug-mini-vc {
+      background: #f1f5f9;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 0.82em;
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: inline-block;
+    }
+
+    /* ---------- misc contributor items ---------- */
+    #lang-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    #lang-row>* {
+      flex: 1;
+    }
+
+    .lang-input {
+      box-sizing: border-box;
+      height: 35px;
+      padding: 7px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 5px;
+      background: #fff;
+      width: 100%;
+    }
+
+    textarea,
+    input {
+      font-size: 10pt;
+    }
+
+    /* ---------- Dynamic Rule Builder ---------- */
+    #rule-builder {
+      margin-bottom: 12px;
+    }
+
+    #rules-list:empty::before {
+      content: "No rules yet. Click \"+ Add Rule\" to add one.";
+      display: block;
+      color: #94a3b8;
+      font-size: 0.85em;
+      padding: 8px 0 4px;
+      font-style: italic;
+    }
+
+    .rule-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 6px 8px;
+    }
+
+    .rule-row:hover {
+      border-color: #cbd5e1;
+    }
+
+    .rule-type-sel {
+      height: 32px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      background: #fff;
+      padding: 0 6px;
+      font-size: 0.85em;
+      width: 175px;
+      flex: 0 0 175px;
+      cursor: pointer;
+      color: #374151;
+    }
+
+    .rule-type-sel:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 2px rgba(99,102,241,.15);
+    }
+
+    .rule-value-input {
+      flex: 1 1 0;
+      min-width: 0;
+      height: 32px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      padding: 0 10px;
+      font-size: 0.85em;
+      background: #fff;
+      box-sizing: border-box;
+      color: #1e293b;
+      font-family: inherit;
+    }
+
+    .rule-value-input:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 2px rgba(99,102,241,.15);
+    }
+
+    .rule-value-input::placeholder {
+      color: #94a3b8;
+    }
+
+    .rule-del-btn {
+      background: none;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      color: #94a3b8;
+      cursor: pointer;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85em;
+      flex-shrink: 0;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .rule-del-btn:hover {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      color: #ef4444;
+    }
+
+    .rule-logic-badge {
+      font-size: 0.7em;
+      font-weight: 700;
+      letter-spacing: .04em;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: #e0e7ff;
+      color: #4338ca;
+      flex-shrink: 0;
+      text-transform: uppercase;
+    }
+
+    .rule-builder-footer {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    #rule-count-hint {
+      font-size: 0.8em;
+      color: #94a3b8;
+    }
+
+    .rule-help {
+      font-size: 0.78em;
+      color: #64748b;
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    .rule-help code {
+      background: #f1f5f9;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-size: 0.95em;
+    }
+
+    /* Force vertical centering on the Perfect translation row */
+    #api-results .api-result-row {
+      align-items: center !important;
+    }
+    #api-results .api-result-row .api-name {
+      align-self: center;
+    }
+    #api-results .api-result-row .tr-display {
+      align-self: center;
+      display: flex;
+      align-items: center;
+    }
+    #own-translation {
+      padding: 3px 0 !important;
+      vertical-align: middle;
+    }
+
+    .rule-ai-hint {
+      font-size: 0.78em;
+      color: #64748b;
+      margin: 2px 0 4px 4px;
+      line-height: 1.45;
+    }</style><script defer="defer" src="contributor.bundle.js?6a956df43a5e9f3a4484"></script><link href="style.css?6a956df43a5e9f3a4484" rel="stylesheet"></head><body><header><a href="/" style="text-decoration:none;color:inherit;"><h1>🪨 Last Translation Benchmark</h1></a><div style="display: flex; align-items: center; gap: 16px;"><span class="info">🔋 <span id="quota-text"></span> </span><span class="info">⭐ <span id="total-points">0</span> points </span><span id="ann-info" class="info"></span></div></header><div class="container"><div id="contributor-layout"><div id="main-col"><div class="card"><h2>New Submission</h2><div id="lang-row"><div><label for="src-lang">Source Language</label> <input id="src-lang" list="src-langs" value="en" placeholder="e.g. English, custom..." class="lang-input"><datalist id="src-langs"></datalist></div><div><label for="tgt-lang">Target Language</label> <input id="tgt-lang" list="tgt-langs" value="de" placeholder="e.g. German, custom..." class="lang-input"><datalist id="tgt-langs"></datalist></div></div><label for="src-text">Input <span class="hint">(the difficult-to-translate text)</span></label> <textarea style="width: calc(100% - 20px);" id="src-text" placeholder="Enter the source text…"></textarea><div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;"><button class="btn btn-secondary" id="tr-btn">⟳ Translate by all models</button> <span id="tr-status" style="font-size:0.85em;color:#64748b"></span></div><div id="api-results"><div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;"><span style="font-size: 0.85em; font-weight: 600; color: #475569;">Translations</span> <span id="pass-count" style="font-size: 0.82em;"></span></div><div class="api-result-row" style="margin-bottom: 12px; background: #fff; border-color: #cbd5e1; align-items: center;"><span class="api-name">Perfect translation</span><div class="tr-display" style="flex: 1; display: flex; align-items: center;"><textarea id="own-translation" placeholder="Type your own translation here..." style="width: 100%; border: none; outline: none; background: transparent; color: inherit; resize: vertical; min-height: 24px; padding: 0; margin: 0; line-height: 1.4;"></textarea></div><span class="verify-pill" id="own-verify-badge"></span></div><div id="api-results-body"></div></div><label>Verification Rules <span class="hint">(each rule must pass)</span></label>
+            <div id="rule-builder">
+              <div id="rules-list"></div>
+              <div class="rule-builder-footer">
+                <button class="btn btn-secondary" id="add-rule-btn" type="button">+ Add Rule</button>
+                <span id="rule-count-hint"></span>
+              </div>
+            </div>
+            <textarea id="vc-content" style="display:none;" aria-hidden="true"></textarea><div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;"><button class="btn btn-secondary" id="verify-btn">✓ Verify translations</button> <span id="verify-result"></span></div><button class="btn btn-success" id="submit-btn">Submit Input, Translations & Rule</button> <span id="submit-status" style="margin-left:10px;font-size:0.85em"></span></div></div><div><div id="sidebar-card" class="card"><h2>My Submissions</h2><div id="my-submissions"><div class="empty">No submissions yet</div></div></div></div></div></div><script>
+  (function () {
+    'use strict';
+
+    var MAX_RULES = 10;
+    var rules = [];
+    var nextId = 0;
+
+    var PLACEHOLDERS = {
+      contains: 'e.g. run, running, ran  — list word variations separated by commas',
+      not_contains: 'list words that must NOT appear, separated by commas',
+      llm: 'Write a short instruction for an AI judge on what to evaluate'
+    };
+
+    var OPTION_LABELS = {
+      contains: 'Has to contain',
+      not_contains: 'Can\'t contain',
+      llm: '🤖  AI Check'
+    };
+
+    function escapeAttr(str) {
+      return (str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function hasLLM() {
+      return rules.some(function (r) { return r.type === 'llm'; });
+    }
+
+    function serialize() {
+      var ta = document.getElementById('vc-content');
+      if (!ta) return;
+      if (rules.length === 0) { ta.value = ''; return; }
+      var arr = rules.map(function (r) { return { type: r.type, value: r.value }; });
+      ta.value = '#!rules\n' + JSON.stringify(arr);
+    }
+
+    function render() {
+      var list = document.getElementById('rules-list');
+      var addBtn = document.getElementById('add-rule-btn');
+      var hint = document.getElementById('rule-count-hint');
+      if (!list) return;
+
+      var llmExists = hasLLM();
+
+      list.innerHTML = rules.map(function (rule) {
+        var llmDisabled = llmExists && rule.type !== 'llm' ? 'disabled' : '';
+        var aiHint = rule.type === 'llm'
+          ? '<div class="rule-ai-hint">💡 Use <strong>AI Check</strong> only when word matching is not enough, for example to check tone, meaning, or style. Write a clear description of what a good translation should do.</div>'
+          : '';
+        return [
+          '<div class="rule-row" data-rid="' + rule.id + '">',
+          '  <select class="rule-type-sel" data-rid="' + rule.id + '">',
+          '    <option value="contains"' + (rule.type === 'contains' ? ' selected' : '') + '>' + OPTION_LABELS.contains + '</option>',
+          '    <option value="not_contains"' + (rule.type === 'not_contains' ? ' selected' : '') + '>' + OPTION_LABELS.not_contains + '</option>',
+          '    <option value="llm"' + (rule.type === 'llm' ? ' selected' : '') + (llmDisabled ? ' disabled' : '') + '>' + OPTION_LABELS.llm + '</option>',
+          '  </select>',
+          '  <input type="text" class="rule-value-input" data-rid="' + rule.id + '"',
+          '    placeholder="' + escapeAttr(PLACEHOLDERS[rule.type] || '') + '"',
+          '    value="' + escapeAttr(rule.value) + '">',
+          '  <button class="rule-del-btn" data-rid="' + rule.id + '" title="Remove this rule">✕</button>',
+          '</div>',
+          aiHint
+        ].join('');
+      }).join('');
+
+      if (addBtn) addBtn.disabled = rules.length >= MAX_RULES;
+      if (hint) hint.textContent = rules.length > 0 ? rules.length + '/' + MAX_RULES + ' rules' : '';
+
+      serialize();
+    }
+
+    function init() {
+      render();
+
+      var addBtn = document.getElementById('add-rule-btn');
+      if (addBtn) {
+        addBtn.addEventListener('click', function () {
+          if (rules.length >= MAX_RULES) return;
+          rules.push({ id: nextId++, type: 'contains', value: '' });
+          render();
+        });
+      }
+
+      var listEl = document.getElementById('rules-list');
+      if (!listEl) return;
+
+      // Type dropdown change
+      listEl.addEventListener('change', function (e) {
+        var el = e.target;
+        if (!el.classList.contains('rule-type-sel')) return;
+        var id = parseInt(el.getAttribute('data-rid'), 10);
+        var rule = rules.find(function (r) { return r.id === id; });
+        if (!rule) return;
+        var newType = el.value;
+        // Enforce LLM uniqueness
+        if (newType === 'llm' && hasLLM() && rule.type !== 'llm') {
+          el.value = rule.type; // revert
+          return;
+        }
+        rule.type = newType;
+        render();
+      });
+
+      // Value input live update
+      listEl.addEventListener('input', function (e) {
+        var el = e.target;
+        if (!el.classList.contains('rule-value-input')) return;
+        var id = parseInt(el.getAttribute('data-rid'), 10);
+        var rule = rules.find(function (r) { return r.id === id; });
+        if (rule) {
+          rule.value = el.value;
+          serialize();
+        }
+      });
+
+      // Delete button
+      listEl.addEventListener('click', function (e) {
+        var btn = e.target.closest ? e.target.closest('.rule-del-btn') : (e.target.classList.contains('rule-del-btn') ? e.target : null);
+        if (!btn) return;
+        var id = parseInt(btn.getAttribute('data-rid'), 10);
+        rules = rules.filter(function (r) { return r.id !== id; });
+        render();
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+</script>
+</body></html>

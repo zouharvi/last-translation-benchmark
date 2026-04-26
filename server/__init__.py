@@ -382,40 +382,72 @@ def verify_submission(req: VerifyReq, user=Depends(_auth)):
 
     # TODO: verify quota here as well
 
-    if content_stripped.startswith("#!regex"):
+    # rules are AND globally and with contains/not_contains
+    # comma-separated terms are OR
+    if content_stripped.startswith("#!rules"):
         lines = content_stripped.split("\n", 1)
-        req.verification_rule = lines[1].strip() if len(lines) > 1 else ""
-        results = []
+        rules_json = lines[1].strip() if len(lines) > 1 else "[]"
         try:
-            pattern = re.compile(req.verification_rule, re.IGNORECASE)
-            for t in req.translations:
-                results.append(bool(pattern.search(t)))
-        except re.error as exc:
+            rules = json.loads(rules_json)
+        except json.JSONDecodeError as exc:
             raise HTTPException(
-                status_code=400, detail=f"Invalid regex: {exc}"
+                status_code=400, detail=f"Invalid rules JSON: {exc}"
             ) from exc
-        return {
-            "results": results,
-        }
 
-    try:
+        if not isinstance(rules, list):
+            raise HTTPException(status_code=400, detail="Rules must be a JSON array")
 
-        async def _run_verify():
-            async def _verify_llm(translation: str) -> bool:
-                return await asyncio.to_thread(
-                    verify_llm, translation, req.verification_rule
-                )
+        # Validate at most one LLM rule
+        llm_rules = [r for r in rules if r.get("type") == "llm"]
+        if len(llm_rules) > 1:
+            raise HTTPException(status_code=400, detail="Only one LLM rule is allowed")
 
-            return await asyncio.gather(*[_verify_llm(t) for t in req.translations])
+        async def _run_rules_verify():
+            results = []
+            for translation in req.translations:
+                passed = True
+                for rule in rules:
+                    rule_type = rule.get("type")
+                    value = rule.get("value", "").strip()
 
-        results = asyncio.run(_run_verify())
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"LLM API error: {exc}") from exc
+                    if rule_type == "contains":
+                        # OR logic: pass if any comma-separated term is found
+                        terms = [t.strip() for t in value.split(",") if t.strip()]
+                        if terms and not any(
+                            term.lower() in translation.lower() for term in terms
+                        ):
+                            passed = False
+                            break
 
-    return {
-        "results": results,
-    }
+                    elif rule_type == "not_contains":
+                        # OR logic: fail if any comma-separated term is found
+                        terms = [t.strip() for t in value.split(",") if t.strip()]
+                        if terms and any(
+                            term.lower() in translation.lower() for term in terms
+                        ):
+                            passed = False
+                            break
 
+                    elif rule_type == "llm":
+                        if value:
+                            llm_result = await asyncio.to_thread(
+                                verify_llm, translation, value
+                            )
+                            if not llm_result:
+                                passed = False
+                                break
+
+                results.append(passed)
+            return results
+
+        try:
+            results = asyncio.run(_run_rules_verify())
+        except Exception as exc:
+            raise HTTPException(
+                status_code=502, detail=f"Verification error: {exc}"
+            ) from exc
+
+        return {"results": results}
 
 # ---------------------------------------------------------------------------
 # Routes — submissions
@@ -510,7 +542,7 @@ def score_submission(sid: int, req: ScoreReq, user=Depends(_auth)):
     else:  # comment — stays pending, stores comment for contributor
         submission["points"] = -1
     submission["reviewer_comment"] = req.comment or ""
-    
+
     if req.comment:
         if "comments" not in submission:
             submission["comments"] = []
