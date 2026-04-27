@@ -15,19 +15,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from .services import (
-    translate_gemini2_5flash,
-    translate_gemma4,
-    translate_google,
-    translate_gpt4p1nano,
-    translate_mymemory,
-    translate_qwen3p6,
-    verify_llm,
-)
-from .utils import (
-    CONTRIBUTOR_QUOTA,
-    DATA_PATH,
-)
+from .services import (translate_gemini2_5flash, translate_gemma4,
+                       translate_google, translate_gpt4p1nano,
+                       translate_mymemory, translate_qwen3p6, verify_llm)
+from .utils import CONTRIBUTOR_QUOTA, DATA_PATH
 
 # ---------------------------------------------------------------------------
 # JSON data store
