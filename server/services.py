@@ -42,7 +42,7 @@ def call_llm(prompt: str, model: str = "google/gemini-2.5-flash-lite") -> str:
             }
         ],
     )
-    return response.choices[0].message.content.lower()
+    return response.choices[0].message.content
 
 
 def verify_llm(translation: str, rule: str) -> bool:
@@ -50,6 +50,7 @@ def verify_llm(translation: str, rule: str) -> bool:
         f"Your goal is to verify whether a translation fulfills a criterion.\n\nCriterion: {rule}\n\nTranslation to verify: {translation}\n\nOutput only pass or fail and nothing else.",
         model="google/gemini-2.5-flash-lite",
     )
+    text = text.strip().lower()
     if "pass" in text and "fail" in text:
         raise ValueError(f"Invalid LLM response: {text}")
     else:
