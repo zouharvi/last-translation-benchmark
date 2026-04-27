@@ -1,0 +1,11 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.12
+    hooks:
+      - id: ruff
+        args: [check, server]
+        pass_filenames: false
+      - id: ruff
+        name: ruff-isort
+        args: [check, --select=I, server]
+        pass_filenames: false

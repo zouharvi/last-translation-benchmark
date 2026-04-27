@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "pre-commit"]
 
 [project.urls]
 Repository = "https://github.com/zouharvi/last-translation-benchmark"
