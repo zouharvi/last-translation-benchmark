@@ -14,7 +14,8 @@ There are three user roles:
 # requires python >=3.12, node >= 20
 npm install --prefix web
 npm run build --prefix web/
-pip install -e ".[dev]" && pre-commit install
+pip install -e ".[dev]" && pre-commit install  # dev: includes linting hooks
+# pip install -e .  # alternatively, if not developing
 # prints login URLs
 python3 server
 ```
