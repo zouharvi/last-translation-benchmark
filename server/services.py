@@ -4,6 +4,7 @@ from openrouter import OpenRouter
 
 from .utils import get_config
 
+_openrouter_client: OpenRouter | None = None
 
 def translate_google(text: str, src_lang: str, tgt_lang: str) -> str:
     return GoogleTranslator(source=src_lang, target=tgt_lang).translate(text)
@@ -29,10 +30,15 @@ def translate_mymemory(text: str, src_lang: str, tgt_lang: str) -> str:
         return data["responseData"]["translatedText"]
     raise Exception(data.get("responseDetails", "API returned an error"))
 
+def _get_client() -> OpenRouter:
+    global _openrouter_client
+    if _openrouter_client is None:
+        _openrouter_client = OpenRouter(api_key=get_config("OPENROUTER_API_KEY", ""))
+    return _openrouter_client
 
 def call_llm(prompt: str, model: str = "google/gemini-2.5-flash-lite") -> str:
     # use openrouter api
-    client = OpenRouter(api_key=get_config("OPENROUTER_API_KEY", ""))
+    client = _get_client()
     response = client.chat.send(
         model=model,
         messages=[
