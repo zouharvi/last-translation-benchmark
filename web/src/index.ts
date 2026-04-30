@@ -16,10 +16,6 @@ $(async () => {
     if (token && username) {
         try {
             const user = await getMe();
-            if (!user.name || !user.email) {
-                window.location.href = 'profile.html' + window.location.search;
-                return;
-            }
             redirectByRoles(user.roles);
         } catch {
             $('#auth-error').show();

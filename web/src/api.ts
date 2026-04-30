@@ -174,10 +174,6 @@ export function getAdminUsers() {
     return apiCall<AdminUser[]>('GET', 'api/admin/users');
 }
 
-export function createAdminUser(username: string, roles: string[]) {
-    return apiCall<AdminUser>('POST', 'api/admin/users', { username, roles });
-}
-
 export function deleteAdminUser(uid: number) {
     return apiCall<{ ok: boolean }>('DELETE', `api/admin/users/${uid}`);
 }

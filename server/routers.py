@@ -21,7 +21,6 @@ from .db import (
 from .languages import LANGUAGES
 from .models import (
     CommentReq,
-    CreateUserReq,
     ProfileReq,
     QuotaReq,
     RolesReq,
@@ -134,31 +133,6 @@ def _admin_user_view(u: dict) -> dict:
 async def admin_users(user=Depends(get_current_user)):
     require_admin(user)
     return [_admin_user_view(u) for u in await get_users()]
-
-
-@router.post("/api/admin/users", status_code=201)
-async def admin_create_user(req: CreateUserReq, user=Depends(get_current_user)):
-    require_admin(user)
-    if not req.username.strip():
-        raise HTTPException(status_code=400, detail="Username cannot be empty")
-    users = await get_users()
-    if any(u["username"].lower() == req.username.strip().lower() for u in users):
-        raise HTTPException(status_code=409, detail="Username already exists")
-    valid_roles = {"admin", "contributor", "reviewer"}
-    bad = [r for r in req.roles if r not in valid_roles]
-    if bad:
-        raise HTTPException(status_code=400, detail=f"Invalid roles: {bad}")
-    new_user = {
-        "id": await next_user_id(),
-        "username": req.username.strip(),
-        "magic_token": secrets.token_urlsafe(24),
-        "roles": req.roles,
-        "quota": CONTRIBUTOR_QUOTA_DEFAULT,
-        "quota_used": 0,
-    }
-    await save_user(new_user)
-    return _admin_user_view(new_user)
-
 
 @router.delete("/api/admin/users/{uid}", status_code=200)
 async def admin_delete_user(uid: int, user=Depends(get_current_user)):

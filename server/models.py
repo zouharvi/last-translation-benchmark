@@ -42,10 +42,6 @@ class ProfileReq(BaseModel):
 class CommentReq(BaseModel):
     comment: str
 
-class CreateUserReq(BaseModel):
-    username: str
-    roles: list[str]
-
 class QuotaReq(BaseModel):
     delta: int
 

@@ -1,7 +1,7 @@
 import './style.css';
 import $ from 'jquery';
 import {
-    getToken, getUsername, getMe, getAdminUsers, createAdminUser, deleteAdminUser,
+    getToken, getUsername, getMe, getAdminUsers, deleteAdminUser,
     rotateAdminToken, adjustAdminQuota, updateAdminRoles, renderRoleSwitcher, AdminUser,
 } from './api';
 
@@ -123,22 +123,6 @@ function applyFilter(): void {
     $('#filtered-count').text(`Total: ${filtered.length} users`);
     renderTable(filtered);
 }
-
-async function handleAddUser(): Promise<void> {
-    const username = ($('#new-username').val() as string).trim();
-    const roles = ['contributor', 'reviewer', 'admin'].filter(r => $(`#role-${r}`).prop('checked'));
-    if (!username || !roles.length) { $('#add-status').text('Username and roles required').css('color', 'red'); return; }
-
-    try {
-        const newUser = await createAdminUser(username, roles);
-        allUsers.push(newUser);
-        applyFilter();
-        $('#new-username').val('');
-        $('input[type="checkbox"]').prop('checked', false);
-        $('#add-status').text('User created').css('color', 'green');
-    } catch (e) { $('#add-status').text(String(e)).css('color', 'red'); }
-}
-
 $(async () => {
     const token = getToken();
     const username = getUsername();
@@ -155,5 +139,4 @@ $(async () => {
 
     $('#filter-input').on('input', applyFilter);
     $('#role-filter').on('change', applyFilter);
-    $('#add-user-btn').on('click', handleAddUser);
 });
