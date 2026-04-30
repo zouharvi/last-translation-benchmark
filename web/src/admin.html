@@ -58,6 +58,23 @@
       font-size: 0.75em;
       font-weight: 700;
       margin-right: 4px;
+      cursor: pointer;
+      transition: opacity 0.1s, transform 0.1s;
+      user-select: none;
+    }
+
+    .role-tag:hover {
+      opacity: 0.8;
+      transform: translateY(-1px);
+    }
+
+    .role-tag:active {
+      transform: translateY(0);
+    }
+
+    .role-inactive {
+      background: #f1f5f9 !important;
+      color: #94a3b8 !important;
     }
 
     .role-admin {

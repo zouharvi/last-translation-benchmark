@@ -180,6 +180,10 @@ export function adjustAdminQuota(uid: number, delta: number) {
     return apiCall<{ quota: number, quota_used: number }>('POST', `api/admin/users/${uid}/adjust-quota`, { delta });
 }
 
+export function updateAdminRoles(uid: number, roles: string[]) {
+    return apiCall<AdminUser>('POST', `api/admin/users/${uid}/roles`, { roles });
+}
+
 export function addComment(id: number, comment: string) {
     return apiCall<{ ok: boolean }>('POST', `api/submissions/${id}/comment`, { comment });
 }

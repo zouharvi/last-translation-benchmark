@@ -12,6 +12,7 @@ from .models import (
     CreateUserReq,
     ProfileReq,
     QuotaReq,
+    RolesReq,
     ScoreReq,
     SubmissionReq,
     TranslateReq,
@@ -46,7 +47,7 @@ def me(user=Depends(get_current_user)):
         "quota": user["quota"],
         "quota_used": user["quota_used"],
         "total_points": total_points,
-        "name": user["name"],
+        "name": user.get("name", ""),
         "affiliation": user.get("affiliation", ""),
         "email": user.get("email", ""),
         "credit_consent": user.get("credit_consent", False),
@@ -147,6 +148,21 @@ def admin_adjust_quota(uid: int, req: QuotaReq, user=Depends(get_current_user)):
     target["quota"] = max(0, target.get("quota", CONTRIBUTOR_QUOTA_DEFAULT) + req.delta)
     save_data()
     return {"quota": target["quota"], "quota_used": target.get("quota_used", 0)}
+
+
+@router.post("/api/admin/users/{uid}/roles")
+def admin_update_roles(uid: int, req: RolesReq, user=Depends(get_current_user)):
+    require_admin(user)
+    target = next((u for u in db_state["users"] if u["id"] == uid), None)
+    if target is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    valid_roles = {"admin", "contributor", "reviewer"}
+    bad = [r for r in req.roles if r not in valid_roles]
+    if bad:
+        raise HTTPException(status_code=400, detail=f"Invalid roles: {bad}")
+    target["roles"] = req.roles
+    save_data()
+    return _admin_user_view(target)
 
 
 # --- Translate ---

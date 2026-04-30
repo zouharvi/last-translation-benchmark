@@ -47,3 +47,6 @@ class CreateUserReq(BaseModel):
 
 class QuotaReq(BaseModel):
     delta: int
+
+class RolesReq(BaseModel):
+    roles: list[str]
