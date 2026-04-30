@@ -22,7 +22,7 @@ function renderTable(users: AdminUser[]): void {
             <td>${u.name ? esc(u.name) : '<span class="muted">—</span>'}</td>
             <td>${u.affiliation ? esc(u.affiliation) : '<span class="muted">—</span>'}</td>
             <td>${u.email ? `<a href="mailto:${esc(u.email)}">${esc(u.email)}</a>` : '<span class="muted">—</span>'}</td>
-            <td style="text-align:center;color:#64748b">${u.quota_used}</td>
+            <td style="text-align:center;color:#64748b">${u.quota_used} / ${u.quota}</td>
             <td>
               <div class="action-btns">
                 <a class="act-btn act-copy" data-uid="${u.id}" title="Login link" href="index.html?user=${encodeURIComponent(u.username)}&token=${encodeURIComponent(u.magic_token)}">🔗</a>
@@ -35,7 +35,7 @@ function renderTable(users: AdminUser[]): void {
     }).join('');
 
     $('#user-table').html(`<table>
-        <thead><tr><th>Username</th><th>Roles</th><th>Name</th><th>Affiliation</th><th>Email</th><th>Quota</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Username</th><th>Roles</th><th>Name</th><th>Affiliation</th><th>Email</th><th>Used / Quota</th><th>Actions</th></tr></thead>
         <tbody>${rows}</tbody>
     </table>`);
 
@@ -62,14 +62,14 @@ function renderTable(users: AdminUser[]): void {
 
     $('.act-quota').on('click', async function () {
         const uid = $(this).data('uid');
-        const raw = prompt('Adjust quota (e.g. +50 or -10):');
+        const u = allUsers.find(u => u.id === uid);
+        const raw = prompt(`Adjust quota (current: ${u?.quota}, used: ${u?.quota_used}).\nUse + or - to adjust (e.g. +50 or -10):`);
         if (raw === null) return;
         if (!/^[+-]\d+$/.test(raw.trim())) { alert('Invalid input. Must start with + or - followed by a number.'); return; }
         const delta = parseInt(raw.trim(), 10);
         try {
             const res = await adjustAdminQuota(uid, delta);
-            const u = allUsers.find(u => u.id === uid);
-            if (u) u.quota_used = res.quota_used;
+            if (u) { u.quota = res.quota; u.quota_used = res.quota_used; }
             applyFilter();
             showToast('Quota updated');
         } catch (e) { alert(e); }

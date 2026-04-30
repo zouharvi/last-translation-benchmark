@@ -2,9 +2,10 @@ import json
 import os
 import secrets
 
-from .utils import DATA_PATH
+from .utils import CONTRIBUTOR_QUOTA_DEFAULT, DATA_PATH
 
 db_state: dict = {}
+
 
 def load_data() -> None:
     global db_state
@@ -30,6 +31,7 @@ def load_data() -> None:
                     "username": username,
                     "magic_token": secrets.token_urlsafe(24),
                     "roles": roles,
+                    "quota": CONTRIBUTOR_QUOTA_DEFAULT,
                     "quota_used": 0,
                 }
             )
@@ -44,6 +46,7 @@ def load_data() -> None:
                 "username": "admin",
                 "magic_token": secrets.token_urlsafe(24),
                 "roles": ["admin", "reviewer"],
+                "quota": CONTRIBUTOR_QUOTA_DEFAULT,
                 "quota_used": 0,
             },
         )
@@ -54,19 +57,18 @@ def load_data() -> None:
         if not user.get("magic_token"):
             user["magic_token"] = secrets.token_urlsafe(24)
             changed = True
-        if "role" in user:
-            user["roles"] = [user["role"]]
-            del user["role"]
-            changed = True
 
     if changed:
         save_data()
+
 
 def save_data() -> None:
     with open(DATA_PATH, "w", encoding="utf-8") as f:
         json.dump(db_state, f, indent=2, ensure_ascii=False)
 
+
 def next_id(collection: list) -> int:
     return max((item["id"] for item in collection), default=0) + 1
+
 
 load_data()

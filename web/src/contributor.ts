@@ -49,7 +49,7 @@ $(async () => {
     }
 
     $('#ann-info').text(`${currentUser.username} · Contributor`);
-    renderStats(currentUser.quota_remaining, currentUser.contributor_quota, currentUser.total_points);
+    renderStats(currentUser.quota_used, currentUser.quota, currentUser.total_points);
     loadMySubmissions();
     renderRules();
 
@@ -96,8 +96,9 @@ $(async () => {
                 String($('#tgt-lang').val()),
             );
             lastResults = data.results;
-            currentUser!.quota_remaining = data.quota_remaining;
-            renderStats(data.quota_remaining, currentUser!.contributor_quota, currentUser!.total_points);
+            currentUser!.quota_used = data.quota_used;
+            currentUser!.quota = data.quota;
+            renderStats(data.quota_used, data.quota, currentUser!.total_points);
             renderApiResults();
             lastResults.forEach(r => r.verified = null);
             ownVerified = null;
@@ -305,8 +306,8 @@ $(async () => {
 
 // ---- Stats bar ----
 
-function renderStats(remaining: number, total: number, points: number): void {
-    $('#quota-text').text(`${remaining} / ${total} quota remaining`);
+function renderStats(used: number, quota: number, points: number): void {
+    $('#quota-text').text(`Used: ${used}, Quota: ${quota}`);
     $('#total-points').text(String(points));
 }
 

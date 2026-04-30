@@ -26,15 +26,15 @@ from .services import (
     translate_qwen3p6,
     verify_llm,
 )
-from .utils import CONTRIBUTOR_QUOTA
+from .utils import CONTRIBUTOR_QUOTA_DEFAULT
 
 router = APIRouter()
 
 # --- Users ---
 
+
 @router.get("/api/me")
 def me(user=Depends(get_current_user)):
-    quota_used = user["quota_used"]
     total_points = sum(
         s["points"]
         for s in db_state["submissions"]
@@ -42,16 +42,16 @@ def me(user=Depends(get_current_user)):
     )
     return {
         "username": user["username"],
-        "roles": user.get("roles", []),
-        "quota_used": quota_used,
-        "quota_remaining": max(0, CONTRIBUTOR_QUOTA - quota_used),
-        "contributor_quota": CONTRIBUTOR_QUOTA,
+        "roles": user["roles"],
+        "quota": user["quota"],
+        "quota_used": user["quota_used"],
         "total_points": total_points,
-        "name": user.get("name", ""),
+        "name": user["name"],
         "affiliation": user.get("affiliation", ""),
         "email": user.get("email", ""),
         "credit_consent": user.get("credit_consent", False),
     }
+
 
 @router.put("/api/profile")
 def update_profile(req: ProfileReq, user=Depends(get_current_user)):
@@ -66,6 +66,7 @@ def update_profile(req: ProfileReq, user=Depends(get_current_user)):
     save_data()
     return {"ok": True}
 
+
 def _admin_user_view(u: dict) -> dict:
     return {
         "id": u["id"],
@@ -76,20 +77,25 @@ def _admin_user_view(u: dict) -> dict:
         "affiliation": u.get("affiliation", ""),
         "email": u.get("email", ""),
         "credit_consent": u.get("credit_consent", False),
+        "quota": u.get("quota", CONTRIBUTOR_QUOTA_DEFAULT),
         "quota_used": u.get("quota_used", 0),
     }
+
 
 @router.get("/api/admin/users")
 def admin_users(user=Depends(get_current_user)):
     require_admin(user)
     return [_admin_user_view(u) for u in db_state["users"]]
 
+
 @router.post("/api/admin/users", status_code=201)
 def admin_create_user(req: CreateUserReq, user=Depends(get_current_user)):
     require_admin(user)
     if not req.username.strip():
         raise HTTPException(status_code=400, detail="Username cannot be empty")
-    if any(u["username"].lower() == req.username.strip().lower() for u in db_state["users"]):
+    if any(
+        u["username"].lower() == req.username.strip().lower() for u in db_state["users"]
+    ):
         raise HTTPException(status_code=409, detail="Username already exists")
     valid_roles = {"admin", "contributor", "reviewer"}
     bad = [r for r in req.roles if r not in valid_roles]
@@ -100,11 +106,13 @@ def admin_create_user(req: CreateUserReq, user=Depends(get_current_user)):
         "username": req.username.strip(),
         "magic_token": secrets.token_urlsafe(24),
         "roles": req.roles,
+        "quota": CONTRIBUTOR_QUOTA_DEFAULT,
         "quota_used": 0,
     }
     db_state["users"].append(new_user)
     save_data()
     return _admin_user_view(new_user)
+
 
 @router.delete("/api/admin/users/{uid}", status_code=200)
 def admin_delete_user(uid: int, user=Depends(get_current_user)):
@@ -118,6 +126,7 @@ def admin_delete_user(uid: int, user=Depends(get_current_user)):
     save_data()
     return {"ok": True}
 
+
 @router.post("/api/admin/users/{uid}/rotate-token")
 def admin_rotate_token(uid: int, user=Depends(get_current_user)):
     require_admin(user)
@@ -128,19 +137,22 @@ def admin_rotate_token(uid: int, user=Depends(get_current_user)):
     save_data()
     return {"magic_token": target["magic_token"]}
 
+
 @router.post("/api/admin/users/{uid}/adjust-quota")
 def admin_adjust_quota(uid: int, req: QuotaReq, user=Depends(get_current_user)):
     require_admin(user)
     target = next((u for u in db_state["users"] if u["id"] == uid), None)
     if target is None:
         raise HTTPException(status_code=404, detail="User not found")
-    target["quota_used"] = max(0, target.get("quota_used", 0) + req.delta)
+    target["quota"] = max(0, target.get("quota", CONTRIBUTOR_QUOTA_DEFAULT) + req.delta)
     save_data()
-    return {"quota_used": target["quota_used"]}
+    return {"quota": target["quota"], "quota_used": target.get("quota_used", 0)}
+
 
 # --- Translate ---
 
 NAME_TO_CODE = {x["name"].lower(): x["code"] for x in LANGUAGES}
+
 
 @router.post("/api/translate-submission")
 def translate_submission(req: TranslateReq, user=Depends(get_current_user)):
@@ -170,7 +182,8 @@ def translate_submission(req: TranslateReq, user=Depends(get_current_user)):
     target_code = NAME_TO_CODE.get(target_name.lower())
 
     quota_used = user["quota_used"]
-    if quota_used >= CONTRIBUTOR_QUOTA:
+    quota = user.get("quota", CONTRIBUTOR_QUOTA_DEFAULT)
+    if quota_used >= quota:
         raise HTTPException(status_code=429, detail="Quota exceeded")
 
     async def _run_translate(name: str, func, *args):
@@ -237,7 +250,8 @@ def translate_submission(req: TranslateReq, user=Depends(get_current_user)):
 
     user["quota_used"] = quota_used + 1
     save_data()
-    return {"results": results, "quota_remaining": CONTRIBUTOR_QUOTA - quota_used - 1}
+    return {"results": results, "quota": quota, "quota_used": quota_used + 1}
+
 
 @router.post("/api/verify-submission")
 def verify_submission(req: VerifyReq, user=Depends(get_current_user)):
@@ -267,7 +281,9 @@ def verify_submission(req: VerifyReq, user=Depends(get_current_user)):
     results = asyncio.run(_run_verify())
     return {"results": results}
 
+
 # --- Submissions ---
+
 
 @router.post("/api/submissions")
 def create_submission(req: SubmissionReq, user=Depends(get_current_user)):
@@ -305,6 +321,7 @@ def create_submission(req: SubmissionReq, user=Depends(get_current_user)):
     save_data()
     return {"ok": True}
 
+
 @router.put("/api/submissions/{sid}")
 def update_submission(sid: int, req: SubmissionReq, user=Depends(get_current_user)):
     submission = next((s for s in db_state["submissions"] if s["id"] == sid), None)
@@ -330,6 +347,7 @@ def update_submission(sid: int, req: SubmissionReq, user=Depends(get_current_use
     save_data()
     return {"ok": True}
 
+
 @router.get("/api/submissions")
 def get_submissions(user=Depends(get_current_user)):
     if "reviewer" in user.get("roles", []):
@@ -345,6 +363,7 @@ def get_submissions(user=Depends(get_current_user)):
         )
 
     return rows
+
 
 @router.post("/api/submissions/{sid}/score")
 def score_submission(sid: int, req: ScoreReq, user=Depends(get_current_user)):
@@ -381,6 +400,7 @@ def score_submission(sid: int, req: ScoreReq, user=Depends(get_current_user)):
 
     save_data()
     return {"ok": True}
+
 
 @router.post("/api/submissions/{sid}/comment")
 def add_comment(sid: int, req: CommentReq, user=Depends(get_current_user)):
