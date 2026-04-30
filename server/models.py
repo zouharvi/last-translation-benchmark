@@ -51,3 +51,9 @@ class QuotaReq(BaseModel):
 
 class RolesReq(BaseModel):
     roles: list[str]
+
+class RegisterReq(BaseModel):
+    name: str
+    affiliation: str
+    email: str
+    credit_consent: bool

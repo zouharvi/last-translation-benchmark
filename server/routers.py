@@ -24,6 +24,7 @@ from .models import (
     CreateUserReq,
     ProfileReq,
     QuotaReq,
+    RegisterReq,
     RolesReq,
     ScoreReq,
     SubmissionReq,
@@ -76,6 +77,30 @@ async def update_profile(req: ProfileReq, user=Depends(get_current_user)):
         }
     )
     await save_user(user)
+    return {"ok": True}
+
+
+@router.post("/api/register", status_code=201)
+async def register(req: RegisterReq):
+    if not req.name.strip() or not req.email.strip():
+        raise HTTPException(status_code=400, detail="Name and email are required")
+    users = await get_users()
+    if any(u.get("email", "").lower() == req.email.strip().lower() for u in users):
+        raise HTTPException(status_code=409, detail="Email already registered")
+    username = f"pending_{secrets.token_urlsafe(8)}"
+    new_user = {
+        "id": await next_user_id(),
+        "username": username,
+        "magic_token": secrets.token_urlsafe(24),
+        "roles": ["contributor"],
+        "quota": CONTRIBUTOR_QUOTA_DEFAULT,
+        "quota_used": 0,
+        "name": req.name.strip(),
+        "affiliation": req.affiliation.strip(),
+        "email": req.email.strip(),
+        "credit_consent": req.credit_consent,
+    }
+    await save_user(new_user)
     return {"ok": True}
 
 

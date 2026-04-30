@@ -1,23 +1,29 @@
 import './style.css';
 import $ from 'jquery';
 
-import { getToken, getUsername, getMe, updateProfile } from './api';
+import { getToken, getUsername, getMe, updateProfile, register } from './api';
 import { setupInstructions } from './utils';
 
 $(async () => {
     setupInstructions('all');
-    if (!getToken() || !getUsername()) { window.location.href = 'index.html'; return; }
+    const hasAuth = Boolean(getToken() && getUsername());
 
-    try {
-        const user = await getMe();
-        // Pre-fill existing profile data
-        if (user.name) $('#name').val(user.name);
-        if (user.affiliation) $('#affiliation').val(user.affiliation);
-        if (user.email) $('#email').val(user.email);
-        if (user.credit_consent) $('#credit-consent').prop('checked', true);
-    } catch {
-        window.location.href = 'index.html';
-        return;
+    if (hasAuth) {
+        try {
+            const user = await getMe();
+            // Pre-fill existing profile data
+            if (user.name) $('#name').val(user.name);
+            if (user.affiliation) $('#affiliation').val(user.affiliation);
+            if (user.email) $('#email').val(user.email);
+            if (user.credit_consent) $('#credit-consent').prop('checked', true);
+        } catch {
+            window.location.href = 'index.html';
+            return;
+        }
+    } else {
+        $('#profile-heading').text('Request Access');
+        $('#profile-sub').text('Fill in your details and wait for a confirmation email with your login link.');
+        $('#save-btn').text('Submit Registration');
     }
 
     $('#save-btn').on('click', async () => {
@@ -33,10 +39,15 @@ $(async () => {
 
         $('#save-btn').prop('disabled', true);
         try {
-            await updateProfile({ name, affiliation, email, credit_consent });
-
-            // Redirect back to main page which will route appropriately
-            window.location.href = 'index.html' + window.location.search;
+            if (hasAuth) {
+                await updateProfile({ name, affiliation, email, credit_consent });
+                window.location.href = 'index.html' + window.location.search;
+            } else {
+                await register({ name, affiliation, email, credit_consent });
+                $('#status-msg').removeClass('msg-err').addClass('msg-ok').text(
+                    'Registration received! You will receive a login link via email once your account is confirmed.'
+                );
+            }
         } catch (err) {
             $('#status-msg').removeClass('msg-ok').addClass('msg-err').text(String(err));
             $('#save-btn').prop('disabled', false);

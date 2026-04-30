@@ -9,6 +9,14 @@ import { esc, showToast, accessDenied } from './utils';
 
 let allUsers: AdminUser[] = [];
 
+function buildMailtoLink(u: AdminUser): string {
+    const loginLink = `${window.location.origin}/index.html?user=${encodeURIComponent(u.username)}&token=${encodeURIComponent(u.magic_token)}`;
+    const name = u.name || u.username;
+    const subject = 'Last Translation Benchmark access';
+    const body = `Dear ${name},\n\nThank you for your interest in Last Translation Benchmark. You can submit hard-to-translate inputs via this link (do not share with anyone):\n\n${loginLink}\n\nPlease make sure that you read the instructions in detail.\nLet us know if you have any questions or need to increase your submission quota.\n\nOn behalf of LTB organizers,\nVilém Zouhar`;
+    return `mailto:${u.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 function renderTable(users: AdminUser[]): void {
     if (!users.length) {
         $('#user-table').html('<div class="empty">No users found</div>');
@@ -30,6 +38,7 @@ function renderTable(users: AdminUser[]): void {
             <td>
               <div class="action-btns">
                 <a class="act-btn act-copy" data-uid="${u.id}" title="Login link" href="index.html?user=${encodeURIComponent(u.username)}&token=${encodeURIComponent(u.magic_token)}">🔗</a>
+                ${u.email ? `<a class="act-btn act-email" data-uid="${u.id}" title="Send invitation email" href="${buildMailtoLink(u)}">📧</a>` : ''}
                 <button class="act-btn act-rotate" data-uid="${u.id}" title="Rotate magic token">🔄</button>
                 <button class="act-btn act-quota" data-uid="${u.id}" title="Adjust quota">±</button>
                 <button class="act-btn act-delete" data-uid="${u.id}" title="Remove user">✕</button>

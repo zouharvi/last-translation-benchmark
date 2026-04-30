@@ -148,6 +148,15 @@ export function updateProfile(data: {
     return apiCall<{ ok: boolean }>('PUT', 'api/profile', data);
 }
 
+export function register(data: {
+    name: string;
+    affiliation: string;
+    email: string;
+    credit_consent: boolean;
+}) {
+    return apiCall<{ ok: boolean }>('POST', 'api/register', data);
+}
+
 export interface AdminUser {
     id: number;
     username: string;
