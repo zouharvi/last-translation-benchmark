@@ -8,10 +8,10 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <style>
     .admin-grid {
-      display: grid;
-      grid-template-columns: 1fr 320px;
+      display: flex;
+      flex-direction: column;
       gap: 16px;
-      align-items: start;
+      align-items: stretch;
     }
 
     @media (max-width: 860px) {
@@ -187,6 +187,30 @@
 
   <div class="container" style="max-width: 1200px;">
     <div class="admin-grid">
+      <div class="card add-panel" style="margin-bottom: 0;">
+        <h2 style="margin-bottom: 12px;">Add user</h2>
+        <div style="display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 200px;">
+            <label style="display: block; margin-bottom: 4px; font-size: 0.85em;">Username</label>
+            <input id="new-username" type="text" placeholder="Username" class="admin-input"
+              style="width:100%; box-sizing:border-box;">
+          </div>
+          <div style="min-width: 200px;">
+            <label style="display: block; margin-bottom: 4px; font-size: 0.85em;">Roles</label>
+            <div class="role-checks" style="margin-bottom: 0; padding: 5px 0;">
+              <label class="role-check-label"><input type="checkbox" id="role-contributor" checked> Contributor</label>
+              <label class="role-check-label"><input type="checkbox" id="role-reviewer"> Reviewer</label>
+              <label class="role-check-label"><input type="checkbox" id="role-admin"> Admin</label>
+            </div>
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 4px; font-size: 0.85em; visibility: hidden;">&nbsp;</label>
+            <button class="btn btn-success" id="add-user-btn" style="height: 32px; padding: 0 16px;">Add user</button>
+          </div>
+        </div>
+        <div id="add-status" style="font-size:0.8em; margin-top:8px"></div>
+      </div>
+
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           <h2 style="margin:0">Users</h2>
@@ -206,21 +230,6 @@
           </div>
         </div>
         <span id="filtered-count"></span>
-      </div>
-
-      <div class="card add-panel">
-        <h2>Add user</h2>
-        <label>Username</label>
-        <input id="new-username" type="text" placeholder="Username" class="admin-input"
-          style="width:100%; box-sizing:border-box; margin-bottom:12px">
-        <label>Roles</label>
-        <div class="role-checks">
-          <label class="role-check-label"><input type="checkbox" id="role-contributor" checked> Contributor</label>
-          <label class="role-check-label"><input type="checkbox" id="role-reviewer"> Reviewer</label>
-          <label class="role-check-label"><input type="checkbox" id="role-admin"> Admin</label>
-        </div>
-        <button class="btn btn-success" id="add-user-btn" style="width:100%">Add user</button>
-        <div id="add-status" style="font-size:0.8em; margin-top:8px"></div>
       </div>
     </div>
   </div>
