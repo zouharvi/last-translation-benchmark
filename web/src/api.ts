@@ -175,6 +175,10 @@ export function rotateAdminToken(uid: number) {
     return apiCall<{ magic_token: string }>('POST', `api/admin/users/${uid}/rotate-token`);
 }
 
+export function adjustAdminQuota(uid: number, delta: number) {
+    return apiCall<{ quota_used: number }>('POST', `api/admin/users/${uid}/adjust-quota`, { delta });
+}
+
 export function addComment(id: number, comment: string) {
     return apiCall<{ ok: boolean }>('POST', `api/submissions/${id}/comment`, { comment });
 }

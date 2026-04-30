@@ -2,7 +2,7 @@ import './style.css';
 import $ from 'jquery';
 import {
     getToken, getUsername, getMe, getAdminUsers, createAdminUser, deleteAdminUser,
-    rotateAdminToken, renderRoleSwitcher, AdminUser,
+    rotateAdminToken, adjustAdminQuota, renderRoleSwitcher, AdminUser,
 } from './api';
 
 import { esc, showToast, accessDenied } from './utils';
@@ -27,6 +27,7 @@ function renderTable(users: AdminUser[]): void {
               <div class="action-btns">
                 <a class="act-btn act-copy" data-uid="${u.id}" title="Login link" href="index.html?user=${encodeURIComponent(u.username)}&token=${encodeURIComponent(u.magic_token)}">🔗</a>
                 <button class="act-btn act-rotate" data-uid="${u.id}" title="Rotate magic token">🔄</button>
+                <button class="act-btn act-quota" data-uid="${u.id}" title="Adjust quota">±</button>
                 <button class="act-btn act-delete" data-uid="${u.id}" title="Remove user">✕</button>
               </div>
             </td>
@@ -56,6 +57,21 @@ function renderTable(users: AdminUser[]): void {
             allUsers = allUsers.filter(u => u.id !== uid);
             applyFilter();
             showToast('User deleted');
+        } catch (e) { alert(e); }
+    });
+
+    $('.act-quota').on('click', async function () {
+        const uid = $(this).data('uid');
+        const raw = prompt('Adjust quota (e.g. +50 or -10):');
+        if (raw === null) return;
+        if (!/^[+-]\d+$/.test(raw.trim())) { alert('Invalid input. Must start with + or - followed by a number.'); return; }
+        const delta = parseInt(raw.trim(), 10);
+        try {
+            const res = await adjustAdminQuota(uid, delta);
+            const u = allUsers.find(u => u.id === uid);
+            if (u) u.quota_used = res.quota_used;
+            applyFilter();
+            showToast('Quota updated');
         } catch (e) { alert(e); }
     });
 }

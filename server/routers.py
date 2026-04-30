@@ -11,6 +11,7 @@ from .models import (
     CommentReq,
     CreateUserReq,
     ProfileReq,
+    QuotaReq,
     ScoreReq,
     SubmissionReq,
     TranslateReq,
@@ -126,6 +127,16 @@ def admin_rotate_token(uid: int, user=Depends(get_current_user)):
     target["magic_token"] = secrets.token_urlsafe(24)
     save_data()
     return {"magic_token": target["magic_token"]}
+
+@router.post("/api/admin/users/{uid}/adjust-quota")
+def admin_adjust_quota(uid: int, req: QuotaReq, user=Depends(get_current_user)):
+    require_admin(user)
+    target = next((u for u in db_state["users"] if u["id"] == uid), None)
+    if target is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    target["quota_used"] = max(0, target.get("quota_used", 0) + req.delta)
+    save_data()
+    return {"quota_used": target["quota_used"]}
 
 # --- Translate ---
 

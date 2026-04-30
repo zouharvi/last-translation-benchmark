@@ -44,3 +44,6 @@ class CommentReq(BaseModel):
 class CreateUserReq(BaseModel):
     username: str
     roles: list[str]
+
+class QuotaReq(BaseModel):
+    delta: int
