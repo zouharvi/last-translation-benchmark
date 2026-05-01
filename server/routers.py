@@ -422,7 +422,7 @@ async def score_submission(sid: int, req: ScoreReq, user=Depends(get_current_use
         submission["points"] = 1
     elif req.action == "reject":
         submission["points"] = 0
-    else:
+    elif submission.get("points", -1) < 0:
         submission["points"] = -1
     submission["reviewer_comment"] = req.comment or ""
 
@@ -479,7 +479,8 @@ async def add_comment(sid: int, req: CommentReq, user=Depends(get_current_user))
     )
 
     if is_reviewer:
-        submission["points"] = -1
+        if submission.get("points", -1) < 0:
+            submission["points"] = -1
         submission["reviewer_comment"] = req.comment
 
     await save_submission(submission)
