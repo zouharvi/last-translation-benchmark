@@ -6,11 +6,11 @@ import { setupInstructions } from './utils';
 
 $(async () => {
     setupInstructions('all');
-    
+
     $('#register-btn').on('click', () => {
         window.location.href = 'profile.html';
     });
-    
+
     const token = getToken();
     const username = getUsername();
     if (token && username) {
@@ -28,8 +28,8 @@ function redirectByRoles(roles: string[]): void {
     if (roles.includes('admin')) {
         window.location.href = 'admin.html' + search;
     } else if (roles.includes('reviewer')) {
-        window.location.href = 'reviewer.html' + search;
+        window.location.href = 'review.html' + search;
     } else if (roles.includes('contributor')) {
-        window.location.href = 'contributor.html' + search;
+        window.location.href = 'contribute.html' + search;
     }
 }

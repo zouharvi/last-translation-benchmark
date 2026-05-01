@@ -211,7 +211,7 @@ export function renderRoleSwitcher(roles: string[]): void {
         btn.style.padding = '3px 8px';
         btn.style.fontSize = '0.8em';
         btn.style.textDecoration = 'none';
-        btn.href = 'contributor.html' + search;
+        btn.href = 'contribute.html' + search;
         container.appendChild(btn);
     }
     if (roles.includes('reviewer')) {
@@ -221,7 +221,7 @@ export function renderRoleSwitcher(roles: string[]): void {
         btn.style.padding = '3px 8px';
         btn.style.fontSize = '0.8em';
         btn.style.textDecoration = 'none';
-        btn.href = 'reviewer.html' + search;
+        btn.href = 'review.html' + search;
         container.appendChild(btn);
     }
     if (roles.includes('admin')) {
