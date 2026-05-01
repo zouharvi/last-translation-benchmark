@@ -197,8 +197,8 @@ $(async () => {
         }
 
         const mtPassCount = lastResults.filter(r => r.verified === true).length;
-        if (mtPassCount + 1 > 2) {
-            $('#submit-status').html('<span class="msg-err">At most two translations can pass verification</span>');
+        if (mtPassCount > 2) {
+            $('#submit-status').html('<span class="msg-err">At most two MT translations can pass verification</span>');
             return;
         }
 
