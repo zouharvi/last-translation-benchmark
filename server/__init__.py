@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from .db import get_users, init_db
@@ -71,6 +72,29 @@ app.add_middleware(
 )
 
 app.include_router(router)
+
+
+# ---------------------------------------------------------------------------
+# Simple HTML redirects
+# ---------------------------------------------------------------------------
+
+
+@app.get("/admin")
+async def redirect_admin(request: Request):
+    qs = request.url.query
+    return RedirectResponse(url="/admin.html" + (f"?{qs}" if qs else ""))
+
+
+@app.get("/contribute")
+async def redirect_contribute(request: Request):
+    qs = request.url.query
+    return RedirectResponse(url="/contribute.html" + (f"?{qs}" if qs else ""))
+
+
+@app.get("/review")
+async def redirect_review(request: Request):
+    qs = request.url.query
+    return RedirectResponse(url="/review.html" + (f"?{qs}" if qs else ""))
 
 
 # ---------------------------------------------------------------------------
