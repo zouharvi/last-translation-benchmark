@@ -183,11 +183,23 @@ $(async () => {
             return;
         }
 
-        const allPassed = translations.length > 0 && translations.every(t => t.verified === true);
-        if (allPassed) {
-            if (!confirm('All models passed the verification. This should be allowed only in special cases. Are you sure you want to submit?')) {
-                return;
-            }
+        if (!ownTranslation) {
+            $('#submit-status').html('<span class="msg-err">A human translation is required</span>');
+            return;
+        }
+        if (ownVerified === null) {
+            $('#submit-status').html('<span class="msg-err">Please verify translations before submitting</span>');
+            return;
+        }
+        if (ownVerified !== true) {
+            $('#submit-status').html('<span class="msg-err">Human translation must pass verification</span>');
+            return;
+        }
+
+        const mtPassCount = lastResults.filter(r => r.verified === true).length;
+        if (mtPassCount + 1 > 2) {
+            $('#submit-status').html('<span class="msg-err">At most two translations can pass verification</span>');
+            return;
         }
 
         try {
