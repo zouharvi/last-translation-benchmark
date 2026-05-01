@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .db import get_users, init_db
@@ -75,26 +75,25 @@ app.include_router(router)
 
 
 # ---------------------------------------------------------------------------
-# Simple HTML redirects
+# Transparent HTML serving (no redirect, URL stays the same)
 # ---------------------------------------------------------------------------
+
+_STATIC_DIR = os.path.dirname(os.path.abspath(__file__)) + "/static"
 
 
 @app.get("/admin")
-async def redirect_admin(request: Request):
-    qs = request.url.query
-    return RedirectResponse(url="/admin.html" + (f"?{qs}" if qs else ""))
+async def serve_admin():
+    return FileResponse(_STATIC_DIR + "/admin.html")
 
 
 @app.get("/contribute")
-async def redirect_contribute(request: Request):
-    qs = request.url.query
-    return RedirectResponse(url="/contribute.html" + (f"?{qs}" if qs else ""))
+async def serve_contribute():
+    return FileResponse(_STATIC_DIR + "/contribute.html")
 
 
 @app.get("/review")
-async def redirect_review(request: Request):
-    qs = request.url.query
-    return RedirectResponse(url="/review.html" + (f"?{qs}" if qs else ""))
+async def serve_review():
+    return FileResponse(_STATIC_DIR + "/review.html")
 
 
 # ---------------------------------------------------------------------------
