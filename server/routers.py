@@ -269,7 +269,7 @@ async def translate_submission(req: TranslateReq, user=Depends(get_current_user)
         )
     tasks += [
         _run_translate(
-            "Gemini 2.5 Flash",
+            "Gemini 2.5 Flash Lite",
             translate_gemini2_5flash,
             req.text,
             source_name,
