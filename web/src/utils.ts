@@ -29,7 +29,7 @@ export function renderCommentThread(comments: Comment[] | undefined, viewerRole:
 export function accessDenied(roles: string[], target: string): void {
     document.body.innerHTML = `<div style="padding: 2rem; text-align: center;">
         <h2>Access Denied</h2>
-        <p>You have roles: ${roles.join(', ')}. Need: "${target}".</p>
+        <p>You have roles: ${roles.map(x => `<em>${esc(x)}</em>`).join(', ')}.<br>Need: <em>${esc(target)}</em>.</p>
     </div>`;
 }
 
@@ -48,7 +48,7 @@ export async function setupInstructions(mode: 'all' | 'contributor' | 'reviewer'
             const html = await fetch('instructions.html').then(r => r.text());
             const bodyMatch = html.match(/<body>([\s\S]*?)<\/body>/);
             const body = bodyMatch ? bodyMatch[1] : html;
-            
+
             let filtered = body;
             const splitKey = '<h2>Instructions for Reviewers</h2>';
             if (mode === 'contributor') {
@@ -56,7 +56,7 @@ export async function setupInstructions(mode: 'all' | 'contributor' | 'reviewer'
             } else if (mode === 'reviewer') {
                 filtered = splitKey + body.split(splitKey)[1];
             }
-            
+
             box.html(filtered).data('loaded', true);
         }
         box.slideDown();

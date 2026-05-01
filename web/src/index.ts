@@ -26,10 +26,10 @@ $(async () => {
 function redirectByRoles(roles: string[]): void {
     const search = window.location.search;
     if (roles.includes('admin')) {
-        window.location.href = 'admin.html' + search;
+        window.location.href = 'admin' + search;
     } else if (roles.includes('reviewer')) {
-        window.location.href = 'review.html' + search;
+        window.location.href = 'review' + search;
     } else if (roles.includes('contributor')) {
-        window.location.href = 'contribute.html' + search;
+        window.location.href = 'contribute' + search;
     }
 }

@@ -211,7 +211,7 @@ export function renderRoleSwitcher(roles: string[]): void {
         btn.style.padding = '3px 8px';
         btn.style.fontSize = '0.8em';
         btn.style.textDecoration = 'none';
-        btn.href = 'contribute.html' + search;
+        btn.href = 'contribute' + search;
         container.appendChild(btn);
     }
     if (roles.includes('reviewer')) {
@@ -221,7 +221,7 @@ export function renderRoleSwitcher(roles: string[]): void {
         btn.style.padding = '3px 8px';
         btn.style.fontSize = '0.8em';
         btn.style.textDecoration = 'none';
-        btn.href = 'review.html' + search;
+        btn.href = 'review' + search;
         container.appendChild(btn);
     }
     if (roles.includes('admin')) {
@@ -231,7 +231,7 @@ export function renderRoleSwitcher(roles: string[]): void {
         btn.style.padding = '3px 8px';
         btn.style.fontSize = '0.8em';
         btn.style.textDecoration = 'none';
-        btn.href = 'admin.html' + search;
+        btn.href = 'admin' + search;
         container.appendChild(btn);
     }
     const profileBtn = document.createElement('a');
@@ -240,7 +240,7 @@ export function renderRoleSwitcher(roles: string[]): void {
     profileBtn.style.padding = '3px 8px';
     profileBtn.style.fontSize = '0.8em';
     profileBtn.style.textDecoration = 'none';
-    profileBtn.href = 'profile.html' + search;
+    profileBtn.href = 'profile' + search;
     container.appendChild(profileBtn);
 
     const headerActions = document.querySelector('header > div');

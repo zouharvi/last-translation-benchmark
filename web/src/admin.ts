@@ -15,7 +15,10 @@ function renderTable(users: AdminUser[]): void {
         $('#user-table').html('<div class="empty">No users found</div>');
         return;
     }
+    // Slightly complicated way to get the hosting root. We could use host but that doesn't work if this is hosted from a directory.
+    let root = window.location.origin + window.location.pathname.split("/").slice(0, -1).join("/");
     const rows = users.map(u => {
+        const link = root + '/?user=' + encodeURIComponent(u.username) + '&token=' + encodeURIComponent(u.magic_token);
         const allRoles = ['admin', 'reviewer', 'contributor'];
         const rolesHtml = allRoles.map(r => {
             const active = u.roles.includes(r);
@@ -30,13 +33,12 @@ function renderTable(users: AdminUser[]): void {
             <td style="text-align:right;color:#64748b;white-space:nowrap">${u.quota_used} / ${u.quota}</td>
             <td>
               <div class="action-btns">
-                <a class="act-btn act-copy" data-uid="${u.id}" title="Login link" href="index.html?user=${encodeURIComponent(u.username)}&token=${encodeURIComponent(u.magic_token)}">🔗</a>
+                <a class="act-btn act-copy" data-uid="${u.id}" title="Login link" href="${link}">🔗</a>
                 ${u.email ? (() => {
-                    const link = window.location.origin + window.location.pathname.replace('admin.html', 'index.html') + '?user=' + encodeURIComponent(u.username) + '&token=' + encodeURIComponent(u.magic_token);
-                    const subject = 'Your Last Translation Benchmark Login Link';
-                    const body = `Dear ${u.name || u.username},\n\nThank you for your interest in Last Translation Benchmark. You can submit hard-to-translate inputs via this link (do not share with anyone):\n\n${link}\n\nPlease make sure that you read the instructions in detail.\nLet us know if you have any questions or need to increase your submission quota.\n\nOn behalf of LTB organizers,\n${adminName}`;
-                    return `<a class="act-btn" title="Send magic link via email" href="mailto:${encodeURIComponent(u.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}" style="background:#e0e7ff;color:#4338ca;text-decoration:none;">📧</a>`;
-                })() : `<button class="act-btn act-email" title="Send magic link via email" style="background:#e0e7ff;color:#4338ca;">📧</button>`}
+                const subject = 'Your Last Translation Benchmark Login Link';
+                const body = `Dear ${u.name || u.username},\n\nThank you for your interest in Last Translation Benchmark. You can submit hard-to-translate inputs via this link (do not share with anyone):\n\n${link}\n\nPlease make sure that you read the instructions in detail.\nLet us know if you have any questions or need to increase your submission quota.\n\nOn behalf of LTB organizers,\n${adminName}`;
+                return `<a class="act-btn" title="Send magic link via email" href="mailto:${encodeURIComponent(u.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}" style="background:#e0e7ff;color:#4338ca;text-decoration:none;">📧</a>`;
+            })() : `<button class="act-btn act-email" title="Send magic link via email" style="background:#e0e7ff;color:#4338ca;">📧</button>`}
                 <button class="act-btn act-rotate" data-uid="${u.id}" title="Rotate magic token">🔄</button>
                 <button class="act-btn act-quota" data-uid="${u.id}" title="Adjust quota">±</button>
                 <button class="act-btn act-delete" data-uid="${u.id}" title="Remove user">✕</button>
