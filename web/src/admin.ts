@@ -27,26 +27,21 @@ function renderTable(users: AdminUser[]): void {
         }).join('');
 
         let statusLabel: string;
-        let statusColor: string;
         let statusTitle: string;
         if (u.total_submitted > 0) {
             statusLabel = 'submitted';
-            statusColor = '#dcfce7;color:#166534';
             statusTitle = u.last_active ? `Last active: ${u.last_active}` : '';
         } else if (u.last_active) {
             statusLabel = 'logged-in';
-            statusColor = '#dbeafe;color:#1e40af';
             statusTitle = `Last active: ${u.last_active}`;
         } else if (u.invite_sent) {
             statusLabel = 'invite-sent';
-            statusColor = '#fef9c3;color:#854d0e';
             statusTitle = `Invite sent: ${u.invite_sent}`;
         } else {
             statusLabel = 'registered';
-            statusColor = '#f1f5f9;color:#475569';
             statusTitle = '';
         }
-        const statusBadge = `<span style="background:${statusColor};padding:2px 7px;border-radius:10px;font-size:0.8em;white-space:nowrap" title="${esc(statusTitle)}">${statusLabel}</span>`;
+        const statusBadge = `<span style="font-size:0.8em;white-space:nowrap" title="${esc(statusTitle)}">${statusLabel}</span>`;
 
         return `<tr data-uid="${u.id}">
             <td><span class="uname">${esc(u.username)}</span></td>
