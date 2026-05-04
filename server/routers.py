@@ -52,6 +52,13 @@ router = APIRouter()
 async def me(user=Depends(get_current_user)):
     submissions = await db_get_submissions(user_id=user["id"])
     total_accepted = sum(1 for s in submissions if s.get("points") == 1)
+    now = datetime.now(timezone.utc)
+    last_active = user.get("last_active", "")
+    if not last_active or (
+        now - datetime.fromisoformat(last_active).replace(tzinfo=timezone.utc)
+    ).total_seconds() > 300:
+        user["last_active"] = now.strftime("%Y-%m-%d %H:%M:%S")
+        await save_user(user)
     return {
         "username": user["username"],
         "roles": user["roles"],
@@ -133,6 +140,8 @@ async def _admin_user_view(u: dict) -> dict:
         "review_langs": u.get("review_langs", []),
         "total_accepted": total_accepted,
         "total_submitted": len(submissions),
+        "invite_sent": u.get("invite_sent", ""),
+        "last_active": u.get("last_active", ""),
     }
 
 
@@ -163,6 +172,17 @@ async def admin_rotate_token(uid: int, user=Depends(get_current_user)):
     target["magic_token"] = secrets.token_urlsafe(24)
     await save_user(target)
     return {"magic_token": target["magic_token"]}
+
+
+@router.post("/api/admin/users/{uid}/mark-invite-sent")
+async def admin_mark_invite_sent(uid: int, user=Depends(get_current_user)):
+    require_admin(user)
+    target = await get_user_by_id(uid)
+    if target is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    target["invite_sent"] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    await save_user(target)
+    return {"invite_sent": target["invite_sent"]}
 
 
 @router.post("/api/admin/users/{uid}/adjust-quota")
