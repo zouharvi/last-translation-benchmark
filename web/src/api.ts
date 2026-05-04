@@ -48,16 +48,46 @@ export interface Submission {
     comments?: Comment[];
 }
 
+// ---------- Cookie helpers ----------
+
+function setCookie(name: string, value: string): void {
+    const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString();
+    const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Strict${secure}`;
+}
+
+function getCookie(name: string): string | null {
+    const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+    return match ? decodeURIComponent(match[1]) : null;
+}
+
 // ---------- Token helpers ----------
 
 export function getToken(): string | null {
     const params = new URLSearchParams(window.location.search);
-    return params.get('token');
+    const urlToken = params.get('token');
+    if (urlToken) {
+        setCookie('ltb_token', urlToken);
+        return urlToken;
+    }
+    return getCookie('ltb_token');
 }
 
 export function getUsername(): string | null {
     const params = new URLSearchParams(window.location.search);
-    return params.get('user');
+    const urlUser = params.get('user');
+    if (urlUser) {
+        setCookie('ltb_user', urlUser);
+        return urlUser;
+    }
+    return getCookie('ltb_user');
+}
+
+export function logout(): void {
+    const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `ltb_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict${secure}`;
+    document.cookie = `ltb_user=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict${secure}`;
+    window.location.href = '/';
 }
 
 // ---------- Generic fetch ----------
@@ -210,8 +240,6 @@ export function renderRoleSwitcher(roles: string[]): void {
     container.style.gap = '8px';
     container.style.marginLeft = '16px';
 
-    const search = window.location.search;
-
     if (roles.includes('contributor')) {
         const btn = document.createElement('a');
         btn.textContent = 'Contribute';
@@ -219,7 +247,7 @@ export function renderRoleSwitcher(roles: string[]): void {
         btn.style.padding = '3px 8px';
         btn.style.fontSize = '0.8em';
         btn.style.textDecoration = 'none';
-        btn.href = 'contribute' + search;
+        btn.href = 'contribute';
         container.appendChild(btn);
     }
     if (roles.includes('reviewer')) {
@@ -229,7 +257,7 @@ export function renderRoleSwitcher(roles: string[]): void {
         btn.style.padding = '3px 8px';
         btn.style.fontSize = '0.8em';
         btn.style.textDecoration = 'none';
-        btn.href = 'review' + search;
+        btn.href = 'review';
         container.appendChild(btn);
     }
     if (roles.includes('admin')) {
@@ -239,7 +267,7 @@ export function renderRoleSwitcher(roles: string[]): void {
         btn.style.padding = '3px 8px';
         btn.style.fontSize = '0.8em';
         btn.style.textDecoration = 'none';
-        btn.href = 'admin' + search;
+        btn.href = 'admin';
         container.appendChild(btn);
     }
     const profileBtn = document.createElement('a');
@@ -248,8 +276,16 @@ export function renderRoleSwitcher(roles: string[]): void {
     profileBtn.style.padding = '3px 8px';
     profileBtn.style.fontSize = '0.8em';
     profileBtn.style.textDecoration = 'none';
-    profileBtn.href = 'profile' + search;
+    profileBtn.href = 'profile';
     container.appendChild(profileBtn);
+
+    const logoutBtn = document.createElement('button');
+    logoutBtn.textContent = 'Logout';
+    logoutBtn.className = 'btn btn-secondary';
+    logoutBtn.style.padding = '3px 8px';
+    logoutBtn.style.fontSize = '0.8em';
+    logoutBtn.addEventListener('click', logout);
+    container.appendChild(logoutBtn);
 
     const headerActions = document.querySelector('header > div');
     if (headerActions) {

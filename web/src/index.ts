@@ -1,7 +1,7 @@
 import './style.css';
 import $ from 'jquery';
 
-import { getToken, getUsername, getMe, User } from './api';
+import { getToken, getUsername, getMe, logout, User } from './api';
 import { setupInstructions } from './utils';
 
 $(async () => {
@@ -23,20 +23,23 @@ function showRoleButtons(user: User): void {
     $('#register-btn').hide();
     $('#cta-info-unauth').hide();
 
-    const search = window.location.search;
     const container = $('#role-buttons');
 
     container.append(`<span>Hello ${user.name}!</span><br><br>`);
 
     if (user.roles.includes('contributor')) {
-        container.append(`<a href="contribute${search}" class="btn btn-secondary">✍️ Contribute</a>`);
+        container.append(`<a href="contribute" class="btn btn-secondary">✍️ Contribute</a>`);
     }
     if (user.roles.includes('reviewer')) {
-        container.append(`<a href="review${search}" class="btn btn-secondary">🔍 Review</a>`);
+        container.append(`<a href="review" class="btn btn-secondary">🔍 Review</a>`);
     }
     if (user.roles.includes('admin')) {
-        container.append(`<a href="admin${search}" class="btn btn-secondary">⚙️ Admin</a>`);
+        container.append(`<a href="admin" class="btn btn-secondary">⚙️ Admin</a>`);
     }
+
+    const logoutBtn = $('<button class="btn btn-secondary">Logout</button>');
+    logoutBtn.on('click', logout);
+    container.append(logoutBtn);
 
     container.css('display', 'block');
 }
