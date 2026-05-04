@@ -1,15 +1,13 @@
 import './style.css';
 import $ from 'jquery';
 
-import { getToken, getUsername, getMe, logout, User } from './api';
+import { getCookie, getMe, logout, User } from './api';
 import { setupInstructions } from './utils';
 
 $(async () => {
     setupInstructions('all');
 
-    const token = getToken();
-    const username = getUsername();
-    if (token && username) {
+    if (getCookie('ltb_token')) {
         try {
             const user = await getMe();
             showRoleButtons(user);

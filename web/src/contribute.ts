@@ -1,7 +1,7 @@
 import './style.css';
 import $ from 'jquery';
 import {
-    getToken, getUsername, getMe,
+    getMe, getCookie,
     translate, verify, createSubmission, updateSubmission, getSubmissions, addComment, renderRoleSwitcher,
     User, Submission, Rule,
 } from './api';
@@ -23,7 +23,7 @@ let rules: Rule[] = [{ type: 'llm', value: '' }];
 
 $(async () => {
     setupInstructions('contributor');
-    if (!getToken() || !getUsername()) { window.location.href = 'index.html'; return; }
+    if (!getCookie('ltb_token')) { window.location.href = 'index.html'; return; }
 
     let LANGUAGES: string[] = [];
     try {

@@ -1,7 +1,7 @@
 import './style.css';
 import $ from 'jquery';
 import {
-    getToken, getUsername, getMe,
+    getMe, getCookie,
     getSubmissions, scoreSubmission, addComment, renderRoleSwitcher,
     Submission,
 } from './api';
@@ -13,7 +13,7 @@ let curFilter = 'pending';
 
 $(async () => {
     setupInstructions('all');
-    if (!getToken() || !getUsername()) { window.location.href = 'index.html'; return; }
+    if (!getCookie('ltb_token')) { window.location.href = 'index.html'; return; }
 
     try {
         const user = await getMe();

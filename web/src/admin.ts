@@ -1,7 +1,7 @@
 import './style.css';
 import $ from 'jquery';
 import {
-    getToken, getUsername, getMe, getAdminUsers, deleteAdminUser,
+    getMe, getCookie, getAdminUsers, deleteAdminUser,
     rotateAdminToken, adjustAdminQuota, updateAdminRoles, updateAdminReviewScope, renderRoleSwitcher, AdminUser,
     markInviteSent,
 } from './api';
@@ -176,9 +176,7 @@ function applyFilter(): void {
     renderTable(filtered);
 }
 $(async () => {
-    const token = getToken();
-    const username = getUsername();
-    if (!token || !username) { window.location.href = 'index.html'; return; }
+    if (!getCookie('ltb_token')) { window.location.href = 'index.html'; return; }
     try {
         const user = await getMe();
         adminName = user.name || user.username;

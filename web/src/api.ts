@@ -51,50 +51,45 @@ export interface Submission {
 // ---------- Cookie helpers ----------
 
 function setCookie(name: string, value: string): void {
-    const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString();
+    const maxAge = 30 * 24 * 60 * 60; // 30 days
     const secure = window.location.protocol === 'https:' ? '; Secure' : '';
-    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Strict${secure}`;
+    document.cookie = `${name}=${encodeURIComponent(value)}; max-age=${maxAge}; path=/; SameSite=Strict${secure}`;
 }
 
-function getCookie(name: string): string | null {
+export function getCookie(name: string): string | null {
     const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
     return match ? decodeURIComponent(match[1]) : null;
 }
 
-// ---------- Token helpers ----------
-
-export function getToken(): string | null {
-    const params = new URLSearchParams(window.location.search);
-    const urlToken = params.get('token');
-    if (urlToken) {
-        setCookie('ltb_token', urlToken);
-        return urlToken;
-    }
-    return getCookie('ltb_token');
-}
-
-export function getUsername(): string | null {
+export function checkUrlAndSetCookies(): void {
     const params = new URLSearchParams(window.location.search);
     const urlUser = params.get('user');
-    if (urlUser) {
+    const urlToken = params.get('token');
+
+    if (urlUser && urlToken) {
         setCookie('ltb_user', urlUser);
-        return urlUser;
+        setCookie('ltb_token', urlToken);
+        
+        const url = new URL(window.location.href);
+        url.searchParams.delete('user');
+        url.searchParams.delete('token');
+        window.history.replaceState({}, document.title, url.toString());
     }
-    return getCookie('ltb_user');
 }
+
+// Run immediately on import
+checkUrlAndSetCookies();
 
 export function logout(): void {
     const secure = window.location.protocol === 'https:' ? '; Secure' : '';
-    document.cookie = `ltb_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict${secure}`;
-    document.cookie = `ltb_user=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict${secure}`;
+    document.cookie = `ltb_token=; max-age=0; path=/; SameSite=Strict${secure}`;
+    document.cookie = `ltb_user=; max-age=0; path=/; SameSite=Strict${secure}`;
     window.location.href = '/';
 }
 
 // ---------- Generic fetch ----------
 
 function apiCall<T>(method: string, url: string, data?: object): Promise<T> {
-    const token = getToken();
-    const username = getUsername();
     return new Promise<T>((resolve, reject) => {
         const settings: JQuery.AjaxSettings = {
             url,
@@ -107,12 +102,6 @@ function apiCall<T>(method: string, url: string, data?: object): Promise<T> {
                 reject(detail);
             },
         };
-        if (token && username) {
-            settings.headers = {
-                'Authorization': `Bearer ${token}`,
-                'X-User-ID': username
-            };
-        }
         if (data !== undefined) settings.data = JSON.stringify(data);
         $.ajax(settings);
     });

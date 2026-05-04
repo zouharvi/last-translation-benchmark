@@ -1,13 +1,13 @@
 import './style.css';
 import $ from 'jquery';
 
-import { getToken, getUsername, getMe, updateProfile, registerUser } from './api';
+import { getCookie, getMe, updateProfile, registerUser } from './api';
 import { setupInstructions } from './utils';
 
 $(async () => {
     setupInstructions('all');
     
-    const isRegistrationMode = !getToken() || !getUsername();
+    const isRegistrationMode = !getCookie('ltb_token');
 
     if (!isRegistrationMode) {
         try {
