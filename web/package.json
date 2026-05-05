@@ -1,11 +1,11 @@
 {
   "name": "ltb-frontend",
   "scripts": {
-    "build": "webpack --mode production",
-    "watch": "webpack --mode production --watch",
-    "build-dev": "webpack --mode development",
-    "watch-dev": "webpack --mode development --watch",
-    "dev": "webpack serve --mode development"
+    "build": "python3 ../server/languages.py && webpack --mode production",
+    "watch": "python3 ../server/languages.py && webpack --mode production --watch",
+    "build-dev": "python3 ../server/languages.py && webpack --mode development",
+    "watch-dev": "python3 ../server/languages.py && webpack --mode development --watch",
+    "dev": "python3 ../server/languages.py && webpack serve --mode development"
   },
   "dependencies": {
     "jquery": "^3.7.1"

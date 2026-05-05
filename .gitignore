@@ -1,4 +1,6 @@
 config.toml
+scripts/data/
+secret/
 
 data/
 static/

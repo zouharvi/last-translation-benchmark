@@ -8,10 +8,10 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <style>
     .admin-grid {
-      display: grid;
-      grid-template-columns: 1fr 320px;
+      display: flex;
+      flex-direction: column;
       gap: 16px;
-      align-items: start;
+      align-items: stretch;
     }
 
     @media (max-width: 860px) {
@@ -58,6 +58,23 @@
       font-size: 0.75em;
       font-weight: 700;
       margin-right: 4px;
+      cursor: pointer;
+      transition: opacity 0.1s, transform 0.1s;
+      user-select: none;
+    }
+
+    .role-tag:hover {
+      opacity: 0.8;
+      transform: translateY(-1px);
+    }
+
+    .role-tag:active {
+      transform: translateY(0);
+    }
+
+    .role-inactive {
+      background: #f1f5f9 !important;
+      color: #94a3b8 !important;
     }
 
     .role-admin {
@@ -113,24 +130,6 @@
       color: #991b1b;
     }
 
-    .add-panel h2 {
-      margin-top: 0;
-    }
-
-    .role-checks {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    .role-check-label {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 0.85em;
-      cursor: pointer;
-    }
-
     #toast {
       position: fixed;
       bottom: 20px;
@@ -168,20 +167,55 @@
       margin-top: 4px;
       display: block;
     }
+
+    a {
+      text-decoration: none;
+    }
+
+    .email-cell {
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .email-cell a {
+      color: inherit;
+    }
+
+    .scope-cell {
+      width: 100px;
+      max-width: 200px;
+      min-width: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    td.scope-cell {
+      font-family: monospace;
+      font-size: 0.85em;
+      cursor: pointer;
+      color: #475569;
+    }
+
+    td.scope-cell:hover {
+      background: #f1f5f9;
+    }
   </style>
 </head>
 
 <body>
   <header>
     <a href="/" style="text-decoration:none;color:inherit;">
-      <h1>🪨 Last Translation Benchmark</h1>
+      <h1><img src="favicon.svg" style="height: 1em;"> Last Translation Benchmark</h1>
     </a>
     <div style="display: flex; align-items: center; gap: 16px;">
       <span id="admin-info" class="info"></span>
     </div>
   </header>
 
-  <div class="container" style="max-width: 1200px;">
+  <div class="container" style="max-width: 1400px;">
     <div class="admin-grid">
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
@@ -193,8 +227,7 @@
               <option value="reviewer">Reviewer</option>
               <option value="admin">Admin</option>
             </select>
-            <input id="filter-input" type="text" placeholder="Search…" class="admin-input"
-              style="width:150px; height: 1.2em;">
+            <input id="filter-input" type="text" placeholder="Search…" class="admin-input" style="width:150px;">
           </div>
         </div>
         <div class="tbl-wrap">
@@ -203,21 +236,6 @@
           </div>
         </div>
         <span id="filtered-count"></span>
-      </div>
-
-      <div class="card add-panel">
-        <h2>Add user</h2>
-        <label>Username</label>
-        <input id="new-username" type="text" placeholder="Username" class="admin-input"
-          style="width:100%; box-sizing:border-box; margin-bottom:12px">
-        <label>Roles</label>
-        <div class="role-checks">
-          <label class="role-check-label"><input type="checkbox" id="role-contributor" checked> Contributor</label>
-          <label class="role-check-label"><input type="checkbox" id="role-reviewer"> Reviewer</label>
-          <label class="role-check-label"><input type="checkbox" id="role-admin"> Admin</label>
-        </div>
-        <button class="btn btn-success" id="add-user-btn" style="width:100%">Add user</button>
-        <div id="add-status" style="font-size:0.8em; margin-top:8px"></div>
       </div>
     </div>
   </div>

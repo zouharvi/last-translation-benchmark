@@ -6,9 +6,9 @@ export interface User {
     username: string;
     roles: string[];
     quota_used: number;
-    quota_remaining: number;
-    contributor_quota: number;
-    total_points: number;
+    quota: number;
+    total_accepted: number;
+    total_submitted: number;
     name: string;
     affiliation: string;
     email: string;
@@ -29,7 +29,7 @@ export interface Comment {
 }
 
 export interface Rule {
-    type: 'llm' | 'contains' | 'not_contains';
+    type: 'llm' | 'contains' | 'not_contains' | '';
     value: string;
 }
 
@@ -48,17 +48,48 @@ export interface Submission {
     comments?: Comment[];
 }
 
-// ---------- Token helpers ----------
+// ---------- Cookie helpers ----------
 
-export function getToken(): string | null {
+function setCookie(name: string, value: string): void {
+    const maxAge = 30 * 24 * 60 * 60; // 30 days
+    const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `${name}=${encodeURIComponent(value)}; max-age=${maxAge}; path=/; SameSite=Strict${secure}`;
+}
+
+export function getCookie(name: string): string | null {
+    const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+    return match ? decodeURIComponent(match[1]) : null;
+}
+
+export function checkUrlAndSetCookies(): void {
     const params = new URLSearchParams(window.location.search);
-    return params.get('token');
+    const urlUser = params.get('user');
+    const urlToken = params.get('token');
+
+    if (urlUser && urlToken) {
+        setCookie('ltb_user', urlUser);
+        setCookie('ltb_token', urlToken);
+        
+        const url = new URL(window.location.href);
+        url.searchParams.delete('user');
+        url.searchParams.delete('token');
+        window.history.replaceState({}, document.title, url.toString());
+    }
+}
+
+// Run immediately on import
+checkUrlAndSetCookies();
+
+export function logout(): void {
+    const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `ltb_token=; max-age=0; path=/; SameSite=Strict${secure}`;
+    document.cookie = `ltb_user=; max-age=0; path=/; SameSite=Strict${secure}`;
+    window.location.href = '/';
 }
 
 // ---------- Generic fetch ----------
 
 function apiCall<T>(method: string, url: string, data?: object): Promise<T> {
-    const token = getToken();
     return new Promise<T>((resolve, reject) => {
         const settings: JQuery.AjaxSettings = {
             url,
@@ -71,7 +102,6 @@ function apiCall<T>(method: string, url: string, data?: object): Promise<T> {
                 reject(detail);
             },
         };
-        if (token) settings.headers = { Authorization: `Bearer ${token}` };
         if (data !== undefined) settings.data = JSON.stringify(data);
         $.ajax(settings);
     });
@@ -86,21 +116,23 @@ export function getMe() {
 export function translate(text: string, source_lang: string, target_lang: string) {
     return apiCall<{
         results: Array<{ api: string; translation: string | null; error: string | null }>;
-        quota_remaining: number;
+        quota_used: number;
+        quota: number;
     }>('POST', 'api/translate-submission', { text, source_lang, target_lang });
 }
 
 export function verify(
+    source_text: string,
     translations: string[],
     verification_rules: Rule[],
 ) {
     return apiCall<{ results: boolean[]; detail: string }>(
-        'POST', 'api/verify-submission', { translations, verification_rules }
+        'POST', 'api/verify-submission', { source_text, translations, verification_rules }
     );
 }
 
-export function getSubmissions() {
-    return apiCall<Submission[]>('GET', 'api/submissions');
+export function getSubmissions(mode: 'contributor' | 'reviewer' = 'contributor') {
+    return apiCall<Submission[]>('GET', `api/submissions?mode=${mode}`);
 }
 
 export function createSubmission(data: {
@@ -136,6 +168,15 @@ export function updateProfile(data: {
     return apiCall<{ ok: boolean }>('PUT', 'api/profile', data);
 }
 
+export function registerUser(data: {
+    name: string;
+    affiliation: string;
+    email: string;
+    credit_consent: boolean;
+}) {
+    return apiCall<{ ok: boolean }>('POST', 'api/register', data);
+}
+
 export interface AdminUser {
     id: number;
     username: string;
@@ -145,15 +186,17 @@ export interface AdminUser {
     affiliation: string;
     email: string;
     credit_consent: boolean;
+    quota: number;
     quota_used: number;
+    total_accepted: number;
+    total_submitted: number;
+    review_langs: string[];
+    invite_sent: string;
+    last_active: string;
 }
 
 export function getAdminUsers() {
     return apiCall<AdminUser[]>('GET', 'api/admin/users');
-}
-
-export function createAdminUser(username: string, roles: string[]) {
-    return apiCall<AdminUser>('POST', 'api/admin/users', { username, roles });
 }
 
 export function deleteAdminUser(uid: number) {
@@ -162,6 +205,22 @@ export function deleteAdminUser(uid: number) {
 
 export function rotateAdminToken(uid: number) {
     return apiCall<{ magic_token: string }>('POST', `api/admin/users/${uid}/rotate-token`);
+}
+
+export function adjustAdminQuota(uid: number, delta: number) {
+    return apiCall<{ quota: number, quota_used: number }>('POST', `api/admin/users/${uid}/adjust-quota`, { delta });
+}
+
+export function updateAdminRoles(uid: number, roles: string[]) {
+    return apiCall<AdminUser>('POST', `api/admin/users/${uid}/roles`, { roles });
+}
+
+export function updateAdminReviewScope(uid: number, review_langs: string[]) {
+    return apiCall<AdminUser>('POST', `api/admin/users/${uid}/review-scope`, { review_langs });
+}
+
+export function markInviteSent(uid: number) {
+    return apiCall<{ invite_sent: string }>('POST', `api/admin/users/${uid}/mark-invite-sent`);
 }
 
 export function addComment(id: number, comment: string) {
@@ -176,42 +235,52 @@ export function renderRoleSwitcher(roles: string[]): void {
     container.style.gap = '8px';
     container.style.marginLeft = '16px';
 
-    const search = window.location.search;
-
     if (roles.includes('contributor')) {
-        const btn = document.createElement('button');
+        const btn = document.createElement('a');
         btn.textContent = 'Contribute';
         btn.className = 'btn btn-secondary';
         btn.style.padding = '3px 8px';
         btn.style.fontSize = '0.8em';
-        btn.onclick = () => window.location.href = 'contributor.html' + search;
+        btn.style.textDecoration = 'none';
+        btn.href = 'contribute';
         container.appendChild(btn);
     }
     if (roles.includes('reviewer')) {
-        const btn = document.createElement('button');
+        const btn = document.createElement('a');
         btn.textContent = 'Review';
         btn.className = 'btn btn-secondary';
         btn.style.padding = '3px 8px';
         btn.style.fontSize = '0.8em';
-        btn.onclick = () => window.location.href = 'reviewer.html' + search;
+        btn.style.textDecoration = 'none';
+        btn.href = 'review';
         container.appendChild(btn);
     }
     if (roles.includes('admin')) {
-        const btn = document.createElement('button');
+        const btn = document.createElement('a');
         btn.textContent = 'Admin';
         btn.className = 'btn btn-secondary';
         btn.style.padding = '3px 8px';
         btn.style.fontSize = '0.8em';
-        btn.onclick = () => window.location.href = 'admin.html' + search;
+        btn.style.textDecoration = 'none';
+        btn.href = 'admin';
         container.appendChild(btn);
     }
-    const profileBtn = document.createElement('button');
+    const profileBtn = document.createElement('a');
     profileBtn.textContent = 'Profile';
     profileBtn.className = 'btn btn-secondary';
     profileBtn.style.padding = '3px 8px';
     profileBtn.style.fontSize = '0.8em';
-    profileBtn.onclick = () => window.location.href = 'profile.html' + search;
+    profileBtn.style.textDecoration = 'none';
+    profileBtn.href = 'profile';
     container.appendChild(profileBtn);
+
+    const logoutBtn = document.createElement('button');
+    logoutBtn.textContent = 'Logout';
+    logoutBtn.className = 'btn btn-secondary';
+    logoutBtn.style.padding = '3px 8px';
+    logoutBtn.style.fontSize = '0.8em';
+    logoutBtn.addEventListener('click', logout);
+    container.appendChild(logoutBtn);
 
     const headerActions = document.querySelector('header > div');
     if (headerActions) {

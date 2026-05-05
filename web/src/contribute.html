@@ -93,27 +93,14 @@
       flex: 1;
     }
 
-    .lang-input {
-      box-sizing: border-box;
-      height: 35px;
-      padding: 7px 10px;
-      border: 1px solid #d1d5db;
-      border-radius: 5px;
-      background: #fff;
-      width: 100%;
-    }
-
-    textarea,
-    input {
-      font-size: 10pt;
-    }
+    /* .lang-input is now handled by global styles */
   </style>
 </head>
 
 <body>
   <header>
     <a href="/" style="text-decoration:none;color:inherit;">
-      <h1>🪨 Last Translation Benchmark</h1>
+      <h1><img src="favicon.svg" style="height: 1em;"> Last Translation Benchmark</h1>
     </a>
     <div style="display: flex; align-items: center; gap: 16px;">
       <span class="info">
@@ -127,6 +114,9 @@
   </header>
 
   <div class="container">
+    <button id="show-instructions-btn" class="btn btn-instructions">📖 Show guidelines for contributing</button>
+    <div id="instructions-box" style="margin-bottom: 20px;"></div>
+
     <div id="contributor-layout">
 
       <!-- ===== MAIN FORM COLUMN ===== -->
@@ -137,22 +127,21 @@
           <div id="lang-row">
             <div>
               <label for="src-lang">Source Language</label>
-              <input type="text" id="src-lang" list="src-langs" value="en" placeholder="e.g. English, custom..."
-                class="lang-input">
+              <input type="text" id="src-lang" list="src-langs" value="English" placeholder="e.g. English, custom...">
               <datalist id="src-langs"></datalist>
             </div>
             <div>
               <label for="tgt-lang">Target Language</label>
-              <input type="text" id="tgt-lang" list="tgt-langs" value="de" placeholder="e.g. German, custom..."
-                class="lang-input">
+              <input type="text" id="tgt-lang" list="tgt-langs" value="" placeholder="e.g. German, custom...">
               <datalist id="tgt-langs"></datalist>
             </div>
           </div>
 
           <label for="src-text">Input <span class="hint">(the difficult-to-translate text)</span></label>
-          <textarea style="width: calc(100% - 20px);" id="src-text" placeholder="Enter the source text…"></textarea>
+          <textarea id="src-text" placeholder="Enter the source text…"></textarea>
 
-          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+          <div
+            style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
             <span id="tr-status" style="font-size:0.85em;color:#64748b"></span>
             <button class="btn btn-secondary" id="tr-btn">⟳ Translate by all models</button>
           </div>
@@ -167,7 +156,7 @@
             <!-- Own Translation -->
 
             <div class="api-result-row" style="margin-bottom: 12px; background: #fff; border-color: #cbd5e1;">
-              <span class="api-name">Perfect translation</span>
+              <span class="api-name">Human translation</span>
               <div class="tr-display" style="flex: 1; display: flex;">
                 <textarea id="own-translation" placeholder="Type your own translation here..."
                   style="width: 100%; border: none; outline: none; background: transparent; color: inherit; resize: vertical; min-height: 24px; padding: 0; margin: 0;"></textarea>
@@ -182,17 +171,20 @@
             <span class="hint">(all rules must pass)</span>
           </label>
           <div id="rules-container" style="margin-bottom: 8px;"></div>
-          <button class="btn btn-secondary" id="add-rule-btn" style="margin-bottom: 12px; padding: 4px 10px; font-size: 0.85em;">+ Add Rule</button>
+          <button class="btn btn-secondary" id="add-rule-btn"
+            style="margin-bottom: 12px; padding: 4px 10px; font-size: 0.85em;">+ Add Rule</button>
 
 
-          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+          <div
+            style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
             <span id="verify-result"></span>
             <button class="btn btn-secondary" id="verify-btn">✓ Verify translations</button>
           </div>
 
           <div style="display: flex; justify-content: flex-end; align-items: center;">
             <span id="submit-status" style="margin-right:10px;font-size:0.85em"></span>
-            <button class="btn btn-secondary" id="cancel-edit-btn" style="display:none; margin-right:10px;">Cancel Edit</button>
+            <button class="btn btn-secondary" id="cancel-edit-btn" style="display:none; margin-right:10px;">Cancel
+              Edit</button>
             <button class="btn btn-success" id="submit-btn">Submit Input, Translations & Rule</button>
           </div>
         </div>

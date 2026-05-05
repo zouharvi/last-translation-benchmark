@@ -1,28 +1,28 @@
 import './style.css';
 import $ from 'jquery';
 import {
-    getToken, getMe,
+    getMe, getCookie,
     getSubmissions, scoreSubmission, addComment, renderRoleSwitcher,
     Submission,
 } from './api';
+
+import { esc as escHtml, fmtDate, scoreBadge, accessDenied, renderCommentThread, setupInstructions } from './utils';
 
 let allSugs: Submission[] = [];
 let curFilter = 'pending';
 
 $(async () => {
-    if (!getToken()) { window.location.href = 'index.html'; return; }
+    setupInstructions('all');
+    if (!getCookie('ltb_token')) { window.location.href = 'index.html'; return; }
 
     try {
         const user = await getMe();
         renderRoleSwitcher(user.roles);
         if (!user.roles.includes('reviewer')) {
-            document.body.innerHTML = `<div style="padding: 2rem; text-align: center;">
-                <h2>Access Denied</h2>
-                <p>You have the following roles: ${user.roles.join(', ')}, which does not match "reviewer" which you're trying to access.</p>
-            </div>`;
+            accessDenied(user.roles, 'reviewer');
             return;
         }
-        $('#sen-info').text(`${user.username} · Reviewer`);
+        $('#sen-info').text(user.username);
     } catch {
         window.location.href = 'index.html';
         return;
@@ -100,7 +100,7 @@ $(async () => {
             $input.val('');
             $(`#comment-box-${id}`).hide();
             $(`#sug-${id} .sug-meta .badge`).replaceWith(scoreBadge(-1, text));
-            $(`#comment-thread-${id}`).html(renderCommentThread(sug?.comments ?? []));
+            $(`#comment-thread-${id}`).html(renderCommentThreadWrap(sug?.comments ?? []));
         } catch { alert('Failed to save'); }
         $(this).prop('disabled', false).text('Send');
     });
@@ -109,7 +109,7 @@ $(async () => {
 async function loadSubmissions(): Promise<void> {
     $('#sen-list').html('<div class="empty">Loading…</div>');
     try {
-        allSugs = await getSubmissions();
+        allSugs = await getSubmissions('reviewer');
         populateFilters();
         renderList();
     } catch {
@@ -143,17 +143,8 @@ function renderList(): void {
     $el.html(list.map(renderSug).join(''));
 }
 
-function renderCommentThread(comments: Submission['comments']): string {
-    if (!comments || !comments.length) return '';
-    // On the reviewer screen, reviewer = "own" → right; contributor = "foreign" → left
-    const classFor = (role: string) =>
-        role === 'reviewer' ? 'comment-msg-contributor' : 'comment-msg-reviewer';
-    return `<div class="comment-thread">${comments.map(c => `
-        <div class="comment-msg ${classFor(c.role)}">
-            <span class="comment-author">${escHtml(c.author)}</span>
-            <span class="comment-ts">${escHtml(c.timestamp)}</span>
-            <div class="comment-body">${escHtml(c.text)}</div>
-        </div>`).join('')}</div>`;
+function renderCommentThreadWrap(comments: Submission['comments']): string {
+    return renderCommentThread(comments, 'reviewer');
 }
 
 function renderSug(s: Submission): string {
@@ -193,14 +184,12 @@ function renderSug(s: Submission): string {
         </div>`;
     }).join('');
 
-    const threadHtml = renderCommentThread(s.comments);
-
     return `<div class="sug-item" id="sug-${s.id}">
         <div class="sug-meta">#${s.id} &middot; <b>${escHtml(s.username)}</b> &middot; ${s.source_lang}&rarr;${s.target_lang} &middot; ${fmtDate(s.created_at)} &middot; ${scoreBadge(s.points, s.reviewer_comment)}</div>
         <div class="sug-box" style="margin-bottom:8px"><div class="lbl">SOURCE</div>${escHtml(s.source_text)}</div>
         <div style="margin-bottom:8px">${trRows}</div>
         <div style="margin-bottom:8px">${ruleRows}</div>
-        <div id="comment-thread-${s.id}">${threadHtml}</div>
+        <div id="comment-thread-${s.id}">${renderCommentThreadWrap(s.comments)}</div>
         <div id="comment-box-${s.id}" style="display:none;margin-top:8px;flex-direction:row;align-items:flex-start;gap:6px">
             <textarea class="comment-input" placeholder="Write a comment for the contributor…" rows="2" style="flex:1;margin-bottom:0"></textarea>
             <button class="comment-send-btn score-btn" style="background:#64748b;color:#fff;align-self:stretch" data-id="${s.id}">Send</button>
@@ -209,15 +198,3 @@ function renderSug(s: Submission): string {
     </div>`;
 }
 
-function escHtml(str: string): string { return $('<div>').text(str).html(); }
-
-function fmtDate(dt: string): string { return (dt ?? '').replace('T', ' ').slice(0, 16); }
-
-function scoreBadge(p: number, comment?: string): string {
-    if (p < 0) {
-        if (comment) return '<span class="badge badge-score-1">💬 Commented</span>';
-        return '<span class="badge badge-pending">Pending</span>';
-    }
-    const labels = ['✗ Rejected', '✓ Accepted'];
-    return `<span class="badge badge-score-${p === 1 ? 3 : 0}">${labels[p] ?? String(p)}</span>`;
-}

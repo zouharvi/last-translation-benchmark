@@ -1,10 +1,12 @@
 import './style.css';
 import $ from 'jquery';
 import {
-    getToken, getMe,
+    getMe, getCookie,
     translate, verify, createSubmission, updateSubmission, getSubmissions, addComment, renderRoleSwitcher,
     User, Submission, Rule,
 } from './api';
+
+import { esc as escHtml, fmtDate, scoreBadge, accessDenied, renderCommentThread, setupInstructions } from './utils';
 
 let currentUser: User | null = null;
 
@@ -16,146 +18,21 @@ let editingSubmissionId: number | null = null;
 let allMySubmissions: Submission[] = [];
 let rules: Rule[] = [{ type: 'llm', value: '' }];
 
-const LANGUAGES = [
-    { name: 'Afrikaans', code: 'af' },
-    { name: 'Albanian', code: 'sq' },
-    { name: 'Amharic', code: 'am' },
-    { name: 'Arabic', code: 'ar' },
-    { name: 'Armenian', code: 'hy' },
-    { name: 'Assamese', code: 'as' },
-    { name: 'Aymara', code: 'ay' },
-    { name: 'Azerbaijani', code: 'az' },
-    { name: 'Bambara', code: 'bm' },
-    { name: 'Basque', code: 'eu' },
-    { name: 'Belarusian', code: 'be' },
-    { name: 'Bengali', code: 'bn' },
-    { name: 'Bhojpuri', code: 'bho' },
-    { name: 'Bosnian', code: 'bs' },
-    { name: 'Bulgarian', code: 'bg' },
-    { name: 'Catalan', code: 'ca' },
-    { name: 'Cebuano', code: 'ceb' },
-    { name: 'Chichewa', code: 'ny' },
-    { name: 'Chinese (Simplified)', code: 'zh-CN' },
-    { name: 'Chinese (Traditional)', code: 'zh-TW' },
-    { name: 'Corsican', code: 'co' },
-    { name: 'Croatian', code: 'hr' },
-    { name: 'Czech', code: 'cs' },
-    { name: 'Danish', code: 'da' },
-    { name: 'Dhivehi', code: 'dv' },
-    { name: 'Dogri', code: 'doi' },
-    { name: 'Dutch', code: 'nl' },
-    { name: 'English', code: 'en' },
-    { name: 'Esperanto', code: 'eo' },
-    { name: 'Estonian', code: 'et' },
-    { name: 'Ewe', code: 'ee' },
-    { name: 'Filipino', code: 'tl' },
-    { name: 'Finnish', code: 'fi' },
-    { name: 'French', code: 'fr' },
-    { name: 'Frisian', code: 'fy' },
-    { name: 'Galician', code: 'gl' },
-    { name: 'Georgian', code: 'ka' },
-    { name: 'German', code: 'de' },
-    { name: 'Greek', code: 'el' },
-    { name: 'Guarani', code: 'gn' },
-    { name: 'Gujarati', code: 'gu' },
-    { name: 'Haitian Creole', code: 'ht' },
-    { name: 'Hausa', code: 'ha' },
-    { name: 'Hawaiian', code: 'haw' },
-    { name: 'Hebrew', code: 'iw' },
-    { name: 'Hindi', code: 'hi' },
-    { name: 'Hmong', code: 'hmn' },
-    { name: 'Hungarian', code: 'hu' },
-    { name: 'Icelandic', code: 'is' },
-    { name: 'Igbo', code: 'ig' },
-    { name: 'Ilocano', code: 'ilo' },
-    { name: 'Indonesian', code: 'id' },
-    { name: 'Irish', code: 'ga' },
-    { name: 'Italian', code: 'it' },
-    { name: 'Japanese', code: 'ja' },
-    { name: 'Javanese', code: 'jw' },
-    { name: 'Kannada', code: 'kn' },
-    { name: 'Kazakh', code: 'kk' },
-    { name: 'Khmer', code: 'km' },
-    { name: 'Kinyarwanda', code: 'rw' },
-    { name: 'Konkani', code: 'gom' },
-    { name: 'Korean', code: 'ko' },
-    { name: 'Krio', code: 'kri' },
-    { name: 'Kurdish (Kurmanji)', code: 'ku' },
-    { name: 'Kurdish (Sorani)', code: 'ckb' },
-    { name: 'Kyrgyz', code: 'ky' },
-    { name: 'Lao', code: 'lo' },
-    { name: 'Latin', code: 'la' },
-    { name: 'Latvian', code: 'lv' },
-    { name: 'Lingala', code: 'ln' },
-    { name: 'Lithuanian', code: 'lt' },
-    { name: 'Luganda', code: 'lg' },
-    { name: 'Luxembourgish', code: 'lb' },
-    { name: 'Macedonian', code: 'mk' },
-    { name: 'Maithili', code: 'mai' },
-    { name: 'Malagasy', code: 'mg' },
-    { name: 'Malay', code: 'ms' },
-    { name: 'Malayalam', code: 'ml' },
-    { name: 'Maltese', code: 'mt' },
-    { name: 'Maori', code: 'mi' },
-    { name: 'Marathi', code: 'mr' },
-    { name: 'Meiteilon (Manipuri)', code: 'mni-Mtei' },
-    { name: 'Mizo', code: 'lus' },
-    { name: 'Mongolian', code: 'mn' },
-    { name: 'Myanmar', code: 'my' },
-    { name: 'Nepali', code: 'ne' },
-    { name: 'Norwegian', code: 'no' },
-    { name: 'Odia (Oriya)', code: 'or' },
-    { name: 'Oromo', code: 'om' },
-    { name: 'Pashto', code: 'ps' },
-    { name: 'Persian', code: 'fa' },
-    { name: 'Polish', code: 'pl' },
-    { name: 'Portuguese', code: 'pt' },
-    { name: 'Punjabi', code: 'pa' },
-    { name: 'Quechua', code: 'qu' },
-    { name: 'Romanian', code: 'ro' },
-    { name: 'Russian', code: 'ru' },
-    { name: 'Samoan', code: 'sm' },
-    { name: 'Sanskrit', code: 'sa' },
-    { name: 'Scots Gaelic', code: 'gd' },
-    { name: 'Sepedi', code: 'nso' },
-    { name: 'Serbian', code: 'sr' },
-    { name: 'Sesotho', code: 'st' },
-    { name: 'Shona', code: 'sn' },
-    { name: 'Sindhi', code: 'sd' },
-    { name: 'Sinhala', code: 'si' },
-    { name: 'Slovak', code: 'sk' },
-    { name: 'Slovenian', code: 'sl' },
-    { name: 'Somali', code: 'so' },
-    { name: 'Spanish', code: 'es' },
-    { name: 'Sundanese', code: 'su' },
-    { name: 'Swahili', code: 'sw' },
-    { name: 'Swedish', code: 'sv' },
-    { name: 'Tajik', code: 'tg' },
-    { name: 'Tamil', code: 'ta' },
-    { name: 'Tatar', code: 'tt' },
-    { name: 'Telugu', code: 'te' },
-    { name: 'Thai', code: 'th' },
-    { name: 'Tigrinya', code: 'ti' },
-    { name: 'Tsonga', code: 'ts' },
-    { name: 'Turkish', code: 'tr' },
-    { name: 'Turkmen', code: 'tk' },
-    { name: 'Twi', code: 'ak' },
-    { name: 'Ukrainian', code: 'uk' },
-    { name: 'Urdu', code: 'ur' },
-    { name: 'Uyghur', code: 'ug' },
-    { name: 'Uzbek', code: 'uz' },
-    { name: 'Vietnamese', code: 'vi' },
-    { name: 'Welsh', code: 'cy' },
-    { name: 'Xhosa', code: 'xh' },
-    { name: 'Yiddish', code: 'yi' },
-    { name: 'Yoruba', code: 'yo' },
-    { name: 'Zulu', code: 'zu' }
-];
+
+
 
 $(async () => {
-    if (!getToken()) { window.location.href = 'index.html'; return; }
+    setupInstructions('contributor');
+    if (!getCookie('ltb_token')) { window.location.href = 'index.html'; return; }
 
-    const langOptions = LANGUAGES.map(l => `<option value="${l.code}">${l.name}</option>`).join('');
+    let LANGUAGES: string[] = [];
+    try {
+        LANGUAGES = await (await fetch('languages.json')).json();
+    } catch (e) {
+        console.error('Failed to load languages', e);
+    }
+
+    const langOptions = LANGUAGES.map(name => `<option value="${name}">${name}</option>`).join('');
     $('#src-langs').html(langOptions);
     $('#tgt-langs').html(langOptions);
 
@@ -163,10 +40,7 @@ $(async () => {
         currentUser = await getMe();
         renderRoleSwitcher(currentUser.roles);
         if (!currentUser.roles.includes('contributor')) {
-            document.body.innerHTML = `<div style="padding: 2rem; text-align: center;">
-                <h2>Access Denied</h2>
-                <p>You have the following roles: ${currentUser.roles.join(', ')}, which does not match "contributor" which you're trying to access.</p>
-            </div>`;
+            accessDenied(currentUser.roles, 'contributor');
             return;
         }
     } catch {
@@ -174,26 +48,20 @@ $(async () => {
         return;
     }
 
-    $('#ann-info').text(`${currentUser.username} · Contributor`);
-    renderStats(currentUser.quota_remaining, currentUser.contributor_quota, currentUser.total_points);
+    $('#ann-info').text(currentUser.username);
+    renderStats(currentUser.quota_used, currentUser.quota, currentUser.total_accepted);
     loadMySubmissions();
     renderRules();
 
     $('#add-rule-btn').on('click', () => {
         if (rules.length >= 10) return;
-        const type = rules.some(r => r.type === 'llm') ? 'contains' : 'llm';
-        rules.push({ type, value: '' });
+        rules.push({ type: 'llm', value: '' });
         renderRules();
     });
 
     $('#rules-container').on('change', '.rule-type', function () {
         const index = $(this).closest('.rule-row').data('index');
         const newType = $(this).val() as any;
-        if (newType === 'llm' && rules.some((r, i) => r.type === 'llm' && i !== index)) {
-            alert('At most one LLM-verification rule is allowed.');
-            renderRules();
-            return;
-        }
         rules[index].type = newType;
         renderRules();
     });
@@ -213,7 +81,6 @@ $(async () => {
     // Auto-translate
     $('#tr-btn').on('click', async () => {
         const text = String($('#src-text').val() ?? '').trim();
-        if (!text) { alert('Enter source text first.'); return; }
         $('#tr-btn').prop('disabled', true);
         $('#tr-status').text('Translating…');
         try {
@@ -223,8 +90,9 @@ $(async () => {
                 String($('#tgt-lang').val()),
             );
             lastResults = data.results;
-            currentUser!.quota_remaining = data.quota_remaining;
-            renderStats(data.quota_remaining, currentUser!.contributor_quota, currentUser!.total_points);
+            currentUser!.quota_used = data.quota_used;
+            currentUser!.quota = data.quota;
+            renderStats(data.quota_used, data.quota, currentUser!.total_accepted);
             renderApiResults();
             lastResults.forEach(r => r.verified = null);
             ownVerified = null;
@@ -252,7 +120,8 @@ $(async () => {
 
         $('#verify-result').html('<span style="color:#64748b;font-size:0.9em">Verifying...</span>');
         try {
-            const data = await verify(translations, rules);
+            const source_text = String($('#src-text').val() ?? '').trim();
+            const data = await verify(source_text, translations, rules);
 
             let resultIdx = 0;
             let pass = 0;
@@ -299,18 +168,37 @@ $(async () => {
             }
         });
         if (ownTranslation && !translations.some(t => t.translation === ownTranslation)) {
-            translations.push({ api: 'perfect', translation: ownTranslation, verified: ownVerified ?? null });
+            translations.push({ api: 'human', translation: ownTranslation, verified: ownVerified ?? null });
         }
 
         const source_lang = String($('#src-lang').val());
         const target_lang = String($('#tgt-lang').val());
 
-        if (!source_text || translations.length === 0 || rules.length === 0) {
+        if (translations.length === 0 || rules.length === 0) {
             $('#submit-status').html('<span class="msg-err">Please fill all required fields, translate and verify translations first</span>');
             return;
         }
         if (rules.some(r => !r.value.trim())) {
             $('#submit-status').html('<span class="msg-err">All rules must have content</span>');
+            return;
+        }
+
+        if (!ownTranslation) {
+            $('#submit-status').html('<span class="msg-err">A human translation is required</span>');
+            return;
+        }
+        if (ownVerified === null) {
+            $('#submit-status').html('<span class="msg-err">Please verify translations before submitting</span>');
+            return;
+        }
+        if (ownVerified !== true) {
+            $('#submit-status').html('<span class="msg-err">Human translation must pass verification</span>');
+            return;
+        }
+
+        const mtPassCount = lastResults.filter(r => r.verified === true).length;
+        if (mtPassCount > 2) {
+            $('#submit-status').html('<span class="msg-err">At most two MT translations can pass verification</span>');
             return;
         }
 
@@ -369,7 +257,7 @@ $(async () => {
         $('#verify-result').text('');
 
         // Find own translation if any
-        const ownTr = sub.translations.find(t => t.api === 'perfect');
+        const ownTr = sub.translations.find(t => t.api === 'human');
         if (ownTr) {
             $('#own-translation').val(ownTr.translation);
             ownVerified = ownTr.verified;
@@ -380,7 +268,7 @@ $(async () => {
         }
 
         // Fill MT results
-        lastResults = sub.translations.filter(t => t.api !== 'perfect').map(t => ({
+        lastResults = sub.translations.filter(t => t.api !== 'human').map(t => ({
             api: t.api,
             translation: t.translation,
             error: null,
@@ -425,33 +313,31 @@ $(async () => {
 
 // ---- Stats bar ----
 
-function renderStats(remaining: number, total: number, points: number): void {
-    $('#quota-text').text(`${remaining} / ${total} quota remaining`);
-    $('#total-points').text(String(points));
+function renderStats(used: number, quota: number, accepted: number): void {
+    $('#quota-text').text(`Used: ${used} / ${quota}`);
+    $('#total-points').text(accepted);
 }
 
 function renderRules() {
     const $container = $('#rules-container');
     $container.empty();
-    const hasLlm = rules.some(r => r.type === 'llm');
-
     rules.forEach((rule, index) => {
         let placeholder = "Enter rule content...";
         if (rule.type === 'llm') placeholder = "Describe what the LLM should check (e.g. 'Should be sarcastic.')";
-        else if (rule.type === 'contains') placeholder = "Enter the text that MUST be present in the translation (case-sensitive)";
-        else if (rule.type === 'not_contains') placeholder = "Enter the text that MUST NOT be present in the translation (case-sensitive)";
+        else if (rule.type === 'contains') placeholder = "Enter the exact text that MUST be present in the translation (case-sensitive)";
+        else if (rule.type === 'not_contains') placeholder = "Enter the exact text that MUST NOT be present in the translation (case-sensitive)";
 
         const $row = $(`
             <div class="rule-row" data-index="${index}" style="display: flex; gap: 12px; align-items: flex-start; margin-bottom: 8px;">
                 <div style="display: flex; flex-direction: column; gap: 4px; width: 140px;">
                     <select class="rule-type" style="width: 100%; height: 32px; padding: 0 5px; border: 1px solid #d1d5db; border-radius: 5px; font-size: 0.85em; margin-bottom: 0px;">
-                        <option value="llm" ${rule.type === 'llm' ? 'selected' : ''} ${hasLlm && rule.type !== 'llm' ? 'disabled' : ''}>LLM-verification</option>
+                        <option value="llm" ${rule.type === 'llm' || rule.type === '' ? 'selected' : ''}>LLM-verification</option>
                         <option value="contains" ${rule.type === 'contains' ? 'selected' : ''}>Has to contain</option>
                         <option value="not_contains" ${rule.type === 'not_contains' ? 'selected' : ''}>Can't contain</option>
                     </select>
                     <button class="rule-remove btn btn-secondary" style="padding: 4px 10px; font-size: 0.85em; width: fit-content;">- Remove Rule</button>
                 </div>
-                <textarea class="rule-value" placeholder="${escHtml(placeholder)}" style="flex: 1; height: 40px; padding: 7px 10px; border: 1px solid #d1d5db; min-height: 30px; border-radius: 5px; font-size: 0.85em; resize: vertical;">${escHtml(rule.value)}</textarea>
+                <textarea class="rule-value" placeholder="${escHtml(placeholder)}" style="flex: 1; height: 40px; padding: 7px 10px; border: 1px solid #d1d5db; min-height: 60px; border-radius: 5px; font-size: 0.85em; resize: vertical;">${escHtml(rule.value)}</textarea>
             </div>
         `);
         $container.append($row);
@@ -480,7 +366,7 @@ function renderApiResults(): void {
 
 async function loadMySubmissions(): Promise<void> {
     try {
-        const sugs = await getSubmissions();
+        const sugs = await getSubmissions('contributor');
         allMySubmissions = sugs;
         const $el = $('#my-submissions');
         if (sugs.length == 0) {
@@ -497,14 +383,7 @@ function renderMySug(s: Submission): string {
     const trPreview = firstTr.length > 60 ? firstTr.slice(0, 60) + '…' : firstTr;
 
     const comments = s.comments ?? [];
-    const threadHtml = comments.length
-        ? `<div class="comment-thread comment-thread-mini">${comments.map(c =>
-            `<div class="comment-msg comment-msg-${c.role}">
-                <span class="comment-author">${escHtml(c.author)}</span>
-                <span class="comment-ts">${escHtml(c.timestamp)}</span>
-                <div class="comment-body">${escHtml(c.text)}</div>
-            </div>`).join('')}</div>`
-        : '';
+    const threadHtml = renderCommentThread(comments, 'contributor');
 
     const replyHtml = comments.length
         ? `<div class="comment-reply-row">
@@ -533,12 +412,3 @@ function renderMySug(s: Submission): string {
     </div>`;
 }
 
-function escHtml(str: string): string { return $('<div>').text(str).html(); }
-
-function fmtDate(dt: string): string { return (dt ?? '').replace('T', ' ').slice(0, 16); }
-
-function scoreBadge(p: number): string {
-    if (p < 0) return '<span class="badge badge-pending">Pending</span>';
-    const labels = ['✗ Rejected', '✓ Accepted'];
-    return `<span class="badge badge-score-${p === 1 ? 3 : 0}">${labels[p] ?? String(p)}</span>`;
-}

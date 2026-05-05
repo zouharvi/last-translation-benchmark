@@ -7,15 +7,17 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 module.exports = (env, argv) => ({
   entry: {
     index: './src/index.ts',
-    contributor: './src/contributor.ts',
-    reviewer: './src/reviewer.ts',
+    contributor: './src/contribute.ts',
+    reviewer: './src/review.ts',
     profile: './src/profile.ts',
     admin: './src/admin.ts',
   },
   output: {
     filename: '[name].bundle.js',
     path: path.resolve(__dirname, '../server/static'),
-    clean: true,
+    clean: {
+      keep: /languages\.json/,
+    },
   },
   optimization: {
     minimize: true,
@@ -42,14 +44,14 @@ module.exports = (env, argv) => ({
       hash: true,
     }),
     new HtmlWebpackPlugin({
-      template: './src/contributor.html',
-      filename: 'contributor.html',
+      template: './src/contribute.html',
+      filename: 'contribute.html',
       chunks: ['contributor'],
       hash: true,
     }),
     new HtmlWebpackPlugin({
-      template: './src/reviewer.html',
-      filename: 'reviewer.html',
+      template: './src/review.html',
+      filename: 'review.html',
       chunks: ['reviewer'],
       hash: true,
     }),
@@ -65,9 +67,11 @@ module.exports = (env, argv) => ({
       chunks: ['admin'],
       hash: true,
     }),
+
     new CopyWebpackPlugin({
       patterns: [
         { from: 'src/favicon.svg', to: '.' },
+        { from: 'src/instructions.html', to: '.' },
       ],
     }),
   ],

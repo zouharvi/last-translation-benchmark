@@ -6,63 +6,95 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Last Translation Benchmark</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
   <style>
     .hero {
-      max-width: 500px;
-      margin: 80px auto 0;
-      padding: 0 24px;
+      max-width: 600px;
+      margin: 100px auto 20px auto;
+      padding: 40px;
+      text-align: center;
     }
 
     .hero h1 {
-      font-size: 1.8em;
+      font-size: 2.2em;
       color: #1e293b;
-      margin: 0 0 8px;
-    }
-
-    .hero .tagline {
-      color: #64748b;
-      font-size: 1em;
-      margin: 0 0 32px;
+      margin-bottom: 30px;
+      letter-spacing: -0.02em;
     }
 
     .hero p {
       color: #334155;
-      line-height: 1.7;
-      margin: 0 0 16px;
-      text-align: justify;
+      line-height: 1.8;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    .hero .cta-info {
+      padding: 24px;
+      background: #f1f5f9;
+      border-radius: 12px;
+      font-size: 0.95em;
+      color: #475569;
+      border: 1px solid #e2e8f0;
     }
 
     .auth-error {
       display: none;
       margin-top: 24px;
-      padding: 12px 16px;
+      padding: 16px;
       background: #fef2f2;
       border: 1px solid #fca5a5;
-      border-radius: 6px;
+      border-radius: 8px;
       color: #b91c1c;
       font-size: 0.9em;
+      font-weight: 500;
+    }
+
+    a {
+      text-decoration: none;
+      margin-left: 5px;
+      margin-right: 5px;
     }
   </style>
 </head>
 
 <body>
   <div class="hero">
-    <h1>🪨 Last Translation Benchmark</h1>
-    <p class="tagline">A large-scale effort to collect difficult-to-translate inputs</p>
-    <p>
-      This platform gathers inputs (text, video, audio, images, documents) that are challenging for machine
-      translation systems.
-      Contributors submit inputs with multiple MT outputs and a verification rule.
-      Once approved, contributors have the option to be part of the resulting publication.
-    </p>
-    <p>
-      To access the platform, use the magic link you received. If you don't have one,
-      contact the project administrators.
-    </p>
-    <div id="auth-error" class="auth-error">
-      Invalid or expired magic link. Please request a new one from the administrators.
+    <h1><img src="favicon.svg" style="height: 1em;"> Last Translation Benchmark</h1>
+
+    <div class="card">
+      <p>
+        This platform gathers inputs (text, video, audio, images, documents) that are challenging for modern machine
+        translation systems.
+      </p>
+      <p>
+        Contributors submit these inputs alongside machine translation outputs and a verification rule.
+        Approved contributions are eligible for inclusion in upcoming research publications.
+      </p>
+
+      <div id="cta-info-unauth" class="cta-info">
+        To access the platform, please use the <strong>magic link</strong> provided you received in your email.
+        <br>
+        <br>
+        <a href="profile.html" id="register-btn" class="btn btn-success" style="margin-right: 8px; margin-top: 20px;">📝
+          Register as Contributor</a>
+      </div>
+
+      <div id="role-buttons" class="cta-info"
+        style="display: none; margin-top: 16px; text-align: center; margin: auto; width: max-content; max-width: 90%;">
+      </div>
+
+      <div id="auth-error" class="auth-error">
+        Invalid or expired magic link. Please request a new one from the administrators.
+      </div>
     </div>
+  </div>
+
+  <div class="container" style="text-align: center; margin-top: -60px;">
+    <div style="margin-bottom: 16px;">
+      <button id="show-instructions-btn" class="btn btn-instructions">📖 Show guidelines for contributing &
+        reviewing</button>
+    </div>
+    <div id="instructions-box" style="text-align: left;"></div>
   </div>
 </body>
 
