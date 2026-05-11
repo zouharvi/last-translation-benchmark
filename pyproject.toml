@@ -20,6 +20,7 @@ dependencies = [
     "openrouter >= 0.9",
     "aiosqlite >= 0.20",
     "lara-sdk >= 1.8",
+    "google-genai >= 1.0",
 ]
 
 [project.optional-dependencies]

@@ -2,7 +2,7 @@ import './style.css';
 import $ from 'jquery';
 import {
     getMe, getCookie,
-    translate, verify, createSubmission, updateSubmission, getSubmissions, addComment, renderRoleSwitcher,
+    translate, translateMedia, verify, createSubmission, updateSubmission, getSubmissions, addComment, renderRoleSwitcher,
     User, Submission, Rule,
 } from './api';
 
@@ -17,6 +17,8 @@ let ownVerified: boolean | null = null;
 let editingSubmissionId: number | null = null;
 let allMySubmissions: Submission[] = [];
 let rules: Rule[] = [{ type: 'llm', value: '' }];
+let inputMode: 'text' | 'audio' | 'image' = 'text';
+let lastMediaFilename: string | null = null;
 
 
 
@@ -53,6 +55,12 @@ $(async () => {
     loadMySubmissions();
     renderRules();
 
+    // Input type toggle
+    setInputMode('text');
+    $('.input-type-btn').on('click', function () {
+        setInputMode($(this).data('type') as 'text' | 'audio' | 'image');
+    });
+
     $('#add-rule-btn').on('click', () => {
         if (rules.length >= 10) return;
         rules.push({ type: 'llm', value: '' });
@@ -80,19 +88,35 @@ $(async () => {
 
     // Auto-translate
     $('#tr-btn').on('click', async () => {
-        const text = String($('#src-text').val() ?? '').trim();
+        const srcLang = String($('#src-lang').val());
+        const tgtLang = String($('#tgt-lang').val());
         $('#tr-btn').prop('disabled', true);
         $('#tr-status').text('Translating…');
         try {
-            const data = await translate(
-                text,
-                String($('#src-lang').val()),
-                String($('#tgt-lang').val()),
-            );
-            lastResults = data.results;
-            currentUser!.quota_used = data.quota_used;
-            currentUser!.quota = data.quota;
-            renderStats(data.quota_used, data.quota, currentUser!.total_accepted);
+            let results: Array<{ api: string; translation: string | null; error: string | null }>;
+            let quota_used: number, quota: number;
+
+            if (inputMode === 'text') {
+                const text = String($('#src-text').val() ?? '').trim();
+                const data = await translate(text, srcLang, tgtLang);
+                results = data.results;
+                quota_used = data.quota_used;
+                quota = data.quota;
+            } else {
+                const file = ($('#src-file')[0] as HTMLInputElement).files?.[0];
+                if (!file) { $('#tr-status').text('✗ No file selected'); return; }
+                const data = await translateMedia(file, srcLang, tgtLang);
+                lastMediaFilename = data.filename;
+                results = [{ api: 'Gemini 2.5 Flash', translation: data.translation, error: null }];
+                quota_used = data.quota_used;
+                quota = data.quota;
+                $('#media-status').text(`Saved as: ${data.filename}`);
+            }
+
+            lastResults = results;
+            currentUser!.quota_used = quota_used;
+            currentUser!.quota = quota;
+            renderStats(quota_used, quota, currentUser!.total_accepted);
             renderApiResults();
             lastResults.forEach(r => r.verified = null);
             ownVerified = null;
@@ -203,11 +227,12 @@ $(async () => {
         }
 
         try {
+            const source_media = lastMediaFilename ?? undefined;
             if (editingSubmissionId !== null) {
-                await updateSubmission(editingSubmissionId, { source_text, source_lang, target_lang, verification_rules: rules, translations });
+                await updateSubmission(editingSubmissionId, { source_text, source_media, source_lang, target_lang, verification_rules: rules, translations });
                 $('#submit-status').html('<span class="msg-ok">✓ Updated!</span>');
             } else {
-                await createSubmission({ source_text, source_lang, target_lang, verification_rules: rules, translations });
+                await createSubmission({ source_text, source_media, source_lang, target_lang, verification_rules: rules, translations });
                 $('#submit-status').html('<span class="msg-ok">✓ Submitted!</span>');
             }
             clearForm();
@@ -296,7 +321,10 @@ $(async () => {
 
     function clearForm() {
         editingSubmissionId = null;
+        lastMediaFilename = null;
         $('#src-text, #own-translation').val('');
+        ($('#src-file')[0] as HTMLInputElement).value = '';
+        $('#media-status').text('');
         $('#verify-result, #own-verify-badge').html('');
         lastResults = [];
         ownVerified = null;
@@ -308,6 +336,29 @@ $(async () => {
         $('#pass-count').text('');
         loadMySubmissions();
         setTimeout(() => $('#submit-status').html(''), 3000);
+    }
+
+    function setInputMode(mode: 'text' | 'audio' | 'image') {
+        inputMode = mode;
+        lastMediaFilename = null;
+        $('.input-type-btn').css('font-weight', 'normal');
+        $(`.input-type-btn[data-type="${mode}"]`).css('font-weight', 'bold');
+        if (mode === 'text') {
+            $('#src-text').show();
+            $('#media-input').hide();
+            $('#src-file').removeAttr('accept');
+            $('#input-label').text('Input');
+        } else if (mode === 'audio') {
+            $('#src-text').hide();
+            $('#media-input').show();
+            $('#src-file').attr('accept', '.mp3,.wav');
+            $('#input-label').text('Audio file (MP3, WAV)');
+        } else {
+            $('#src-text').hide();
+            $('#media-input').show();
+            $('#src-file').attr('accept', '.png,.jpg,.jpeg');
+            $('#input-label').text('Image file (PNG, JPG)');
+        }
     }
 });
 

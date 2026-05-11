@@ -38,6 +38,7 @@ export interface Submission {
     user_id: number;
     username: string;
     source_text: string;
+    source_media?: string;
     source_lang: string;
     target_lang: string;
     verification_rules: Rule[];
@@ -121,6 +122,28 @@ export function translate(text: string, source_lang: string, target_lang: string
     }>('POST', 'api/translate-submission', { text, source_lang, target_lang });
 }
 
+export function translateMedia(file: File, source_lang: string, target_lang: string): Promise<{
+    translation: string;
+    filename: string;
+    quota_used: number;
+    quota: number;
+}> {
+    const token = getCookie('ltb_token') ?? '';
+    const form = new FormData();
+    form.append('file', file);
+    form.append('source_lang', source_lang);
+    form.append('target_lang', target_lang);
+    return fetch('api/translate-media', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: form,
+    }).then(async r => {
+        const json = await r.json();
+        if (!r.ok) throw (json as { detail?: string }).detail ?? 'Request failed';
+        return json;
+    });
+}
+
 export function verify(
     source_text: string,
     translations: string[],
@@ -137,6 +160,7 @@ export function getSubmissions(mode: 'contributor' | 'reviewer' = 'contributor')
 
 export function createSubmission(data: {
     source_text: string;
+    source_media?: string;
     source_lang: string;
     target_lang: string;
     verification_rules: Rule[];
@@ -147,6 +171,7 @@ export function createSubmission(data: {
 
 export function updateSubmission(id: number, data: {
     source_text: string;
+    source_media?: string;
     source_lang: string;
     target_lang: string;
     verification_rules: Rule[];

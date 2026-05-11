@@ -1,5 +1,6 @@
 import os
 import tomllib
+from pathlib import Path
 from typing import Any
 
 for config_file in ["config.toml", "config.template.toml"]:
@@ -20,4 +21,5 @@ def get_config(key: str, default: Any = "") -> Any:
 
 CONTRIBUTOR_QUOTA_DEFAULT = get_config("CONTRIBUTOR_QUOTA_DEFAULT", 10)
 DB_PATH = get_config("DB_PATH", "data/db.sqlite")
+MEDIA_DIR = str(Path(DB_PATH).parent / "media")
 OPENAI_API_KEY = get_config("OPENAI_API_KEY", "")

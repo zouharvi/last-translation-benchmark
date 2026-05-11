@@ -1,8 +1,9 @@
 import asyncio
 import secrets
 from datetime import datetime, timezone
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from .auth import get_current_user, require_admin
 from .db import (
@@ -31,6 +32,8 @@ from .models import (
 )
 from .services import (
     translate_gemini2_5flash,
+    translate_gemini25flash_audio,
+    translate_gemini25flash_image,
     translate_gemma4,
     translate_google,
     translate_gpt4p1nano,
@@ -38,7 +41,7 @@ from .services import (
     translate_llama4,
     verify_llm,
 )
-from .utils import CONTRIBUTOR_QUOTA_DEFAULT
+from .utils import CONTRIBUTOR_QUOTA_DEFAULT, MEDIA_DIR
 
 router = APIRouter()
 
@@ -309,6 +312,62 @@ async def translate_submission(req: TranslateReq, user=Depends(get_current_user)
     return {"results": results, "quota": quota, "quota_used": quota_used + 1}
 
 
+ALLOWED_IMAGE_TYPES = {"image/png", "image/jpeg"}
+ALLOWED_AUDIO_TYPES = {"audio/mpeg", "audio/wav"}
+ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".mp3", ".wav"}
+
+
+@router.post("/api/translate-media")
+async def translate_media(
+    file: UploadFile = File(...),
+    source_lang: str = Form(...),
+    target_lang: str = Form(...),
+    user=Depends(get_current_user),
+):
+    if "contributor" not in user.get("roles", []):
+        raise HTTPException(status_code=403, detail="Only contributors can use translation quota")
+
+    suffix = Path(file.filename).suffix.lower()
+    if suffix not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Unsupported file type. Allowed: PNG, JPG, MP3, WAV")
+
+    if not source_lang.strip() or not target_lang.strip():
+        raise HTTPException(status_code=400, detail="Both languages must be specified")
+    if len(source_lang) > 50 or len(target_lang) > 50:
+        raise HTTPException(status_code=400, detail="Language has to be at most 50 characters long")
+
+    quota_used = user["quota_used"]
+    quota = user.get("quota", CONTRIBUTOR_QUOTA_DEFAULT)
+    if quota_used >= quota:
+        raise HTTPException(status_code=429, detail="Quota exceeded")
+
+    Path(MEDIA_DIR).mkdir(parents=True, exist_ok=True)
+    filename = f"{secrets.token_urlsafe(16)}{suffix}"
+    file_path = Path(MEDIA_DIR) / filename
+
+    contents = await file.read()
+    file_path.write_bytes(contents)
+
+    if suffix in {".png", ".jpg", ".jpeg"}:
+        translate_func = translate_gemini25flash_image
+    else:
+        translate_func = translate_gemini25flash_audio
+
+    try:
+        translation = await translate_func(str(file_path), source_lang, target_lang)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+    user["quota_used"] = quota_used + 1
+    await save_user(user)
+    return {
+        "translation": translation,
+        "filename": filename,
+        "quota": quota,
+        "quota_used": quota_used + 1,
+    }
+
+
 @router.post("/api/verify-submission")
 async def verify_submission(req: VerifyReq, user=Depends(get_current_user)):
     if not req.verification_rules:
@@ -364,6 +423,7 @@ async def create_submission(req: SubmissionReq, user=Depends(get_current_user)):
         "user_id": user["id"],
         "username": user["username"],
         "source_text": req.source_text,
+        "source_media": req.source_media,
         "source_lang": req.source_lang,
         "target_lang": req.target_lang,
         "verification_rules": [r.model_dump() for r in req.verification_rules],

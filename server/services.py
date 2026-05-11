@@ -3,12 +3,14 @@ import asyncio
 import httpx
 import lara_sdk
 from deep_translator import DeeplTranslator, GoogleTranslator
+from google import genai
 from openrouter import OpenRouter
 
 from .languages import LANGUAGES
 from .utils import get_config
 
 OPENROUTER_CLIENT = OpenRouter(api_key=get_config("OPENROUTER_API_KEY", ""))
+GEMINI_CLIENT = genai.Client(api_key=get_config("GEMINI_API_KEY", ""))
 HTTP_CLIENT = httpx.AsyncClient(timeout=10)
 LARA_CLIENT = lara_sdk.Translator(
     lara_sdk.AccessKey(
@@ -117,3 +119,35 @@ async def translate_llama4(text: str, src_lang: str, tgt_lang: str) -> str:
 async def translate_gpt4p1nano(text: str, src_lang: str, tgt_lang: str) -> str:
     prompt = f"Translate the following text from {src_lang} to {tgt_lang}. Output only the translation and nothing else:\n{text}"
     return await call_llm(prompt, model="openai/gpt-4.1-nano")
+
+
+async def translate_gemini25flash_direct(text: str, src_lang: str, tgt_lang: str) -> str:
+    prompt = f"Translate the following text from {src_lang} to {tgt_lang}. Output only the translation and nothing else:\n{text}"
+    response = await GEMINI_CLIENT.aio.models.generate_content(
+        model="gemini-2.5-flash", contents=prompt
+    )
+    return response.text
+
+
+async def translate_gemini25flash_audio(file_path: str, src_lang: str, tgt_lang: str) -> str:
+    uploaded = await GEMINI_CLIENT.aio.files.upload(file=file_path)
+    response = await GEMINI_CLIENT.aio.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=[
+            f"Translate the speech in this audio from {src_lang} to {tgt_lang}. Output only the translation and nothing else.",
+            uploaded,
+        ],
+    )
+    return response.text
+
+
+async def translate_gemini25flash_image(file_path: str, src_lang: str, tgt_lang: str) -> str:
+    uploaded = await GEMINI_CLIENT.aio.files.upload(file=file_path)
+    response = await GEMINI_CLIENT.aio.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=[
+            f"Translate the text in this image from {src_lang} to {tgt_lang}. Output only the translation and nothing else.",
+            uploaded,
+        ],
+    )
+    return response.text
