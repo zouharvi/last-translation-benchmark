@@ -13,12 +13,13 @@ keywords = [
     "human evaluation",
 ]
 dependencies = [
-    "fastapi >= 0.110.0",
-    "uvicorn >= 0.29.0",
-    "httpx >= 0.27.0",
-    "deep-translator >= 1.11.4",
-    "openrouter >= 0.9.1",
-    "aiosqlite >= 0.20.0",
+    "fastapi >= 0.110",
+    "uvicorn >= 0.29",
+    "httpx >= 0.27",
+    "deep-translator >= 1.11",
+    "openrouter >= 0.9",
+    "aiosqlite >= 0.20",
+    "lara-sdk >= 1.8",
 ]
 
 [project.optional-dependencies]

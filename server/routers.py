@@ -18,7 +18,6 @@ from .db import (
 from .db import (
     get_submissions as db_get_submissions,
 )
-from .languages import LANGUAGES
 from .models import (
     CommentReq,
     ProfileReq,
@@ -35,13 +34,11 @@ from .services import (
     translate_gemma4,
     translate_google,
     translate_gpt4p1nano,
+    translate_lara,
     translate_llama4,
-    translate_mymemory,
     verify_llm,
 )
 from .utils import CONTRIBUTOR_QUOTA_DEFAULT
-
-NAME_TO_CODE = {x["name"].lower(): x["code"] for x in LANGUAGES}
 
 router = APIRouter()
 
@@ -54,9 +51,13 @@ async def me(user=Depends(get_current_user)):
     total_accepted = sum(1 for s in submissions if s.get("points") == 1)
     now = datetime.now(timezone.utc)
     last_active = user.get("last_active", "")
-    if not last_active or (
-        now - datetime.fromisoformat(last_active).replace(tzinfo=timezone.utc)
-    ).total_seconds() > 300:
+    if (
+        not last_active
+        or (
+            now - datetime.fromisoformat(last_active).replace(tzinfo=timezone.utc)
+        ).total_seconds()
+        > 300
+    ):
         user["last_active"] = now.strftime("%Y-%m-%d %H:%M:%S")
         await save_user(user)
     return {
@@ -151,6 +152,7 @@ async def admin_users(user=Depends(get_current_user)):
     users = await get_users()
     return await asyncio.gather(*[_admin_user_view(u) for u in users])
 
+
 @router.delete("/api/admin/users/{uid}", status_code=200)
 async def admin_delete_user(uid: int, user=Depends(get_current_user)):
     require_admin(user)
@@ -212,7 +214,9 @@ async def admin_update_roles(uid: int, req: RolesReq, user=Depends(get_current_u
 
 
 @router.post("/api/admin/users/{uid}/review-scope")
-async def admin_update_review_scope(uid: int, req: ReviewScopeReq, user=Depends(get_current_user)):
+async def admin_update_review_scope(
+    uid: int, req: ReviewScopeReq, user=Depends(get_current_user)
+):
     require_admin(user)
     target = await get_user_by_id(uid)
     if target is None:
@@ -259,8 +263,6 @@ async def translate_submission(req: TranslateReq, user=Depends(get_current_user)
 
     source_name = req.source_lang
     target_name = req.target_lang
-    source_code = NAME_TO_CODE.get(source_name.lower())
-    target_code = NAME_TO_CODE.get(target_name.lower())
 
     quota_used = user["quota_used"]
     quota = user.get("quota", CONTRIBUTOR_QUOTA_DEFAULT)
@@ -277,19 +279,9 @@ async def translate_submission(req: TranslateReq, user=Depends(get_current_user)
         except Exception as exc:
             return {"api": name, "translation": None, "error": str(exc)}
 
-    tasks = []
-    if source_code and target_code:
-        tasks.append(
-            _run_translate(
-                "MyMemory", translate_mymemory, req.text, source_code, target_code
-            )
-        )
-        tasks.append(
-            _run_translate(
-                "Google", translate_google, req.text, source_code, target_code
-            )
-        )
-    tasks += [
+    tasks = [
+        _run_translate("Lara", translate_lara, req.text, source_name, target_name),
+        _run_translate("Google", translate_google, req.text, source_name, target_name),
         _run_translate(
             "Gemini 2.5 Flash",
             translate_gemini2_5flash,
@@ -306,6 +298,11 @@ async def translate_submission(req: TranslateReq, user=Depends(get_current_user)
         ),
     ]
     results = await asyncio.gather(*tasks)
+
+    # filter out translations that did not pass because of language incompatibility
+    results = [
+        r for r in results if r["translation"] is not None or r["error"] is not None
+    ]
 
     user["quota_used"] = quota_used + 1
     await save_user(user)

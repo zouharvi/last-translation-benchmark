@@ -26,13 +26,13 @@ function showRoleButtons(user: User): void {
     container.append(`<span>Hello ${user.name} (${user.username}) from ${user.affiliation}!</span><br><br>`);
 
     if (user.roles.includes('contributor')) {
-        container.append(`<a href="contribute" class="btn btn-secondary">✍️ Contribute</a>`);
+        container.append(`<a href="contribute" class="btn btn-secondary">✍️&nbsp;Contribute</a>`);
     }
     if (user.roles.includes('reviewer')) {
-        container.append(`<a href="review" class="btn btn-secondary">🔍 Review</a>`);
+        container.append(`<a href="review" class="btn btn-secondary">🔍&nbsp;Review</a>`);
     }
     if (user.roles.includes('admin')) {
-        container.append(`<a href="admin" class="btn btn-secondary">⚙️ Admin</a>`);
+        container.append(`<a href="admin" class="btn btn-secondary">⚙️&nbsp;Admin</a>`);
     }
 
     const logoutBtn = $('<button class="btn btn-secondary">Logout</button>');
