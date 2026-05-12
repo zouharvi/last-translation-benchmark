@@ -124,7 +124,7 @@ export function translate(text: string, source_lang: string, target_lang: string
 
 export function translateMedia(file: File, source_lang: string, target_lang: string, source_text: string = ''): Promise<{
     translation: string;
-    filename: string;
+    media_data: string;
     quota_used: number;
     quota: number;
 }> {
@@ -143,15 +143,14 @@ export function translateMedia(file: File, source_lang: string, target_lang: str
         if (!r.ok) {
             const detail = (json as { detail?: unknown }).detail;
             if (typeof detail === 'string') throw detail;
-            if (Array.isArray(detail)) throw detail.map((d: { msg?: string }) => d.msg ?? JSON.stringify(d)).join('; ');
+            if (Array.isArray(detail)) throw detail.map((d: { msg?: string; loc?: unknown[] }) => {
+                const field = Array.isArray(d.loc) ? String(d.loc[d.loc.length - 1]) : '';
+                return field ? `${field}: ${d.msg}` : (d.msg ?? JSON.stringify(d));
+            }).join('; ');
             throw JSON.stringify(detail) ?? 'Request failed';
         }
         return json;
     });
-}
-
-export function deleteMedia(filename: string) {
-    return apiCall<{ ok: boolean }>('DELETE', `api/media/${encodeURIComponent(filename)}`);
 }
 
 export function verify(

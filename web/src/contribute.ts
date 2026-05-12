@@ -2,7 +2,7 @@ import './style.css';
 import $ from 'jquery';
 import {
     getMe, getCookie,
-    translate, translateMedia, deleteMedia, verify, createSubmission, updateSubmission, getSubmissions, addComment, renderRoleSwitcher,
+    translate, translateMedia, verify, createSubmission, updateSubmission, getSubmissions, addComment, renderRoleSwitcher,
     User, Submission, Rule,
 } from './api';
 
@@ -18,7 +18,7 @@ let editingSubmissionId: number | null = null;
 let allMySubmissions: Submission[] = [];
 let rules: Rule[] = [{ type: 'llm', value: '' }];
 let inputMode: 'text' | 'audio' | 'image' = 'text';
-let lastMediaFilename: string | null = null;
+let lastMediaData: string | null = null;
 
 
 
@@ -127,10 +127,9 @@ $(async () => {
                     $('#tr-status').text(`✗ File too large (max ${maxMB}MB)`);
                     return;
                 }
-                if (lastMediaFilename) deleteMedia(lastMediaFilename).catch(() => {});
                 const srcText = String($('#src-text').val() ?? '').trim();
                 const data = await translateMedia(file, srcLang, tgtLang, srcText);
-                lastMediaFilename = data.filename;
+                lastMediaData = data.media_data;
                 results = [{ api: 'Gemini 2.5 Flash', translation: data.translation, error: null }];
                 quota_used = data.quota_used;
                 quota = data.quota;
@@ -253,7 +252,7 @@ $(async () => {
 
         try {
             const editingSub = editingSubmissionId !== null ? allMySubmissions.find(s => s.id === editingSubmissionId) : null;
-            const source_media = lastMediaFilename ?? editingSub?.source_media ?? undefined;
+            const source_media = lastMediaData ?? editingSub?.source_media ?? undefined;
             if (editingSubmissionId !== null) {
                 await updateSubmission(editingSubmissionId, { source_text, source_media, source_lang, target_lang, verification_rules: rules, translations });
                 $('#submit-status').html('<span class="msg-ok">✓ Updated!</span>');
@@ -261,7 +260,7 @@ $(async () => {
                 await createSubmission({ source_text, source_media, source_lang, target_lang, verification_rules: rules, translations });
                 $('#submit-status').html('<span class="msg-ok">✓ Submitted!</span>');
             }
-            lastMediaFilename = null; // keep the file — it's now in the DB
+            lastMediaData = null;
             clearForm();
         } catch (err) {
             $('#submit-status').html(`<span class="msg-err">${escHtml(String(err))}</span>`);
@@ -352,8 +351,7 @@ $(async () => {
 
     function clearForm() {
         editingSubmissionId = null;
-        if (lastMediaFilename) deleteMedia(lastMediaFilename).catch(() => {});
-        lastMediaFilename = null;
+        lastMediaData = null;
         $('#media-preview').empty();
         $('#src-text, #own-translation').val('');
         ($('#src-file')[0] as HTMLInputElement).value = '';
@@ -373,8 +371,7 @@ $(async () => {
 
     function setInputMode(mode: 'text' | 'audio' | 'image') {
         inputMode = mode;
-        if (lastMediaFilename) deleteMedia(lastMediaFilename).catch(() => {});
-        lastMediaFilename = null;
+        lastMediaData = null;
         $('.input-type-btn').css('font-weight', 'normal');
         $(`.input-type-btn[data-type="${mode}"]`).css('font-weight', 'bold');
         if (mode === 'text') {
@@ -450,6 +447,7 @@ function renderApiResults(): void {
     $body.show();
 }
 
+
 // ---- Sidebar: my submissions ----
 
 async function loadMySubmissions(): Promise<void> {
@@ -469,14 +467,12 @@ function renderMySug(s: Submission): string {
     const srcPreview = s.source_text.length > 60 ? s.source_text.slice(0, 60) + '…' : s.source_text;
     const firstTr = s.translations[0]?.translation ?? '';
     const trPreview = firstTr.length > 60 ? firstTr.slice(0, 60) + '…' : firstTr;
-    const isAudio = s.source_media && /\.(mp3|wav)$/i.test(s.source_media);
-    const isImage = s.source_media && /\.(png|jpe?g)$/i.test(s.source_media);
-    const mediaUrl = s.source_media ? `api/media/${encodeURIComponent(s.source_media)}` : null;
-    const mediaHtml = isAudio && mediaUrl
-        ? `<audio controls src="${mediaUrl}" style="width:100%;margin-bottom:4px"></audio>`
-        : isImage && mediaUrl
-            ? `<img src="${mediaUrl}" style="max-width:66%;margin-bottom:4px;border-radius:4px">`
-            : '';
+    const isAudio = s.source_media && /^data:audio/.test(s.source_media);
+    const mediaHtml = s.source_media
+        ? (isAudio
+            ? `<audio controls src="${s.source_media}" style="width:100%;margin-bottom:4px"></audio>`
+            : `<img src="${s.source_media}" style="max-width:66%;margin-bottom:4px;border-radius:4px">`)
+        : '';
 
     const comments = s.comments ?? [];
     const threadHtml = renderCommentThread(comments, 'contributor');

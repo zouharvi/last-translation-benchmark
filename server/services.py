@@ -1,18 +1,15 @@
 import asyncio
+import base64
 
 import httpx
 import lara_sdk
 from deep_translator import DeeplTranslator, GoogleTranslator
-from google import genai
 from openrouter import OpenRouter
 
 from .languages import LANGUAGES
 from .utils import get_config
 
 OPENROUTER_CLIENT = OpenRouter(api_key=get_config("OPENROUTER_API_KEY", ""))
-
-_gemini_key = get_config("GEMINI_API_KEY", "")
-GEMINI_CLIENT = genai.Client(api_key=_gemini_key) if _gemini_key else None
 
 HTTP_CLIENT = httpx.AsyncClient(timeout=10)
 LARA_CLIENT = lara_sdk.Translator(
@@ -124,19 +121,9 @@ async def translate_gpt4p1nano(text: str, src_lang: str, tgt_lang: str) -> str:
     return await call_llm(prompt, model="openai/gpt-4.1-nano")
 
 
-async def translate_gemini25flash_direct(text: str, src_lang: str, tgt_lang: str) -> str:
-    if GEMINI_CLIENT is None:
-        raise ValueError("GEMINI_API_KEY is not configured")
-    prompt = f"Translate the following text from {src_lang} to {tgt_lang}. Output only the translation and nothing else:\n{text}"
-    response = await GEMINI_CLIENT.aio.models.generate_content(
-        model="gemini-2.5-flash", contents=prompt
-    )
-    return response.text
-
-
-async def translate_gemini25flash_audio(file_path: str, src_lang: str, tgt_lang: str, source_text: str = "") -> str:
-    if GEMINI_CLIENT is None:
-        raise ValueError("GEMINI_API_KEY is not configured")
+async def translate_gemini25flash_audio(file_bytes: bytes, suffix: str, src_lang: str, tgt_lang: str, source_text: str = "") -> str:
+    if OPENROUTER_CLIENT is None:
+        raise ValueError("OPENROUTER_API_KEY is not configured")
     if source_text.strip():
         prompt = (
             f"Translate the following text from {src_lang} to {tgt_lang}. "
@@ -145,17 +132,20 @@ async def translate_gemini25flash_audio(file_path: str, src_lang: str, tgt_lang:
         )
     else:
         prompt = f"Translate the speech in this audio from {src_lang} to {tgt_lang}. Output only the translation and nothing else."
-    uploaded = await GEMINI_CLIENT.aio.files.upload(file=file_path)
-    response = await GEMINI_CLIENT.aio.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=[prompt, uploaded],
+    fmt = "mp3" if suffix == ".mp3" else "wav"
+    response = await OPENROUTER_CLIENT.chat.send_async(
+        model="google/gemini-2.5-flash",
+        messages=[{"role": "user", "content": [
+            {"type": "text", "text": prompt},
+            {"type": "input_audio", "input_audio": {"data": base64.b64encode(file_bytes).decode(), "format": fmt}},
+        ]}],
     )
-    return response.text
+    return response.choices[0].message.content
 
 
-async def translate_gemini25flash_image(file_path: str, src_lang: str, tgt_lang: str, source_text: str = "") -> str:
-    if GEMINI_CLIENT is None:
-        raise ValueError("GEMINI_API_KEY is not configured")
+async def translate_gemini25flash_image(file_bytes: bytes, suffix: str, src_lang: str, tgt_lang: str, source_text: str = "") -> str:
+    if OPENROUTER_CLIENT is None:
+        raise ValueError("OPENROUTER_API_KEY is not configured")
     if source_text.strip():
         prompt = (
             f"Translate the following text from {src_lang} to {tgt_lang}. "
@@ -164,9 +154,13 @@ async def translate_gemini25flash_image(file_path: str, src_lang: str, tgt_lang:
         )
     else:
         prompt = f"Translate the text in this image from {src_lang} to {tgt_lang}. Output only the translation and nothing else."
-    uploaded = await GEMINI_CLIENT.aio.files.upload(file=file_path)
-    response = await GEMINI_CLIENT.aio.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=[prompt, uploaded],
+    mime = {"png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg"}.get(suffix.lstrip("."), "image/jpeg")
+    data_url = f"data:{mime};base64,{base64.b64encode(file_bytes).decode()}"
+    response = await OPENROUTER_CLIENT.chat.send_async(
+        model="google/gemini-2.5-flash",
+        messages=[{"role": "user", "content": [
+            {"type": "text", "text": prompt},
+            {"type": "image_url", "image_url": {"url": data_url}},
+        ]}],
     )
-    return response.text
+    return response.choices[0].message.content

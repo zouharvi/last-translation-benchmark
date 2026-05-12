@@ -1,11 +1,10 @@
 import asyncio
-import re
+import base64
 import secrets
 from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
 
 from .auth import get_current_user, require_admin
 from .db import (
@@ -43,7 +42,7 @@ from .services import (
     translate_llama4,
     verify_llm,
 )
-from .utils import CONTRIBUTOR_QUOTA_DEFAULT, MEDIA_DIR
+from .utils import CONTRIBUTOR_QUOTA_DEFAULT
 
 router = APIRouter()
 
@@ -314,9 +313,8 @@ async def translate_submission(req: TranslateReq, user=Depends(get_current_user)
     return {"results": results, "quota": quota, "quota_used": quota_used + 1}
 
 
-ALLOWED_IMAGE_TYPES = {"image/png", "image/jpeg"}
-ALLOWED_AUDIO_TYPES = {"audio/mpeg", "audio/wav"}
 ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".mp3", ".wav"}
+MIME_MAP = {".wav": "audio/wav", ".mp3": "audio/mpeg", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}
 
 
 @router.post("/api/translate-media")
@@ -344,57 +342,29 @@ async def translate_media(
     if quota_used >= quota:
         raise HTTPException(status_code=429, detail="Quota exceeded")
 
-    Path(MEDIA_DIR).mkdir(parents=True, exist_ok=True)
-    filename = f"{secrets.token_urlsafe(16)}{suffix}"
-    file_path = Path(MEDIA_DIR) / filename
-
     contents = await file.read()
     max_bytes = (10 if suffix in {".png", ".jpg", ".jpeg"} else 25) * 1024 * 1024
     if len(contents) > max_bytes:
         raise HTTPException(status_code=413, detail=f"File too large (max {max_bytes // (1024*1024)}MB)")
-    file_path.write_bytes(contents)
 
-    if suffix in {".png", ".jpg", ".jpeg"}:
-        translate_func = translate_gemini25flash_image
-    else:
-        translate_func = translate_gemini25flash_audio
+    translate_func = translate_gemini25flash_image if suffix in {".png", ".jpg", ".jpeg"} else translate_gemini25flash_audio
 
     try:
-        translation = await translate_func(str(file_path), source_lang, target_lang, source_text)
+        translation = await translate_func(contents, suffix, source_lang, target_lang, source_text)
     except Exception as exc:
-        file_path.unlink(missing_ok=True)
         raise HTTPException(status_code=500, detail=str(exc))
+
+    mime = MIME_MAP.get(suffix, "application/octet-stream")
+    media_data = f"data:{mime};base64,{base64.b64encode(contents).decode()}"
 
     user["quota_used"] = quota_used + 1
     await save_user(user)
     return {
         "translation": translation,
-        "filename": filename,
+        "media_data": media_data,
         "quota": quota,
         "quota_used": quota_used + 1,
     }
-
-
-@router.get("/api/media/{filename}")
-async def get_media(filename: str, user=Depends(get_current_user)):
-    if not re.match(r'^[A-Za-z0-9_-]+\.[a-z0-9]+$', filename):
-        raise HTTPException(status_code=400, detail="Invalid filename")
-    file_path = Path(MEDIA_DIR) / filename
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="File not found")
-    mime_map = {".wav": "audio/wav", ".mp3": "audio/mpeg", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}
-    suffix = Path(filename).suffix.lower()
-    return FileResponse(str(file_path), media_type=mime_map.get(suffix))
-
-
-@router.delete("/api/media/{filename}")
-async def delete_media(filename: str, user=Depends(get_current_user)):
-    if not re.match(r'^[A-Za-z0-9_-]+\.[a-z0-9]+$', filename):
-        raise HTTPException(status_code=400, detail="Invalid filename")
-    file_path = Path(MEDIA_DIR) / filename
-    if file_path.exists():
-        file_path.unlink()
-    return {"ok": True}
 
 
 @router.post("/api/verify-submission")

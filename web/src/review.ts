@@ -148,14 +148,12 @@ function renderCommentThreadWrap(comments: Submission['comments']): string {
 }
 
 function renderSource(s: Submission): string {
-    const isImage = s.source_media && /\.(png|jpe?g)$/i.test(s.source_media);
-    const isAudio = s.source_media && /\.(mp3|wav)$/i.test(s.source_media);
-    const mediaUrl = s.source_media ? `api/media/${encodeURIComponent(s.source_media)}` : null;
+    const isAudio = s.source_media && /^data:audio/.test(s.source_media);
     let out = '';
-    if (isAudio && mediaUrl) {
-        out += `<audio controls src="${mediaUrl}" style="width:100%;margin-bottom:6px"></audio>`;
-    } else if (isImage && mediaUrl) {
-        out += `<img src="${mediaUrl}" style="max-width:66%;margin-bottom:6px;border-radius:4px">`;
+    if (s.source_media) {
+        out += isAudio
+            ? `<audio controls src="${s.source_media}" style="width:100%;margin-bottom:6px"></audio>`
+            : `<img src="${s.source_media}" style="max-width:66%;margin-bottom:6px;border-radius:4px">`;
     }
     if (s.source_text) out += escHtml(s.source_text);
     return out;
