@@ -21,6 +21,7 @@ dependencies = [
     "aiosqlite >= 0.20",
     "lara-sdk >= 1.8",
     "google-genai >= 1.0",
+    "python-multipart >= 0.0.9",
 ]
 
 [project.optional-dependencies]

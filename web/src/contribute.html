@@ -148,12 +148,14 @@
             <button class="btn btn-secondary input-type-btn" data-type="image" style="padding: 3px 10px; font-size: 0.85em;">Image</button>
           </div>
 
-          <label for="src-text" id="input-label">Input</label>
-          <textarea id="src-text" placeholder="Enter the source text…" style="min-height: 200px;"></textarea>
+          <label for="src-file" id="media-file-label" style="display: none;"></label>
           <div id="media-input" style="display: none;">
             <input type="file" id="src-file" style="margin-bottom: 8px;">
+            <div id="media-preview" style="margin-bottom: 8px;"></div>
             <div id="media-status" style="font-size: 0.85em; color: #64748b;"></div>
           </div>
+          <label for="src-text" id="input-label">Input</label>
+          <textarea id="src-text" placeholder="Enter the source text…" style="min-height: 200px;"></textarea>
 
           <div
             style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">

@@ -1,9 +1,11 @@
 import asyncio
+import re
 import secrets
 from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 
 from .auth import get_current_user, require_admin
 from .db import (
@@ -322,6 +324,7 @@ async def translate_media(
     file: UploadFile = File(...),
     source_lang: str = Form(...),
     target_lang: str = Form(...),
+    source_text: str = Form(""),
     user=Depends(get_current_user),
 ):
     if "contributor" not in user.get("roles", []):
@@ -346,6 +349,9 @@ async def translate_media(
     file_path = Path(MEDIA_DIR) / filename
 
     contents = await file.read()
+    max_bytes = (10 if suffix in {".png", ".jpg", ".jpeg"} else 25) * 1024 * 1024
+    if len(contents) > max_bytes:
+        raise HTTPException(status_code=413, detail=f"File too large (max {max_bytes // (1024*1024)}MB)")
     file_path.write_bytes(contents)
 
     if suffix in {".png", ".jpg", ".jpeg"}:
@@ -354,8 +360,9 @@ async def translate_media(
         translate_func = translate_gemini25flash_audio
 
     try:
-        translation = await translate_func(str(file_path), source_lang, target_lang)
+        translation = await translate_func(str(file_path), source_lang, target_lang, source_text)
     except Exception as exc:
+        file_path.unlink(missing_ok=True)
         raise HTTPException(status_code=500, detail=str(exc))
 
     user["quota_used"] = quota_used + 1
@@ -366,6 +373,28 @@ async def translate_media(
         "quota": quota,
         "quota_used": quota_used + 1,
     }
+
+
+@router.get("/api/media/{filename}")
+async def get_media(filename: str, user=Depends(get_current_user)):
+    if not re.match(r'^[A-Za-z0-9_-]+\.[a-z0-9]+$', filename):
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    file_path = Path(MEDIA_DIR) / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    mime_map = {".wav": "audio/wav", ".mp3": "audio/mpeg", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}
+    suffix = Path(filename).suffix.lower()
+    return FileResponse(str(file_path), media_type=mime_map.get(suffix))
+
+
+@router.delete("/api/media/{filename}")
+async def delete_media(filename: str, user=Depends(get_current_user)):
+    if not re.match(r'^[A-Za-z0-9_-]+\.[a-z0-9]+$', filename):
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    file_path = Path(MEDIA_DIR) / filename
+    if file_path.exists():
+        file_path.unlink()
+    return {"ok": True}
 
 
 @router.post("/api/verify-submission")
@@ -406,12 +435,13 @@ async def create_submission(req: SubmissionReq, user=Depends(get_current_user)):
             status_code=403, detail="Only contributors can submit submissions"
         )
 
+    has_source = bool(req.source_text and req.source_text.strip()) or bool(req.source_media)
     if (
         not req.source_lang
         or not req.source_lang.strip()
         or not req.target_lang
         or not req.target_lang.strip()
-        or not req.source_text
+        or not has_source
         or not req.translations
         or not req.verification_rules
     ):
@@ -448,17 +478,18 @@ async def update_submission(
             status_code=403, detail="Not authorized to update this submission"
         )
 
-    submission.update(
-        {
-            "source_text": req.source_text,
-            "source_lang": req.source_lang,
-            "target_lang": req.target_lang,
-            "verification_rules": [r.model_dump() for r in req.verification_rules],
-            "translations": [t.model_dump() for t in req.translations],
-            "points": -1,
-            "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
-        }
-    )
+    update: dict = {
+        "source_text": req.source_text,
+        "source_lang": req.source_lang,
+        "target_lang": req.target_lang,
+        "verification_rules": [r.model_dump() for r in req.verification_rules],
+        "translations": [t.model_dump() for t in req.translations],
+        "points": -1,
+        "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    if req.source_media is not None:
+        update["source_media"] = req.source_media
+    submission.update(update)
     await save_submission(submission)
     return {"ok": True}
 

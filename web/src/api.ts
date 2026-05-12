@@ -122,7 +122,7 @@ export function translate(text: string, source_lang: string, target_lang: string
     }>('POST', 'api/translate-submission', { text, source_lang, target_lang });
 }
 
-export function translateMedia(file: File, source_lang: string, target_lang: string): Promise<{
+export function translateMedia(file: File, source_lang: string, target_lang: string, source_text: string = ''): Promise<{
     translation: string;
     filename: string;
     quota_used: number;
@@ -133,15 +133,25 @@ export function translateMedia(file: File, source_lang: string, target_lang: str
     form.append('file', file);
     form.append('source_lang', source_lang);
     form.append('target_lang', target_lang);
+    form.append('source_text', source_text);
     return fetch('api/translate-media', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: form,
     }).then(async r => {
         const json = await r.json();
-        if (!r.ok) throw (json as { detail?: string }).detail ?? 'Request failed';
+        if (!r.ok) {
+            const detail = (json as { detail?: unknown }).detail;
+            if (typeof detail === 'string') throw detail;
+            if (Array.isArray(detail)) throw detail.map((d: { msg?: string }) => d.msg ?? JSON.stringify(d)).join('; ');
+            throw JSON.stringify(detail) ?? 'Request failed';
+        }
         return json;
     });
+}
+
+export function deleteMedia(filename: string) {
+    return apiCall<{ ok: boolean }>('DELETE', `api/media/${encodeURIComponent(filename)}`);
 }
 
 export function verify(

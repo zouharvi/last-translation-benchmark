@@ -129,25 +129,35 @@ async def translate_gemini25flash_direct(text: str, src_lang: str, tgt_lang: str
     return response.text
 
 
-async def translate_gemini25flash_audio(file_path: str, src_lang: str, tgt_lang: str) -> str:
+async def translate_gemini25flash_audio(file_path: str, src_lang: str, tgt_lang: str, source_text: str = "") -> str:
+    if source_text.strip():
+        prompt = (
+            f"Translate the following text from {src_lang} to {tgt_lang}. "
+            f"Use the audio as additional context. "
+            f"Output only the translation and nothing else.\nText: {source_text}"
+        )
+    else:
+        prompt = f"Translate the speech in this audio from {src_lang} to {tgt_lang}. Output only the translation and nothing else."
     uploaded = await GEMINI_CLIENT.aio.files.upload(file=file_path)
     response = await GEMINI_CLIENT.aio.models.generate_content(
         model="gemini-2.5-flash",
-        contents=[
-            f"Translate the speech in this audio from {src_lang} to {tgt_lang}. Output only the translation and nothing else.",
-            uploaded,
-        ],
+        contents=[prompt, uploaded],
     )
     return response.text
 
 
-async def translate_gemini25flash_image(file_path: str, src_lang: str, tgt_lang: str) -> str:
+async def translate_gemini25flash_image(file_path: str, src_lang: str, tgt_lang: str, source_text: str = "") -> str:
+    if source_text.strip():
+        prompt = (
+            f"Translate the following text from {src_lang} to {tgt_lang}. "
+            f"Use the image as additional context. "
+            f"Output only the translation and nothing else.\nText: {source_text}"
+        )
+    else:
+        prompt = f"Translate the text in this image from {src_lang} to {tgt_lang}. Output only the translation and nothing else."
     uploaded = await GEMINI_CLIENT.aio.files.upload(file=file_path)
     response = await GEMINI_CLIENT.aio.models.generate_content(
         model="gemini-2.5-flash",
-        contents=[
-            f"Translate the text in this image from {src_lang} to {tgt_lang}. Output only the translation and nothing else.",
-            uploaded,
-        ],
+        contents=[prompt, uploaded],
     )
     return response.text

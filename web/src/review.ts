@@ -147,6 +147,20 @@ function renderCommentThreadWrap(comments: Submission['comments']): string {
     return renderCommentThread(comments, 'reviewer');
 }
 
+function renderSource(s: Submission): string {
+    const isImage = s.source_media && /\.(png|jpe?g)$/i.test(s.source_media);
+    const isAudio = s.source_media && /\.(mp3|wav)$/i.test(s.source_media);
+    const mediaUrl = s.source_media ? `api/media/${encodeURIComponent(s.source_media)}` : null;
+    let out = '';
+    if (isAudio && mediaUrl) {
+        out += `<audio controls src="${mediaUrl}" style="width:100%;margin-bottom:6px"></audio>`;
+    } else if (isImage && mediaUrl) {
+        out += `<img src="${mediaUrl}" style="max-width:66%;margin-bottom:6px;border-radius:4px">`;
+    }
+    if (s.source_text) out += escHtml(s.source_text);
+    return out;
+}
+
 function renderSug(s: Submission): string {
     const scoreActions: Array<['reject' | 'accept', string, string]> = [
         ['reject', '#ef4444', 'Reject'],
@@ -186,7 +200,7 @@ function renderSug(s: Submission): string {
 
     return `<div class="sug-item" id="sug-${s.id}">
         <div class="sug-meta">#${s.id} &middot; <b>${escHtml(s.username)}</b> &middot; ${s.source_lang}&rarr;${s.target_lang} &middot; ${fmtDate(s.created_at)} &middot; ${scoreBadge(s.points, s.reviewer_comment)}</div>
-        <div class="sug-box" style="margin-bottom:8px"><div class="lbl">SOURCE</div>${escHtml(s.source_text)}</div>
+        <div class="sug-box" style="margin-bottom:8px"><div class="lbl">SOURCE</div>${renderSource(s)}</div>
         <div style="margin-bottom:8px">${trRows}</div>
         <div style="margin-bottom:8px">${ruleRows}</div>
         <div id="comment-thread-${s.id}">${renderCommentThreadWrap(s.comments)}</div>
