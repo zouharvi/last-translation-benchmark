@@ -58,7 +58,9 @@ $(async () => {
     // Input type toggle
     setInputMode('text');
     $('.input-type-btn').on('click', function () {
-        setInputMode($(this).data('type') as 'text' | 'audio' | 'image');
+        const type = $(this).data('type') as 'text' | 'media';
+        if (type === 'text') setInputMode('text');
+        else setInputMode('media');
     });
 
     // Local file preview (no upload needed)
@@ -67,6 +69,7 @@ $(async () => {
         $('#media-preview').empty();
         if (!file) return;
         const isAudio = /\.(mp3|wav)$/i.test(file.name);
+        inputMode = isAudio ? 'audio' : 'image';
         const reader = new FileReader();
         reader.onload = (e) => {
             const dataUrl = String(e.target?.result ?? '');
@@ -292,10 +295,15 @@ $(async () => {
         if (!sub) return;
 
         editingSubmissionId = id;
-        const mediaMode = sub.source_media
-            ? (/\.(mp3|wav)$/i.test(sub.source_media) ? 'audio' : 'image')
-            : 'text';
-        setInputMode(mediaMode);
+        setInputMode(sub.source_media ? 'media' : 'text');
+        if (sub.source_media) {
+            const isAudio = /^data:audio/.test(sub.source_media);
+            inputMode = isAudio ? 'audio' : 'image';
+            $('#media-preview').html(isAudio
+                ? `<audio controls src="${sub.source_media}" style="width:100%;display:block"></audio>`
+                : `<img src="${sub.source_media}" style="max-width:66%;display:block;border-radius:4px">`
+            );
+        }
         $('#src-text').val(sub.source_text);
         $('#src-lang').val(sub.source_lang);
         $('#tgt-lang').val(sub.target_lang);
@@ -369,27 +377,25 @@ $(async () => {
         setTimeout(() => $('#submit-status').html(''), 3000);
     }
 
-    function setInputMode(mode: 'text' | 'audio' | 'image') {
-        inputMode = mode;
+    function setInputMode(mode: 'text' | 'media' | 'audio' | 'image') {
+        if (mode === 'text') inputMode = 'text';
+        // audio/image set by file change handler; 'media' waits for file selection
         lastMediaData = null;
+        $('#media-preview').empty();
         $('.input-type-btn').css('font-weight', 'normal');
-        $(`.input-type-btn[data-type="${mode}"]`).css('font-weight', 'bold');
         if (mode === 'text') {
+            $(`.input-type-btn[data-type="text"]`).css('font-weight', 'bold');
             $('#media-file-label').hide();
             $('#media-input').hide();
             $('#src-file').removeAttr('accept');
+            ($('#src-file')[0] as HTMLInputElement).value = '';
             $('#input-label').text('Input');
             $('#src-text').show();
-        } else if (mode === 'audio') {
-            $('#media-file-label').text('Audio file (MP3, WAV)').show();
-            $('#media-input').show();
-            $('#src-file').attr('accept', '.mp3,.wav');
-            $('#input-label').text('Source text (optional)');
-            $('#src-text').show();
         } else {
-            $('#media-file-label').text('Image file (PNG, JPG)').show();
+            $(`.input-type-btn[data-type="media"]`).css('font-weight', 'bold');
+            $('#media-file-label').show();
             $('#media-input').show();
-            $('#src-file').attr('accept', '.png,.jpg,.jpeg');
+            $('#src-file').attr('accept', '.mp3,.wav,.png,.jpg,.jpeg');
             $('#input-label').text('Source text (optional)');
             $('#src-text').show();
         }
