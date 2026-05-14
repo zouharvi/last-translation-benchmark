@@ -374,15 +374,12 @@ async def create_submission(req: SubmissionReq, user=Depends(get_current_user)):
             status_code=403, detail="Only contributors can submit submissions"
         )
 
-    has_source = bool(req.source_text and req.source_text.strip()) or bool(
-        req.source_media
-    )
     if (
         not req.source_lang
         or not req.source_lang.strip()
         or not req.target_lang
         or not req.target_lang.strip()
-        or not has_source
+        or not (req.source_text or req.source_media)
         or not req.translations
         or not req.verification_rules
     ):

@@ -475,4 +475,3 @@ function renderMySug(s: Submission): string {
         ${replyHtml}
     </div>`;
 }
-
