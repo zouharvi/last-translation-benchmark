@@ -1,10 +1,8 @@
 import asyncio
-import base64
 import secrets
 from datetime import datetime, timezone
-from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException
 
 from .auth import get_current_user, require_admin
 from .db import (
@@ -33,8 +31,6 @@ from .models import (
 )
 from .services import (
     translate_gemini2_5flash,
-    translate_gemini25flash_audio,
-    translate_gemini25flash_image,
     translate_gemma4,
     translate_google,
     translate_gpt4p1nano,
@@ -250,8 +246,11 @@ async def translate_submission(req: TranslateReq, user=Depends(get_current_user)
             status_code=403, detail="Only contributors can use translation quota"
         )
 
-    if not req.text or not req.text.strip():
-        raise HTTPException(status_code=400, detail="Enter source text first")
+    has_source = bool(req.text and req.text.strip()) or bool(req.source_media)
+    if not has_source:
+        raise HTTPException(
+            status_code=400, detail="Enter source text or add media context first"
+        )
 
     if (
         not req.source_lang
@@ -292,13 +291,31 @@ async def translate_submission(req: TranslateReq, user=Depends(get_current_user)
             req.text,
             source_name,
             target_name,
-        ),
-        _run_translate("Gemma 4", translate_gemma4, req.text, source_name, target_name),
-        _run_translate(
-            "Llama 4 Scout", translate_llama4, req.text, source_name, target_name
+            req.source_media,
         ),
         _run_translate(
-            "GPT-4.1 Nano", translate_gpt4p1nano, req.text, source_name, target_name
+            "Gemma 4",
+            translate_gemma4,
+            req.text,
+            source_name,
+            target_name,
+            req.source_media,
+        ),
+        _run_translate(
+            "Llama 4 Scout",
+            translate_llama4,
+            req.text,
+            source_name,
+            target_name,
+            req.source_media,
+        ),
+        _run_translate(
+            "GPT-4.1 Nano",
+            translate_gpt4p1nano,
+            req.text,
+            source_name,
+            target_name,
+            req.source_media,
         ),
     ]
     results = await asyncio.gather(*tasks)
@@ -311,60 +328,6 @@ async def translate_submission(req: TranslateReq, user=Depends(get_current_user)
     user["quota_used"] = quota_used + 1
     await save_user(user)
     return {"results": results, "quota": quota, "quota_used": quota_used + 1}
-
-
-ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".mp3", ".wav"}
-MIME_MAP = {".wav": "audio/wav", ".mp3": "audio/mpeg", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}
-
-
-@router.post("/api/translate-media")
-async def translate_media(
-    file: UploadFile = File(...),
-    source_lang: str = Form(...),
-    target_lang: str = Form(...),
-    source_text: str = Form(""),
-    user=Depends(get_current_user),
-):
-    if "contributor" not in user.get("roles", []):
-        raise HTTPException(status_code=403, detail="Only contributors can use translation quota")
-
-    suffix = Path(file.filename).suffix.lower()
-    if suffix not in ALLOWED_EXTENSIONS:
-        raise HTTPException(status_code=400, detail="Unsupported file type. Allowed: PNG, JPG, MP3, WAV")
-
-    if not source_lang.strip() or not target_lang.strip():
-        raise HTTPException(status_code=400, detail="Both languages must be specified")
-    if len(source_lang) > 50 or len(target_lang) > 50:
-        raise HTTPException(status_code=400, detail="Language has to be at most 50 characters long")
-
-    quota_used = user["quota_used"]
-    quota = user.get("quota", CONTRIBUTOR_QUOTA_DEFAULT)
-    if quota_used >= quota:
-        raise HTTPException(status_code=429, detail="Quota exceeded")
-
-    contents = await file.read()
-    max_bytes = (10 if suffix in {".png", ".jpg", ".jpeg"} else 25) * 1024 * 1024
-    if len(contents) > max_bytes:
-        raise HTTPException(status_code=413, detail=f"File too large (max {max_bytes // (1024*1024)}MB)")
-
-    translate_func = translate_gemini25flash_image if suffix in {".png", ".jpg", ".jpeg"} else translate_gemini25flash_audio
-
-    try:
-        translation = await translate_func(contents, suffix, source_lang, target_lang, source_text)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
-
-    mime = MIME_MAP.get(suffix, "application/octet-stream")
-    media_data = f"data:{mime};base64,{base64.b64encode(contents).decode()}"
-
-    user["quota_used"] = quota_used + 1
-    await save_user(user)
-    return {
-        "translation": translation,
-        "media_data": media_data,
-        "quota": quota,
-        "quota_used": quota_used + 1,
-    }
 
 
 @router.post("/api/verify-submission")
@@ -405,7 +368,9 @@ async def create_submission(req: SubmissionReq, user=Depends(get_current_user)):
             status_code=403, detail="Only contributors can submit submissions"
         )
 
-    has_source = bool(req.source_text and req.source_text.strip()) or bool(req.source_media)
+    has_source = bool(req.source_text and req.source_text.strip()) or bool(
+        req.source_media
+    )
     if (
         not req.source_lang
         or not req.source_lang.strip()

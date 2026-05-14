@@ -1,5 +1,4 @@
 import asyncio
-import base64
 
 import httpx
 import lara_sdk
@@ -32,7 +31,7 @@ NAME_TO_CODE_LARA = {
 def translate_google(text: str, src_lang: str, tgt_lang: str) -> str:
     source_code = NAME_TO_CODE_GOOGLE.get(src_lang.lower(), None)
     target_code = NAME_TO_CODE_GOOGLE.get(tgt_lang.lower(), None)
-    if source_code is None or target_code is None:
+    if source_code is None or target_code is None or not text:
         return None
 
     return GoogleTranslator(source=source_code, target=target_code).translate(text)
@@ -61,7 +60,7 @@ async def translate_mymemory(text: str, src_lang: str, tgt_lang: str) -> str:
 async def translate_lara(text: str, src_lang: str, tgt_lang: str) -> str:
     source_code = NAME_TO_CODE_LARA.get(src_lang.lower(), None)
     target_code = NAME_TO_CODE_LARA.get(tgt_lang.lower(), None)
-    if source_code is None or target_code is None:
+    if source_code is None or target_code is None or not text:
         return None
 
     resp = await asyncio.to_thread(
@@ -101,66 +100,84 @@ async def verify_llm(source_text: str, translation: str, rule: str) -> bool:
         return "pass" in text
 
 
-async def translate_gemini2_5flash(text: str, src_lang: str, tgt_lang: str) -> str:
-    prompt = f"Translate the following text from {src_lang} to {tgt_lang}. Output only the translation and nothing else:\n{text}"
-    return await call_llm(prompt, model="google/gemini-2.5-flash")
+async def translate_openrouter(
+    text: str, src_lang: str, tgt_lang: str, model: str, source_media: str = None
+) -> str:
+    if not source_media:
+        prompt = f"Translate the following text from {src_lang} to {tgt_lang}. Output only the translation and nothing else:\n{text}"
+        return await call_llm(prompt, model=model)
 
+    if not source_media.startswith("data:") or "," not in source_media:
+        raise ValueError(
+            "Invalid source_media format: must start with 'data:' and contain a comma"
+        )
 
-async def translate_gemma4(text: str, src_lang: str, tgt_lang: str) -> str:
-    prompt = f"Translate the following text from {src_lang} to {tgt_lang}. Output only the translation and nothing else:\n{text}"
-    return await call_llm(prompt, model="google/gemma-4-31b-it")
+    header, base64_data = source_media.split(",", 1)
+    mime = header[5:].split(";", 1)[0]
+    has_audio = "audio" in mime
+    has_image = "image" in mime
+    if len(base64_data) > 1024 * 1024:
+        raise ValueError("Media data too large (max 1MB)")
 
-
-async def translate_llama4(text: str, src_lang: str, tgt_lang: str) -> str:
-    prompt = f"Translate the following text from {src_lang} to {tgt_lang}. Output only the translation and nothing else:\n{text}"
-    return await call_llm(prompt, model="meta-llama/llama-4-scout:nitro")
-
-
-async def translate_gpt4p1nano(text: str, src_lang: str, tgt_lang: str) -> str:
-    prompt = f"Translate the following text from {src_lang} to {tgt_lang}. Output only the translation and nothing else:\n{text}"
-    return await call_llm(prompt, model="openai/gpt-4.1-nano")
-
-
-async def translate_gemini25flash_audio(file_bytes: bytes, suffix: str, src_lang: str, tgt_lang: str, source_text: str = "") -> str:
-    if OPENROUTER_CLIENT is None:
-        raise ValueError("OPENROUTER_API_KEY is not configured")
-    if source_text.strip():
+    if text:
+        context_type = "audio" if has_audio else "image"
         prompt = (
             f"Translate the following text from {src_lang} to {tgt_lang}. "
-            f"Use the audio as additional context. "
-            f"Output only the translation and nothing else.\nText: {source_text}"
+            f"Use the provided {context_type} as additional context. "
+            f"Output only the translation and nothing else:\n{text}"
         )
     else:
-        prompt = f"Translate the speech in this audio from {src_lang} to {tgt_lang}. Output only the translation and nothing else."
-    fmt = "mp3" if suffix == ".mp3" else "wav"
+        context_type = "audio" if has_audio else "image"
+        prompt = f"Translate the provide {context_type} from {src_lang} to {tgt_lang}. Output only the textual translation and nothing else."
+
+    content = [{"type": "text", "text": prompt}]
+    if has_audio:
+        content.append(
+            {
+                "type": "input_audio",
+                "input_audio": {
+                    "data": base64_data,
+                    "format": mime.split("/")[1],
+                },
+            }
+        )
+    elif has_image:
+        content.append({"type": "image_url", "image_url": {"url": source_media}})
+
     response = await OPENROUTER_CLIENT.chat.send_async(
-        model="google/gemini-2.5-flash",
-        messages=[{"role": "user", "content": [
-            {"type": "text", "text": prompt},
-            {"type": "input_audio", "input_audio": {"data": base64.b64encode(file_bytes).decode(), "format": fmt}},
-        ]}],
+        model=model,
+        messages=[{"role": "user", "content": content}],
     )
     return response.choices[0].message.content
 
 
-async def translate_gemini25flash_image(file_bytes: bytes, suffix: str, src_lang: str, tgt_lang: str, source_text: str = "") -> str:
-    if OPENROUTER_CLIENT is None:
-        raise ValueError("OPENROUTER_API_KEY is not configured")
-    if source_text.strip():
-        prompt = (
-            f"Translate the following text from {src_lang} to {tgt_lang}. "
-            f"Use the image as additional context. "
-            f"Output only the translation and nothing else.\nText: {source_text}"
-        )
-    else:
-        prompt = f"Translate the text in this image from {src_lang} to {tgt_lang}. Output only the translation and nothing else."
-    mime = {"png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg"}.get(suffix.lstrip("."), "image/jpeg")
-    data_url = f"data:{mime};base64,{base64.b64encode(file_bytes).decode()}"
-    response = await OPENROUTER_CLIENT.chat.send_async(
-        model="google/gemini-2.5-flash",
-        messages=[{"role": "user", "content": [
-            {"type": "text", "text": prompt},
-            {"type": "image_url", "image_url": {"url": data_url}},
-        ]}],
+async def translate_gemini2_5flash(
+    text: str, src_lang: str, tgt_lang: str, source_media: str = None
+) -> str:
+    return await translate_openrouter(
+        text, src_lang, tgt_lang, "google/gemini-2.5-flash", source_media
     )
-    return response.choices[0].message.content
+
+
+async def translate_gemma4(
+    text: str, src_lang: str, tgt_lang: str, source_media: str = None
+) -> str:
+    return await translate_openrouter(
+        text, src_lang, tgt_lang, "google/gemma-4-31b-it", source_media
+    )
+
+
+async def translate_llama4(
+    text: str, src_lang: str, tgt_lang: str, source_media: str = None
+) -> str:
+    return await translate_openrouter(
+        text, src_lang, tgt_lang, "meta-llama/llama-4-scout:nitro", source_media
+    )
+
+
+async def translate_gpt4p1nano(
+    text: str, src_lang: str, tgt_lang: str, source_media: str = None
+) -> str:
+    return await translate_openrouter(
+        text, src_lang, tgt_lang, "openai/gpt-4.1-nano", source_media
+    )

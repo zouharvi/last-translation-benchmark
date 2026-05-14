@@ -114,44 +114,15 @@ export function getMe() {
     return apiCall<User>('GET', 'api/me');
 }
 
-export function translate(text: string, source_lang: string, target_lang: string) {
+export function translate(text: string, source_lang: string, target_lang: string, source_media?: string) {
     return apiCall<{
         results: Array<{ api: string; translation: string | null; error: string | null }>;
         quota_used: number;
         quota: number;
-    }>('POST', 'api/translate-submission', { text, source_lang, target_lang });
+    }>('POST', 'api/translate-submission', { text, source_lang, target_lang, source_media });
 }
 
-export function translateMedia(file: File, source_lang: string, target_lang: string, source_text: string = ''): Promise<{
-    translation: string;
-    media_data: string;
-    quota_used: number;
-    quota: number;
-}> {
-    const token = getCookie('ltb_token') ?? '';
-    const form = new FormData();
-    form.append('file', file);
-    form.append('source_lang', source_lang);
-    form.append('target_lang', target_lang);
-    form.append('source_text', source_text);
-    return fetch('api/translate-media', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: form,
-    }).then(async r => {
-        const json = await r.json();
-        if (!r.ok) {
-            const detail = (json as { detail?: unknown }).detail;
-            if (typeof detail === 'string') throw detail;
-            if (Array.isArray(detail)) throw detail.map((d: { msg?: string; loc?: unknown[] }) => {
-                const field = Array.isArray(d.loc) ? String(d.loc[d.loc.length - 1]) : '';
-                return field ? `${field}: ${d.msg}` : (d.msg ?? JSON.stringify(d));
-            }).join('; ');
-            throw JSON.stringify(detail) ?? 'Request failed';
-        }
-        return json;
-    });
-}
+
 
 export function verify(
     source_text: string,

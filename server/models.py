@@ -7,6 +7,7 @@ class TranslateReq(BaseModel):
     text: str
     source_lang: str = "en"
     target_lang: str = "de"
+    source_media: Optional[str] = None
 
 class Rule(BaseModel):
     type: str  # "llm", "contains", "not_contains"

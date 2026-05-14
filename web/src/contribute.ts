@@ -2,7 +2,7 @@ import './style.css';
 import $ from 'jquery';
 import {
     getMe, getCookie,
-    translate, translateMedia, verify, createSubmission, updateSubmission, getSubmissions, addComment, renderRoleSwitcher,
+    translate, verify, createSubmission, updateSubmission, getSubmissions, addComment, renderRoleSwitcher,
     User, Submission, Rule,
 } from './api';
 
@@ -17,7 +17,6 @@ let ownVerified: boolean | null = null;
 let editingSubmissionId: number | null = null;
 let allMySubmissions: Submission[] = [];
 let rules: Rule[] = [{ type: 'llm', value: '' }];
-let inputMode: 'text' | 'audio' | 'image' = 'text';
 let lastMediaData: string | null = null;
 
 
@@ -56,30 +55,37 @@ $(async () => {
     renderRules();
 
     // Input type toggle
-    setInputMode('text');
-    $('.input-type-btn').on('click', function () {
-        const type = $(this).data('type') as 'text' | 'media';
-        if (type === 'text') setInputMode('text');
-        else setInputMode('media');
+    $('#add-media-btn').on('click', () => {
+        const file = ($('#src-file')[0] as HTMLInputElement).files?.[0];
+        if (file || lastMediaData) {
+            ($('#src-file')[0] as HTMLInputElement).value = '';
+            lastMediaData = null;
+            $('#media-preview').empty();
+            $('#add-media-btn').text('Add image/audio context');
+        } else {
+            $('#src-file').trigger("click");
+        }
     });
 
-    // Local file preview (no upload needed)
     $('#src-file').on('change', function () {
         const file = (this as HTMLInputElement).files?.[0];
-        $('#media-preview').empty();
         if (!file) return;
+        $('#media-preview').empty();
+
         const isAudio = /\.(mp3|wav)$/i.test(file.name);
-        inputMode = isAudio ? 'audio' : 'image';
         const reader = new FileReader();
         reader.onload = (e) => {
             const dataUrl = String(e.target?.result ?? '');
-            $('#media-preview').html(isAudio
-                ? `<audio controls src="${dataUrl}" style="width:100%;display:block"></audio>`
-                : `<img src="${dataUrl}" style="max-width:66%;display:block;border-radius:4px">`
-            );
+            lastMediaData = dataUrl;
+            const mediaTag = isAudio ? `<audio controls src="${dataUrl}"></audio>` : `<img src="${dataUrl}">`;
+
+            $('#media-preview').html(mediaTag);
+            $('#add-media-btn').text('Remove audio/image context');
         };
         reader.readAsDataURL(file);
     });
+
+
 
     $('#add-rule-btn').on('click', () => {
         if (rules.length >= 10) return;
@@ -106,43 +112,20 @@ $(async () => {
     });
 
 
-    // Auto-translate
+    // Translate by server
     $('#tr-btn').on('click', async () => {
         const srcLang = String($('#src-lang').val());
         const tgtLang = String($('#tgt-lang').val());
         $('#tr-btn').prop('disabled', true);
         $('#tr-status').text('Translating…');
         try {
-            let results: Array<{ api: string; translation: string | null; error: string | null }>;
-            let quota_used: number, quota: number;
+            const text = String($('#src-text').val() ?? '').trim();
+            const data = await translate(text, srcLang, tgtLang, lastMediaData ?? undefined);
 
-            if (inputMode === 'text') {
-                const text = String($('#src-text').val() ?? '').trim();
-                const data = await translate(text, srcLang, tgtLang);
-                results = data.results;
-                quota_used = data.quota_used;
-                quota = data.quota;
-            } else {
-                const file = ($('#src-file')[0] as HTMLInputElement).files?.[0];
-                if (!file) { $('#tr-status').text('✗ No file selected'); return; }
-                const maxMB = inputMode === 'audio' ? 25 : 10;
-                if (file.size > maxMB * 1024 * 1024) {
-                    $('#tr-status').text(`✗ File too large (max ${maxMB}MB)`);
-                    return;
-                }
-                const srcText = String($('#src-text').val() ?? '').trim();
-                const data = await translateMedia(file, srcLang, tgtLang, srcText);
-                lastMediaData = data.media_data;
-                results = [{ api: 'Gemini 2.5 Flash', translation: data.translation, error: null }];
-                quota_used = data.quota_used;
-                quota = data.quota;
-                $('#media-status').text('');
-            }
-
-            lastResults = results;
-            currentUser!.quota_used = quota_used;
-            currentUser!.quota = quota;
-            renderStats(quota_used, quota, currentUser!.total_accepted);
+            lastResults = data.results;
+            currentUser!.quota_used = data.quota_used;
+            currentUser!.quota = data.quota;
+            renderStats(data.quota_used, data.quota, currentUser!.total_accepted);
             renderApiResults();
             lastResults.forEach(r => r.verified = null);
             ownVerified = null;
@@ -295,14 +278,15 @@ $(async () => {
         if (!sub) return;
 
         editingSubmissionId = id;
-        setInputMode(sub.source_media ? 'media' : 'text');
         if (sub.source_media) {
             const isAudio = /^data:audio/.test(sub.source_media);
-            inputMode = isAudio ? 'audio' : 'image';
-            $('#media-preview').html(isAudio
-                ? `<audio controls src="${sub.source_media}" style="width:100%;display:block"></audio>`
-                : `<img src="${sub.source_media}" style="max-width:66%;display:block;border-radius:4px">`
-            );
+            const mediaTag = isAudio ? `<audio controls src="${sub.source_media}"></audio>` : `<img src="${sub.source_media}">`;
+            $('#media-preview').html(mediaTag);
+            $('#add-media-btn').text('Remove image/audio');
+        } else {
+            lastMediaData = null;
+            $('#media-preview').empty();
+            $('#add-media-btn').text('Add image/audio');
         }
         $('#src-text').val(sub.source_text);
         $('#src-lang').val(sub.source_lang);
@@ -375,31 +359,12 @@ $(async () => {
         $('#pass-count').text('');
         loadMySubmissions();
         setTimeout(() => $('#submit-status').html(''), 3000);
+
+        $('#media-preview').empty();
+        $('#add-media-btn').text('Add image/audio context');
     }
 
-    function setInputMode(mode: 'text' | 'media' | 'audio' | 'image') {
-        if (mode === 'text') inputMode = 'text';
-        // audio/image set by file change handler; 'media' waits for file selection
-        lastMediaData = null;
-        $('#media-preview').empty();
-        $('.input-type-btn').css('font-weight', 'normal');
-        if (mode === 'text') {
-            $(`.input-type-btn[data-type="text"]`).css('font-weight', 'bold');
-            $('#media-file-label').hide();
-            $('#media-input').hide();
-            $('#src-file').removeAttr('accept');
-            ($('#src-file')[0] as HTMLInputElement).value = '';
-            $('#input-label').text('Input');
-            $('#src-text').show();
-        } else {
-            $(`.input-type-btn[data-type="media"]`).css('font-weight', 'bold');
-            $('#media-file-label').show();
-            $('#media-input').show();
-            $('#src-file').attr('accept', '.mp3,.wav,.png,.jpg,.jpeg');
-            $('#input-label').text('Source text (optional)');
-            $('#src-text').show();
-        }
-    }
+
 });
 
 // ---- Stats bar ----

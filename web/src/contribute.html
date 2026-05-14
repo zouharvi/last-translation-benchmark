@@ -93,7 +93,19 @@
       flex: 1;
     }
 
-    /* .lang-input is now handled by global styles */
+    #media-preview img {
+      max-width: 300px;
+      max-height: 300px;
+      display: block;
+      border-radius: 4px;
+      margin-top: 8px;
+    }
+
+    #media-preview audio {
+      width: 100%;
+      display: block;
+      margin-top: 8px;
+    }
   </style>
 </head>
 
@@ -142,25 +154,20 @@
             </div>
           </div>
 
-          <div style="display: flex; gap: 6px; margin-bottom: 8px;">
-            <button class="btn btn-secondary input-type-btn" data-type="text" style="padding: 3px 10px; font-size: 0.85em;">Text</button>
-            <button class="btn btn-secondary input-type-btn" data-type="audio" style="padding: 3px 10px; font-size: 0.85em;">Audio</button>
-            <button class="btn btn-secondary input-type-btn" data-type="image" style="padding: 3px 10px; font-size: 0.85em;">Image</button>
-          </div>
-
-          <label for="src-file" id="media-file-label" style="display: none;"></label>
-          <div id="media-input" style="display: none;">
-            <input type="file" id="src-file" style="margin-bottom: 8px;">
-            <div id="media-preview" style="margin-bottom: 8px;"></div>
-            <div id="media-status" style="font-size: 0.85em; color: #64748b;"></div>
-          </div>
           <label for="src-text" id="input-label">Input</label>
           <textarea id="src-text" placeholder="Enter the source text…" style="min-height: 200px;"></textarea>
 
+          <input type="file" id="src-file" style="display: none;" accept=".mp3,.wav,.png,.jpg,.jpeg">
+          <div id="media-preview"></div>
+
           <div
-            style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
-            <span id="tr-status" style="font-size:0.85em;color:#64748b"></span>
-            <button class="btn btn-secondary" id="tr-btn">⟳ Translate by all models</button>
+            style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+            <button id="add-media-btn" class="btn btn-secondary" style="padding: 3px 10px; font-size: 0.85em;">
+              Add image/audio context</button>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span id="tr-status" style="font-size:0.85em;color:#64748b"></span>
+              <button class="btn btn-secondary" id="tr-btn">⟳ Translate by all models</button>
+            </div>
           </div>
 
 
