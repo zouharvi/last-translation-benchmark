@@ -246,8 +246,7 @@ async def translate_submission(req: TranslateReq, user=Depends(get_current_user)
             status_code=403, detail="Only contributors can use translation quota"
         )
 
-    has_source = bool(req.text and req.text.strip()) or bool(req.source_media)
-    if not has_source:
+    if not req.text and not req.source_media:
         raise HTTPException(
             status_code=400, detail="Enter source text or add media context first"
         )
@@ -335,7 +334,9 @@ async def verify_submission(req: VerifyReq, user=Depends(get_current_user)):
     if not req.verification_rules:
         return {"results": [True] * len(req.translations)}
 
-    async def _verify_single(source_text: str, translation: str) -> bool:
+    async def _verify_single(
+        source_text: str, translation: str, source_media: str = None
+    ) -> bool:
         for rule in req.verification_rules:
             if rule.type == "contains":
                 if rule.value not in translation:
@@ -345,7 +346,9 @@ async def verify_submission(req: VerifyReq, user=Depends(get_current_user)):
                     return False
             elif rule.type == "llm":
                 try:
-                    res = await verify_llm(req.source_text, translation, rule.value)
+                    res = await verify_llm(
+                        req.source_text, translation, rule.value, source_media
+                    )
                     if not res:
                         return False
                 except Exception as exc:
@@ -353,7 +356,10 @@ async def verify_submission(req: VerifyReq, user=Depends(get_current_user)):
         return True
 
     results = await asyncio.gather(
-        *[_verify_single(req.source_text, t) for t in req.translations]
+        *[
+            _verify_single(req.source_text, t, req.source_media)
+            for t in req.translations
+        ]
     )
     return {"results": results}
 

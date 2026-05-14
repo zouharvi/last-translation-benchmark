@@ -77,7 +77,7 @@ $(async () => {
         reader.onload = (e) => {
             const dataUrl = String(e.target?.result ?? '');
             lastMediaData = dataUrl;
-            const mediaTag = isAudio ? `<audio controls src="${dataUrl}"></audio>` : `<img src="${dataUrl}">`;
+            const mediaTag = isAudio ? `<audio class="context_audio" controls src="${dataUrl}"></audio>` : `<img class="context_image" src="${dataUrl}">`;
 
             $('#media-preview').html(mediaTag);
             $('#add-media-btn').text('Remove audio/image context');
@@ -155,7 +155,7 @@ $(async () => {
         $('#verify-result').html('<span style="color:#64748b;font-size:0.9em">Verifying...</span>');
         try {
             const source_text = String($('#src-text').val() ?? '').trim();
-            const data = await verify(source_text, translations, rules);
+            const data = await verify(source_text, translations, rules, lastMediaData ?? undefined);
 
             let resultIdx = 0;
             let pass = 0;
@@ -237,8 +237,7 @@ $(async () => {
         }
 
         try {
-            const editingSub = editingSubmissionId !== null ? allMySubmissions.find(s => s.id === editingSubmissionId) : null;
-            const source_media = lastMediaData ?? editingSub?.source_media ?? undefined;
+            const source_media = lastMediaData ?? undefined;
             if (editingSubmissionId !== null) {
                 await updateSubmission(editingSubmissionId, { source_text, source_media, source_lang, target_lang, verification_rules: rules, translations });
                 $('#submit-status').html('<span class="msg-ok">✓ Updated!</span>');
@@ -279,8 +278,9 @@ $(async () => {
 
         editingSubmissionId = id;
         if (sub.source_media) {
+            lastMediaData = sub.source_media;
             const isAudio = /^data:audio/.test(sub.source_media);
-            const mediaTag = isAudio ? `<audio controls src="${sub.source_media}"></audio>` : `<img src="${sub.source_media}">`;
+            const mediaTag = isAudio ? `<audio class="context_audio" controls src="${sub.source_media}"></audio>` : `<img class="context_image" src="${sub.source_media}">`;
             $('#media-preview').html(mediaTag);
             $('#add-media-btn').text('Remove image/audio');
         } else {
@@ -441,8 +441,8 @@ function renderMySug(s: Submission): string {
     const isAudio = s.source_media && /^data:audio/.test(s.source_media);
     const mediaHtml = s.source_media
         ? (isAudio
-            ? `<audio controls src="${s.source_media}" style="width:100%;margin-bottom:4px"></audio>`
-            : `<img src="${s.source_media}" style="max-width:66%;margin-bottom:4px;border-radius:4px">`)
+            ? `<audio controls src="${s.source_media}" class="context_audio"></audio>`
+            : `<img src="${s.source_media}" class="context_image">`)
         : '';
 
     const comments = s.comments ?? [];

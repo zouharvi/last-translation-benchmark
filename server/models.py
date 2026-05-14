@@ -17,6 +17,7 @@ class VerifyReq(BaseModel):
     source_text: str
     translations: list[str]
     verification_rules: list[Rule]
+    source_media: Optional[str] = None
 
 class TranslationEntry(BaseModel):
     api: str

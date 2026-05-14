@@ -604,3 +604,17 @@ textarea {
   padding: 3px;
   padding-left: 6px;
 }
+
+.context_image {
+  margin-bottom: 6px;
+  border-radius: 4px;
+  max-width: 300px;
+  max-height: 300px;
+  display: block;
+}
+
+.context_audio {
+  width: 100%;
+  margin-bottom: 6px;
+  display: block;
+}

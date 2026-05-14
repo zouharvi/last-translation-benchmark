@@ -152,8 +152,8 @@ function renderSource(s: Submission): string {
     let out = '';
     if (s.source_media) {
         out += isAudio
-            ? `<audio controls src="${s.source_media}" style="width:100%;margin-bottom:6px"></audio>`
-            : `<img src="${s.source_media}" style="max-width:66%;margin-bottom:6px;border-radius:4px">`;
+            ? `<audio controls src="${s.source_media}" class="context_audio"></audio>`
+            : `<img src="${s.source_media}" class="context_image">`;
     }
     if (s.source_text) out += escHtml(s.source_text);
     return out;

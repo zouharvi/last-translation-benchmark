@@ -128,9 +128,10 @@ export function verify(
     source_text: string,
     translations: string[],
     verification_rules: Rule[],
+    source_media?: string,
 ) {
     return apiCall<{ results: boolean[]; detail: string }>(
-        'POST', 'api/verify-submission', { source_text, translations, verification_rules }
+        'POST', 'api/verify-submission', { source_text, translations, verification_rules, source_media }
     );
 }
 
