@@ -37,7 +37,7 @@ $(async () => {
     });
 
     // Language / user filter selects
-    $('#filter-lang, #filter-user').on('change', renderList);
+    $('#filter-source-lang, #filter-target-lang, #filter-user').on('change', renderList);
 
     // Refresh
     $('#refresh-btn').on('click', loadSubmissions);
@@ -118,12 +118,16 @@ async function loadSubmissions(): Promise<void> {
 }
 
 function populateFilters(): void {
-    const langVal = String($('#filter-lang').val() ?? '');
+    const sourceLangVal = String($('#filter-source-lang').val() ?? '');
+    const targetLangVal = String($('#filter-target-lang').val() ?? '');
     const userVal = String($('#filter-user').val() ?? '');
-    const langs = [...new Set(allSugs.map(s => `${s.source_lang}→${s.target_lang}`))];
+    const sourceLangs = [...new Set(allSugs.map(s => s.source_lang))];
+    const targetLangs = [...new Set(allSugs.map(s => s.target_lang))];
     const users = [...new Set(allSugs.map(s => s.username))];
-    $('#filter-lang').html('<option value="">All Languages</option>' +
-        langs.map(l => `<option value="${l}"${l === langVal ? ' selected' : ''}>${escHtml(l)}</option>`).join(''));
+    $('#filter-source-lang').html('<option value="">All Source Languages</option>' +
+        sourceLangs.map(l => `<option value="${l}"${l === sourceLangVal ? ' selected' : ''}>${escHtml(l)}</option>`).join(''));
+    $('#filter-target-lang').html('<option value="">All Target Languages</option>' +
+        targetLangs.map(l => `<option value="${l}"${l === targetLangVal ? ' selected' : ''}>${escHtml(l)}</option>`).join(''));
     $('#filter-user').html('<option value="">All Users</option>' +
         users.map(u => `<option value="${u}"${u === userVal ? ' selected' : ''}>${escHtml(u)}</option>`).join(''));
 }
@@ -133,9 +137,11 @@ function renderList(): void {
     if (curFilter === 'pending') list = list.filter(s => s.points < 0);
     else if (curFilter === 'scored') list = list.filter(s => s.points >= 0);
 
-    const langFilter = String($('#filter-lang').val() ?? '');
+    const sourceLangFilter = String($('#filter-source-lang').val() ?? '');
+    const targetLangFilter = String($('#filter-target-lang').val() ?? '');
     const userFilter = String($('#filter-user').val() ?? '');
-    if (langFilter) list = list.filter(s => `${s.source_lang}→${s.target_lang}` === langFilter);
+    if (sourceLangFilter) list = list.filter(s => s.source_lang === sourceLangFilter);
+    if (targetLangFilter) list = list.filter(s => s.target_lang === targetLangFilter);
     if (userFilter) list = list.filter(s => s.username === userFilter);
 
     const $el = $('#sen-list');
@@ -194,4 +200,3 @@ function renderSug(s: Submission): string {
         <div class="sug-scoring">${btns}</div>
     </div>`;
 }
-
