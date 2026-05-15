@@ -476,9 +476,6 @@ async def add_comment(sid: int, req: CommentReq, user=Depends(get_current_user))
                 }
             )
 
-    if not is_reviewer and not submission["comments"]:
-        raise HTTPException(status_code=403, detail="Reviewer must comment first")
-
     submission["comments"].append(
         {
             "author": user["username"],

@@ -372,14 +372,12 @@ function renderMySug(s: Submission): string {
     const comments = s.comments ?? [];
     const threadHtml = renderCommentThread(comments, 'contributor');
 
-    const replyHtml = comments.length
-        ? `<div class="comment-reply-row">
+    const replyHtml = `<div class="comment-reply-row">
             <textarea id="contrib-reply-${s.id}" class="comment-input" placeholder="Reply…" rows="2"></textarea>
             <div style="text-align:right;margin-top:4px">
                 <button class="contrib-send-btn score-btn" style="background:#64748b;color:#fff" data-id="${s.id}">Reply</button>
             </div>
-           </div>`
-        : '';
+           </div>`;
 
     return `<div class="sug-mini">
         <div class="sug-mini-meta">#${s.id} &middot; ${s.source_lang}&rarr;${s.target_lang} &middot; ${fmtDate(s.created_at)}</div>
@@ -398,4 +396,3 @@ function renderMySug(s: Submission): string {
         ${replyHtml}
     </div>`;
 }
-
