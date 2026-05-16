@@ -279,7 +279,8 @@ async def translate_submission(req: TranslateReq, user=Depends(get_current_user)
                 res = await asyncio.to_thread(func, *args)
             return {"api": name, "translation": res, "error": None}
         except Exception as exc:
-            if "No endpoint found that support input audio." in str(exc):
+            err = str(exc).lower()
+            if "endpoint found" in err and "input audio" in err:
                 return {"api": name, "translation": None, "error": None}
             return {"api": name, "translation": None, "error": str(exc)}
 
