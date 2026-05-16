@@ -10,7 +10,6 @@ class TranslateReq(BaseModel):
     source_media: Optional[str] = None
 
 class Rule(BaseModel):
-    type: str  # "llm", "contains", "not_contains"
     value: str
 
 class VerifyReq(BaseModel):

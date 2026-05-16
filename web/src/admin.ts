@@ -57,8 +57,8 @@ function renderTable(users: AdminUser[]): void {
               <div class="action-btns">
                 <a class="act-btn act-copy" data-uid="${u.id}" title="Login link" href="${link}">🔗</a>
                 ${(() => {
-                const subject = 'Your Last Translation Benchmark Login Link';
-                const body = `Dear ${u.name || u.username},\n\nThank you for your interest in Last Translation Benchmark. You can submit hard-to-translate inputs via this link (do not share with anyone):\n\n${link}\n\nPlease make sure that you read the instructions in detail.\nLet us know if you have any questions or need to increase your submission quota.\n\nOn behalf of LTB organizers,\n${adminName}`;
+                const subject = 'Last Translation Benchmark - Login';
+                const body = `Dear ${u.name || u.username},\n\nThank you for your interest in Last Translation Benchmark. You can submit hard-to-translate inputs via this link:\n\n${link}\n\nPlease make sure that you read the instructions in detail.\nLet us know if you have any questions or need to increase your submission quota.\n\nOn behalf of LTB organizers,\n${adminName}`;
                 return `<a class="act-btn act-email-link" data-uid="${u.id}" title="Send magic link via email" target="_blank" href="mailto:${encodeURIComponent(u.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}" style="background:#e0e7ff;color:#4338ca;text-decoration:none;">📧</a>`;
             })()}
                 <button class="act-btn act-rotate" data-uid="${u.id}" title="Rotate magic token">🔄</button>

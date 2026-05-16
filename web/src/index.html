@@ -54,6 +54,22 @@
       margin-left: 5px;
       margin-right: 5px;
     }
+
+    #role-buttons>a {
+      margin-bottom: 10px;
+      display: inline-block;
+    }
+
+    .role-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .role-actions .btn {
+      margin: 0;
+    }
   </style>
 </head>
 
@@ -68,7 +84,7 @@
       </p>
       <p>
         Contributors submit these inputs alongside machine translation outputs and a verification rule.
-        Approved contributions are eligible for inclusion in upcoming research publications.
+        With 10 approved submissions, contributors are eligible for inclusion in the upcoming research publication.
       </p>
 
       <div id="cta-info-unauth" class="cta-info">
@@ -86,15 +102,21 @@
       <div id="auth-error" class="auth-error">
         Invalid or expired magic link. Please request a new one from the administrators.
       </div>
+
+      <button id="show-instructions-btn" class="btn btn-instructions" style="margin-top: 20px;">📖 Show guidelines for
+        contributing &
+        reviewing</button>
     </div>
   </div>
 
   <div class="container" style="text-align: center; margin-top: -60px;">
-    <div style="margin-bottom: 16px;">
-      <button id="show-instructions-btn" class="btn btn-instructions">📖 Show guidelines for contributing &
-        reviewing</button>
-    </div>
     <div id="instructions-box" style="text-align: left;"></div>
+  </div>
+  <div class="hero card" style="padding: 20px 0px;">
+    Reach out to <a href="mailto:vzouhar+ltb@ethz.ch"
+      style="color: black; margin: 0; text-decoration: underline;">vzouhar+ltb@ethz.ch</a> with
+    inquiries<br>or file bug reports on <a href="https://github.com/zouharvi/last-translation-benchmark"
+      style="color: black; margin: 0; text-decoration: underline;">github.com/zouharvi/last-translation-benchmark</a>
   </div>
 </body>
 

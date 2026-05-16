@@ -22,22 +22,27 @@ function showRoleButtons(user: User): void {
     $('#cta-info-unauth').hide();
 
     const container = $('#role-buttons');
+    const actions = $('<div class="role-actions"></div>');
 
     container.append(`<span>Hello ${user.name} (${user.username}) from ${user.affiliation}!</span><br><br>`);
 
     if (user.roles.includes('contributor')) {
-        container.append(`<a href="contribute" class="btn btn-secondary">✍️&nbsp;Contribute</a>`);
+        actions.append('<a href="contribute" class="btn btn-secondary">✍️&nbsp;Contribute</a>');
     }
     if (user.roles.includes('reviewer')) {
-        container.append(`<a href="review" class="btn btn-secondary">🔍&nbsp;Review</a>`);
+        actions.append('<a href="review" class="btn btn-secondary">🔍&nbsp;Review</a>');
     }
     if (user.roles.includes('admin')) {
-        container.append(`<a href="admin" class="btn btn-secondary">⚙️&nbsp;Admin</a>`);
+        actions.append('<a href="admin" class="btn btn-secondary">⚙️&nbsp;Admin</a>');
     }
+
+    actions.append('<a href="profile" class="btn btn-secondary">📇&nbsp;Profile</a>');
 
     const logoutBtn = $('<button class="btn btn-secondary">Logout</button>');
     logoutBtn.on('click', logout);
-    container.append(logoutBtn);
+    actions.append(logoutBtn);
+
+    container.append(actions);
 
     container.css('display', 'block');
 }

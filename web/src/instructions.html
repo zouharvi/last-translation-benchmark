@@ -8,151 +8,68 @@
 
 <body>
   <h2>Instructions for Contributors</h2>
-  <p>Your goal is to find a <strong>source text</strong> in any <strong>source language</strong> and <strong>target
+  <p>Your goal is to find a <strong>input</strong> in any <strong>source language</strong> and <strong>target
       language</strong> where major AI translation tools (e.g. ChatGPT, Google Translate) produce an <strong>inadequate
       translation</strong>, that can be <strong>verified with a clear rule</strong>.</p>
-  <h2>Source text, target text, and verification rules</h2>
-  <p>The source text can be plain text, an image, a video, or a speech snippet.</p>
-  <ol>
-    <li><strong>Domain or topic</strong>: There are no restrictions on what type of text it is or what it talks about.
-      For example, it may be a piece of news, a social media post containing typical slang and informal usage, poetry,
-      something you would see on a signpost, something that would be said in a lecture, the story your grandma told you,
-      the instructions on an annoying government website, your favourite recipe, or anything else. Think broad! Your
-      text can be anything you could imagine being said in some context by someone - for example, the phrase “colourless
-      green ideas”, while meaningless, is still a valid English utterance that someone (like Chomsky) could use, and
-      should be translated correctly. Note that you can write the source text yourself, as well as try something you
-      found in the wild. If you try a text and notice a clear issue, bingo.</li>
-    <li><strong>Script</strong>: If native speakers of your language use more than one script to write it in various
-      contexts (e.g. in official or unofficial contexts), your source text can also use any script, provided that your
-      choice makes sense from a naturalness perspective. For languages without a standardized spelling depending on the
-      script, it’s acceptable to use spelling that you or other native speakers would naturally use, even if that varies
-      between speakers.</li>
-    <li><strong>Slang and spelling</strong>: Use what makes sense for the context of your text! Slang and alternative
-      spelling (“tomorrow” –> “tmrrw”) are acceptable.</li>
-    <li><strong>Code-switching</strong>: If native speakers in your language naturally mix languages in certain contexts
-      (e.g. informal texts), this is acceptable too as long as it is realistic given the context of your source text.
-    </li>
-    <li><strong>Length</strong> : TODO <strong>Length limit needed</strong></li>
-    <li><strong>Format</strong>: TODO</li>
-    <li><strong>Target text</strong>: The target text in the target language is your provided example of one passable
-      translation. Note that there may be many such translations that are rephrasings of one another; you certainly
-      don’t have to list all. Naturally, it should not have the issues you spotted above.</li>
-    <li><strong>Keep it fair</strong>: <span style="text-decoration: underline">This is crucial!</span>. A native
-      speaker should be able to understand your text. If the native speaker were a trained translator, they should be
-      able to avoid the issues you found in the machine translation tools.</li>
-  </ol>
-  <h2>What counts as a mistranslation?</h2>
-  <ol>
-    <li>The mistranslation should be a <span style="text-decoration: underline">reasonable deficiency or shift in the
-        meaning, grammar, naturalness, conveyed emotion, formality or register, or another such meaningful
-        characteristic</span> of the produced translation. This deficiency may be subtle, as long as it be noticeable
-      and matter to a native speaker. We list different types of deficiencies below.</li>
-    <li>Errors due to inherent ambiguity do not count: If your source text has multiple meanings, and you choose one of
-      them as your target text, but the machine translation tool produces another reasonable interpretation, that is not
-      a valid mistake. A good mental check is: would a native speaker also be reasonably confused as to the intended
-      meaning? Is there enough context to determine what the intended meaning is?</li>
-  </ol>
-  <h2>What’s a good verification rule?</h2>
-  <ol>
-    <li>
-      <p><strong>Rules per text</strong>: A particular source text may have up to K verification rules.</p>
-    </li>
-    <li>
-      <p><strong>Verification rules are targeting tricky things about your source text</strong>. Together, your rules
-        should check for what you think and observe could go wrong with translating it. Note that these should certainly
-        cover the issues you spotted with the systems that you try in our interface, but they do not have to be limited
-        to these issues. Feel free to include a rule for something else you believe is tricky, even though the systems
-        you tried happened to get it right.</p>
-    </li>
-    <li>
-      <p><strong>Format</strong>: A verification rule may have the following format:</p>
-      <ul>
-        <li><strong>LLM prompt</strong>: Write a short instruction for an AI judge, e.g. <em>“Check whether the
-            translation conveys that the speaker feels no inner peace.”</em></li>
-      </ul>
-    </li>
-    <li>
-      <p><strong>Granularity of your rule</strong>: Your verification rule should be specific enough to catch wrong
-        translations but flexible enough to pass any reasonable correct phrasing. Try some correct rephrasings and see
-        if your rule passes them, while still failing various incorrect translations.</p>
-    </li>
-  </ol>
-  <h2>Examples</h2>
-  <h3>Issues</h3>
-  <p><strong>Shift in meaning</strong> Translating something that meant “warm day” as “sunny day” constitutes a shift in
-    meaning. <strong>Shift in grammar</strong> <strong>Shift in emotion conveyed</strong> <strong>Shift in formality or
-      register</strong> Translating something that meant “Pass the sugar, man!” as “Could you please pass the sugar?”
-    <strong>Lack of naturalness</strong> Even if the translation is technically correct, does it feel natural? TODO
-    brainstorm and list other things here.</p>
-  <div><strong>Example:</strong> The Marwadi phrase <em>जिया लागे कोनी</em> is mistranslated by ChatGPT as “nothing else
-    feels worth living for”, but it actually means “I am not at peace.”</div>
-  <h3>Step-by-step</h3>
-  <ol>
-    <li>
-      <p><strong>Select languages</strong>: Set the source and target languages.</p>
-    </li>
-    <li>
-      <p><strong>Paste your source text</strong>: The original text containing the tricky phrase.</p>
-    </li>
-    <li>
-      <p><strong>Add translations</strong>: Paste in the (incorrect) AI translation, and a correct translation for
-        contrast.</p>
-    </li>
-    <li>
-      <p><strong>Set verification rules</strong>: For each rule:</p>
-      <ul>
-        <li>Choose one of two methods: (a) regex or (b) LLM prompt.</li>
-        <li>Choose broadly the type of failure mode it tests among … (“Other” category included)</li>
-      </ul>
-    </li>
-    <li>
-      <p><strong>Test &amp; submit</strong>:Click <strong>✓ Test Verification</strong> to confirm your rule correctly
-        flags the bad translation, then submit.</p>
-    </li>
-  </ol>
-  <h2>Instructions for Reviewers</h2>
-  <p>As a reviewer, your role is to assess whether a submission is a genuine, well-formed example of a difficult but
-    verifiable mistranslation. For each submission, you will see a source text, one or more AI-produced translations, a
-    proposed correct translation, and a verification rule. You should evaluate three things in order.</p>
-  <h3>Is the source text genuinely difficult to translate?</h3>
-  <p>The source text should contain a phrase or expression that is non-trivially hard for AI tools to render correctly.
-    For example, idiomatic expressions, culturally specific references, or poetic language where word-for-word
-    translation misses the meaning.</p>
-  <p>Reject submissions where the source text is straightforward or where any reasonable translation would capture the
-    meaning correctly.</p>
-  <h3>Is the AI translation actually wrong?</h3>
-  <p>The AI translation should make a meaningful error, not just a stylistic difference, but a shift in meaning that a
-    native speaker would notice. A paraphrase that captures the same sentiment is <strong>not</strong> sufficient
-    grounds for rejection; the error should be substantive. If a word or a phrase in the original text has multiple
-    translations and only one is considered correct, it should be absolutely clear from the context.</p>
-  <div><strong>Example:</strong> Translating <em>जिया लागे कोनी</em> as “nothing else feels worth living for” rather
-    than “I am not at peace” is a substantive error, the emotional register and meaning are different, even if the
-    poetic effect feels similar.</div>
-  <h3>Is the verification rule correct and well-formed?</h3>
-  <p>The verification rule must:</p>
+  <h3>Inputs</h3>
   <ul>
-    <li><strong>Correctly classify</strong> the provided AI translation as wrong and the correct translation as right.
-    </li>
-    <li><strong>Be neither too strict nor too loose</strong>: it should accept any reasonable correct translation, not
-      just the exact one provided.</li>
-    <li><strong>Be well-formed</strong>: regex patterns should be valid and unambiguous; LLM prompts should be clear and
-      specific enough for a judge to apply consistently.</li>
+    <li><strong>Topic</strong>: There are no restrictions on what the input (text, image, video, audio) is about. For
+      example, it may be a piece of news, a social media post, website instructions.</li>
+    <li><strong>Realism:</strong> Inputs should remain realistic, so that we are testing model failures where they
+      matter.</li>
+    <li><strong>Perfect translation</strong>: You should also provide a “perfect” translation, which demonstrates that
+      it is possible to translate your input and that it passes your verification rules.</li>
+    <li><strong>What is a mistranslation?</strong> The deficiency in the translation should be noticeable and matter to
+      possible recipients.</li>
+    <li><strong>Keep it fair</strong>: Another human should be able to understand your input and what exactly you meant.
+      See the following example:</li>
   </ul>
-  <p>You may <strong>edit the verification rule</strong> directly if you can see a straightforward improvement that
-    makes it more robust, without changing its intent.</p>
-  <h3>Decisions</h3>
+  <div><strong>Example:</strong><br>- Unacceptable ambiguous input: “We looked for a match.”<br>- Contextualized input:
+    “We wanted to start a fire so we looked for a match.”<br>- Contextualized input: “We wanted to play a game so we
+    looked for a match.”</div>
+  <h3>Verification rules</h3>
+  <ul>
+    <li><strong>Verification rules are targeting tricky things about your input</strong>. Together, your rules should
+      check for what you think and observe could go wrong with translating it. They should certainly cover the issues
+      you spotted with the systems that you try in our interface, but they do not have to be limited to these issues.
+      You can include a rule for something else you believe is tricky, even though the systems you tried happened to get
+      it right.</li>
+    <li><strong>Format</strong>: Write a short instruction for an AI judge, e.g. “Check whether the translation conveys
+      that the speaker feels no inner peace.”. The rule should clearly have a pass/fail conclusion. Alternatively, if
+      you know what you’re doing, you can use hard string-matching rules.</li>
+    <li><strong>Pass rate</strong>: At most two automatic translations can pass your verification.</li>
+    <li><strong>Atomicity of your rule</strong>: Each rule should only be checking for one conceptual issue. If you find
+      yourself listing various separable conditions into a single rule, use multiple rules instead.</li>
+    <li><strong>Granularity of your rule</strong>: Your verification rule should be specific enough to catch wrong
+      translations but flexible enough to pass any reasonable correct phrasing.</li>
+  </ul>
+  <div><strong>Example:</strong> The Marwadi phrase “जिया लागे कोनी” is mistranslated into English by translation tools
+    as “nothing else feels worth living for”, but it actually means “I am not at peace.”<br><strong>Verification
+      rule:</strong> The translation should have the meaning of not being at peace/calm.</div>
+  <div><strong>Example:</strong> The English sentence “What’s the difference between jail and prison?” is translated
+    into Czech by translation tools as “Jaký je rozdíl mezi vězením a vězením?”, which has both “jail” and “prison”
+    translated as the same word. This breaks the meaning of the sentence.<br><strong>Verification rule:</strong> The
+    translation should use two distinct words for “jail” and “prison”.</div>
+  <div><strong>Example:</strong> The English text “Dissatisfied with EACL paper decisions? Fret not and submit your
+    paper with ARR reviews to Multilingual Multicultural Evaluation workshop at EACL.” is translated as “Unzufrieden mit
+    den EACL-Papierentscheidungen? Machen Sie sich keine Sorgen und reichen Sie Ihre Arbeit mit ARR-Rezensionen beim
+    Multilingual Multicultural Evaluation Workshop der EACL ein.” which literally translates “paper” as “a piece of
+    paper (Papier)”.<br><strong>Verification rule:</strong> The word for “paper” should be “Artikel” or English loanword
+    “Paper” but not “Papier”.</div>
+  <h4>Step-by-step</h4>
+  <p>Select languages – Provide your input – Hit <strong>translate</strong> – Write verification rules – Write perfect
+    translation – Hit <strong>verify</strong> – Submit</p>
+  <h2>Instructions for Reviewers</h2>
+  <p>As a reviewer, your role is to assess whether a submission follows the above listed contributor rules regarding
+    scope and format of input, nature of observed deficiency, and validity of the provided rules.</p>
   <ul>
     <li><strong>Approve</strong>: the example is genuine, the mistranslation is substantive, and the verification rule
       is correct and well-formed.</li>
-    <li><strong>Reject</strong>: the source text is too easy, the AI translation is not meaningfully wrong, or the
-      verification rule cannot be made to work.</li>
-    <li><strong>Edit &amp; approve</strong>: the example is good, but the verification rule needs a small correction,
-      which you make before approving.</li>
+    <li><strong>Reject</strong>: the input is too easy, the translation is not meaningfully wrong, or the verification
+      rule does not work in a general case.</li>
+    <li><strong>Comment</strong>: make remarks or describe why it’s not acceptable in current form just yet. This should
+      help the contributor make better contributions in the future.</li>
   </ul>
-  <h2>Examples</h2>
-  <div><strong>Example:</strong> Translating <em>जिया लागे कोनी</em> as “nothing else feels worth living for” rather
-    than “I am not at peace” is a substantive error, the emotional register and meaning are different, even if the
-    poetic effect feels similar.</div>
 </body>
 
 </html>

@@ -341,21 +341,12 @@ async def verify_submission(req: VerifyReq, user=Depends(get_current_user)):
         source_text: str, translation: str, source_media: str = None
     ) -> bool:
         for rule in req.verification_rules:
-            if rule.type == "contains":
-                if rule.value not in translation:
+            try:
+                res = await verify_llm(req.source_text, translation, rule.value)
+                if not res:
                     return False
-            elif rule.type == "not_contains":
-                if rule.value in translation:
-                    return False
-            elif rule.type == "llm":
-                try:
-                    res = await verify_llm(
-                        req.source_text, translation, rule.value, source_media
-                    )
-                    if not res:
-                        return False
-                except Exception as exc:
-                    raise HTTPException(status_code=502, detail=f"LLM API error: {exc}")
+            except Exception as exc:
+                raise HTTPException(status_code=502, detail=f"LLM API error: {exc}")
         return True
 
     results = await asyncio.gather(
@@ -514,9 +505,6 @@ async def add_comment(sid: int, req: CommentReq, user=Depends(get_current_user))
                     "timestamp": submission["created_at"],
                 }
             )
-
-    if not is_reviewer and not submission["comments"]:
-        raise HTTPException(status_code=403, detail="Reviewer must comment first")
 
     submission["comments"].append(
         {
