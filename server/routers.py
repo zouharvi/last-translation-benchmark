@@ -280,7 +280,7 @@ async def translate_submission(req: TranslateReq, user=Depends(get_current_user)
             return {"api": name, "translation": res, "error": None}
         except Exception as exc:
             err = str(exc).lower()
-            if "endpoint found" in err and "input audio" in err:
+            if "no endpoint found" in err and "input audio" in err:
                 return {"api": name, "translation": None, "error": None}
             return {"api": name, "translation": None, "error": str(exc)}
 
