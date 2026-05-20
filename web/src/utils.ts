@@ -51,7 +51,7 @@ export async function setupInstructions(mode: 'all' | 'contributor' | 'reviewer'
 
     const loadContent = async () => {
         if (!box.data('loaded')) {
-            const html = await fetch('instructions.html').then(r => r.text());
+            const html = await fetch('assets/instructions.html').then(r => r.text());
             const bodyMatch = html.match(/<body>([\s\S]*?)<\/body>/);
             const body = bodyMatch ? bodyMatch[1] : html;
 

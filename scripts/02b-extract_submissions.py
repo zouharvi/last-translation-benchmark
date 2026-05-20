@@ -22,11 +22,11 @@ cur.execute("SELECT data FROM submissions")
 confirmed_submissions = [
     json.loads(row[0])
     for row in cur.fetchall()
-    if json.loads(row[0]).get("points") == 1
+    # if json.loads(row[0]).get("points") == 1
 ]
 
 with open(args.output, "w") as f:
     json.dump(confirmed_submissions, f, indent=2, ensure_ascii=False)
-print(f"Exported {len(confirmed_submissions)} confirmed submissions to {args.output}")
+print(f"Exported {len(confirmed_submissions)} submissions to {args.output}")
 
 conn.close()

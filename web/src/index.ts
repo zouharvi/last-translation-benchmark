@@ -1,4 +1,4 @@
-import './style.css';
+import './assets/style.css';
 import $ from 'jquery';
 
 import { getCookie, getMe, logout, User } from './api';

@@ -1,4 +1,4 @@
-import './style.css';
+import './assets/style.css';
 import $ from 'jquery';
 import {
     getMe, getCookie,
@@ -504,7 +504,7 @@ function renderMySug(s: Submission): string {
 
     const humanTr = s.translations.find(t => t.api === 'human')?.translation ?? s.translations[0]?.translation ?? '';
 
-    const rulesHtml = s.verification_rules.map((r, i) => 
+    const rulesHtml = s.verification_rules.map((r, i) =>
         `<div style="margin-bottom: 2px;">${i + 1}. ${escHtml(r.value)}</div>`
     ).join('');
 

@@ -47,7 +47,7 @@ Create `config.toml` based on `config.template.toml`
 
 ### Instructions
 
-The instructions in [web/src/instructions.html](web/src/instructions.html) are based on upstream document written in Typst and should not be change locally.
+The instructions in [web/src/assets/instructions.html](web/src/assets/instructions.html) are based on upstream document written in Typst and should not be change locally.
 
 ## Contributing
 
