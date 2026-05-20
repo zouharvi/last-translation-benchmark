@@ -133,7 +133,7 @@ async function loadSubmissions(): Promise<void> {
     const userFilter = String($('#filter-user').val() ?? '');
     try {
         allSugs = await getSubmissions('reviewer', {
-            status: curFilter as 'pending' | 'scored' | 'all',
+            status: curFilter as 'pending' | 'accepted_or_rejected' | 'accepted' | 'rejected' | 'all',
             source_lang: sourceLangFilter,
             target_lang: targetLangFilter,
             username: userFilter,

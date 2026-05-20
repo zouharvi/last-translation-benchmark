@@ -136,7 +136,7 @@ export function verify(
 export function getSubmissions(
     mode: 'contributor' | 'reviewer' = 'contributor',
     filters?: {
-        status?: 'pending' | 'scored' | 'all';
+        status?: 'pending' | 'accepted_or_rejected' | 'accepted' | 'rejected' | 'all';
         source_lang?: string;
         target_lang?: string;
         username?: string;

@@ -244,8 +244,12 @@ def _filter_reviewer_submissions(
 ) -> list[dict]:
     if status == "pending":
         rows = [s for s in rows if s["points"] < 0]
-    elif status == "scored":
+    elif status in {"scored", "accepted_or_rejected"}:
         rows = [s for s in rows if s["points"] >= 0]
+    elif status == "accepted":
+        rows = [s for s in rows if s["points"] == 1]
+    elif status == "rejected":
+        rows = [s for s in rows if s["points"] == 0]
     if source_lang:
         rows = [s for s in rows if s["source_lang"] == source_lang]
     if target_lang:
@@ -523,7 +527,14 @@ async def list_submissions(
     target_lang: str = "",
     username: str = "",
 ):
-    if status not in {"pending", "scored", "all"}:
+    if status not in {
+        "pending",
+        "scored",
+        "accepted_or_rejected",
+        "accepted",
+        "rejected",
+        "all",
+    }:
         raise HTTPException(status_code=400, detail="Invalid status filter")
     if mode == "reviewer" and "reviewer" in user.get("roles", []):
         rows = sorted(
