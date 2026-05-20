@@ -36,6 +36,7 @@ function showRoleButtons(user: User): void {
         actions.append('<a href="admin" class="btn btn-secondary">⚙️&nbsp;Admin</a>');
     }
 
+    actions.append('<a href="dashboard" class="btn btn-secondary">📊&nbsp;Public Dashboard</a>');
     actions.append('<a href="profile" class="btn btn-secondary">📇&nbsp;Profile</a>');
 
     const logoutBtn = $('<button class="btn btn-secondary">Logout</button>');

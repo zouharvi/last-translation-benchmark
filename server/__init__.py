@@ -114,6 +114,11 @@ async def serve_profile():
     return FileResponse(_STATIC_DIR + "/profile.html")
 
 
+@app.get("/dashboard")
+async def serve_dashboard():
+    return FileResponse(_STATIC_DIR + "/dashboard.html")
+
+
 # ---------------------------------------------------------------------------
 # Static frontend — must be mounted last
 # ---------------------------------------------------------------------------

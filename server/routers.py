@@ -152,6 +152,59 @@ async def admin_users(user=Depends(get_current_user)):
     return await asyncio.gather(*[_admin_user_view(u) for u in users])
 
 
+def _build_public_dashboard_rows(users: list[dict], submissions: list[dict]) -> list[dict]:
+    accepted_by_user: dict[int, int] = {}
+    for submission in submissions:
+        if submission.get("points") != 1:
+            continue
+        user_id = submission.get("user_id")
+        if isinstance(user_id, int):
+            accepted_by_user[user_id] = accepted_by_user.get(user_id, 0) + 1
+
+    users_by_id = {u["id"]: u for u in users if isinstance(u.get("id"), int)}
+    rows: list[dict] = []
+    anonymous_total = 0
+
+    for user_id, accepted in accepted_by_user.items():
+        user = users_by_id.get(user_id)
+        if user is None:
+            continue
+        if user.get("credit_consent", False):
+            rows.append(
+                {
+                    "name": user.get("name", ""),
+                    "affiliation": user.get("affiliation", ""),
+                    "accepted_submissions": accepted,
+                }
+            )
+        else:
+            anonymous_total += accepted
+
+    if anonymous_total > 0:
+        rows.append(
+            {
+                "name": "Anonymous",
+                "affiliation": "",
+                "accepted_submissions": anonymous_total,
+            }
+        )
+
+    rows.sort(
+        key=lambda row: (
+            -int(row["accepted_submissions"]),
+            str(row["name"]).lower(),
+        )
+    )
+    return rows
+
+
+@router.get("/api/public-dashboard")
+async def public_dashboard():
+    users = await get_users()
+    submissions = await db_get_submissions()
+    return _build_public_dashboard_rows(users, submissions)
+
+
 @router.delete("/api/admin/users/{uid}", status_code=200)
 async def admin_delete_user(uid: int, user=Depends(get_current_user)):
     require_admin(user)

@@ -47,6 +47,12 @@ export interface Submission {
     comments?: Comment[];
 }
 
+export interface PublicDashboardRow {
+    name: string;
+    affiliation: string;
+    accepted_submissions: number;
+}
+
 // ---------- Cookie helpers ----------
 
 function setCookie(name: string, value: string): void {
@@ -152,6 +158,10 @@ export function getSubmissions(
     if (targetLang && targetLang.trim() !== '') query.set('target_lang', targetLang);
     if (username && username.trim() !== '') query.set('username', username);
     return apiCall<Submission[]>('GET', `api/submissions?${query.toString()}`);
+}
+
+export function getPublicDashboard() {
+    return apiCall<PublicDashboardRow[]>('GET', 'api/public-dashboard');
 }
 
 export function createSubmission(data: {
