@@ -35,6 +35,26 @@ def test_status_filter_scored():
     assert [r["id"] for r in rows] == [2, 3]
 
 
+def test_status_filter_all():
+    rows = _filter_reviewer_submissions(ROWS, "all", "", "", "")
+    assert [r["id"] for r in rows] == [1, 2, 3]
+
+
+def test_filter_source_lang_only():
+    rows = _filter_reviewer_submissions(ROWS, "all", "English", "", "")
+    assert [r["id"] for r in rows] == [1, 3]
+
+
+def test_filter_target_lang_only():
+    rows = _filter_reviewer_submissions(ROWS, "all", "", "English", "")
+    assert [r["id"] for r in rows] == [2]
+
+
+def test_filter_username_only():
+    rows = _filter_reviewer_submissions(ROWS, "all", "", "", "bob")
+    assert [r["id"] for r in rows] == [2, 3]
+
+
 def test_combined_filters():
     rows = _filter_reviewer_submissions(ROWS, "all", "English", "French", "bob")
     assert [r["id"] for r in rows] == [3]
