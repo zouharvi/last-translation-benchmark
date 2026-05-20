@@ -152,7 +152,10 @@ async def admin_users(user=Depends(get_current_user)):
     return await asyncio.gather(*[_admin_user_view(u) for u in users])
 
 
-def _build_public_dashboard_rows(users: list[dict], submissions: list[dict]) -> list[dict]:
+@router.get("/api/public-dashboard")
+async def public_dashboard():
+    users = await get_users()
+    submissions = await db_get_submissions()
     accepted_by_user: dict[int, int] = {}
     for submission in submissions:
         if submission.get("points") != 1:
@@ -196,13 +199,6 @@ def _build_public_dashboard_rows(users: list[dict], submissions: list[dict]) -> 
         )
     )
     return rows
-
-
-@router.get("/api/public-dashboard")
-async def public_dashboard():
-    users = await get_users()
-    submissions = await db_get_submissions()
-    return _build_public_dashboard_rows(users, submissions)
 
 
 @router.delete("/api/admin/users/{uid}", status_code=200)
