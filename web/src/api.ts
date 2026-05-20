@@ -143,10 +143,14 @@ export function getSubmissions(
     },
 ) {
     const query = new URLSearchParams({ mode });
-    if (filters?.status) query.set('status', filters.status);
-    if (filters?.source_lang) query.set('source_lang', filters.source_lang);
-    if (filters?.target_lang) query.set('target_lang', filters.target_lang);
-    if (filters?.username) query.set('username', filters.username);
+    const status = filters?.status;
+    const sourceLang = filters?.source_lang;
+    const targetLang = filters?.target_lang;
+    const username = filters?.username;
+    if (status && status.trim() !== '') query.set('status', status);
+    if (sourceLang && sourceLang.trim() !== '') query.set('source_lang', sourceLang);
+    if (targetLang && targetLang.trim() !== '') query.set('target_lang', targetLang);
+    if (username && username.trim() !== '') query.set('username', username);
     return apiCall<Submission[]>('GET', `api/submissions?${query.toString()}`);
 }
 
