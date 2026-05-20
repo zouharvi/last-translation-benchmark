@@ -133,8 +133,21 @@ export function verify(
     );
 }
 
-export function getSubmissions(mode: 'contributor' | 'reviewer' = 'contributor') {
-    return apiCall<Submission[]>('GET', `api/submissions?mode=${mode}`);
+export function getSubmissions(
+    mode: 'contributor' | 'reviewer' = 'contributor',
+    filters?: {
+        status?: 'pending' | 'scored' | 'all';
+        source_lang?: string;
+        target_lang?: string;
+        username?: string;
+    },
+) {
+    const query = new URLSearchParams({ mode });
+    if (filters?.status) query.set('status', filters.status);
+    if (filters?.source_lang) query.set('source_lang', filters.source_lang);
+    if (filters?.target_lang) query.set('target_lang', filters.target_lang);
+    if (filters?.username) query.set('username', filters.username);
+    return apiCall<Submission[]>('GET', `api/submissions?${query.toString()}`);
 }
 
 export function createSubmission(data: {

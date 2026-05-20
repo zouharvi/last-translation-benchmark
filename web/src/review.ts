@@ -34,11 +34,11 @@ $(async () => {
     // Status filter dropdown
     $('#filter-status').on('change', function () {
         curFilter = String($(this).val());
-        renderList();
+        loadSubmissions();
     });
 
     // Language / user filter selects
-    $('#filter-source-lang, #filter-target-lang, #filter-user').on('change', renderList);
+    $('#filter-source-lang, #filter-target-lang, #filter-user').on('change', loadSubmissions);
 
     // Refresh
     $('#refresh-btn').on('click', loadSubmissions);
@@ -128,8 +128,16 @@ $(async () => {
 
 async function loadSubmissions(): Promise<void> {
     $('#sen-list').html('<div class="empty">Loading…</div>');
+    const sourceLangFilter = String($('#filter-source-lang').val() ?? '');
+    const targetLangFilter = String($('#filter-target-lang').val() ?? '');
+    const userFilter = String($('#filter-user').val() ?? '');
     try {
-        allSugs = await getSubmissions('reviewer');
+        allSugs = await getSubmissions('reviewer', {
+            status: curFilter as 'pending' | 'scored' | 'all',
+            source_lang: sourceLangFilter,
+            target_lang: targetLangFilter,
+            username: userFilter,
+        });
         populateFilters();
         renderList();
     } catch {
@@ -153,20 +161,9 @@ function populateFilters(): void {
 }
 
 function renderList(): void {
-    let list = allSugs;
-    if (curFilter === 'pending') list = list.filter(s => s.points < 0);
-    else if (curFilter === 'scored') list = list.filter(s => s.points >= 0);
-
-    const sourceLangFilter = String($('#filter-source-lang').val() ?? '');
-    const targetLangFilter = String($('#filter-target-lang').val() ?? '');
-    const userFilter = String($('#filter-user').val() ?? '');
-    if (sourceLangFilter) list = list.filter(s => s.source_lang === sourceLangFilter);
-    if (targetLangFilter) list = list.filter(s => s.target_lang === targetLangFilter);
-    if (userFilter) list = list.filter(s => s.username === userFilter);
-
     const $el = $('#sen-list');
-    if (!list.length) { $el.html('<div class="empty">No submissions here</div>'); return; }
-    $el.html(list.map(renderSug).join(''));
+    if (!allSugs.length) { $el.html('<div class="empty">No submissions here</div>'); return; }
+    $el.html(allSugs.map(renderSug).join(''));
 }
 
 function renderCommentThreadWrap(comments: Submission['comments']): string {

@@ -235,6 +235,26 @@ def _submission_matches_scope(submission: dict, review_langs: list[str]) -> bool
     )
 
 
+def _filter_reviewer_submissions(
+    rows: list[dict],
+    status: str,
+    source_lang: str,
+    target_lang: str,
+    username: str,
+) -> list[dict]:
+    if status == "pending":
+        rows = [s for s in rows if s["points"] < 0]
+    elif status == "scored":
+        rows = [s for s in rows if s["points"] >= 0]
+    if source_lang:
+        rows = [s for s in rows if s["source_lang"] == source_lang]
+    if target_lang:
+        rows = [s for s in rows if s["target_lang"] == target_lang]
+    if username:
+        rows = [s for s in rows if s["username"] == username]
+    return rows
+
+
 # --- Translate ---
 
 
@@ -495,7 +515,16 @@ async def delete_submission_endpoint(sid: int, user=Depends(get_current_user)):
 
 
 @router.get("/api/submissions")
-async def list_submissions(user=Depends(get_current_user), mode: str = "contributor"):
+async def list_submissions(
+    user=Depends(get_current_user),
+    mode: str = "contributor",
+    status: str = "all",
+    source_lang: str = "",
+    target_lang: str = "",
+    username: str = "",
+):
+    if status not in {"pending", "scored", "all"}:
+        raise HTTPException(status_code=400, detail="Invalid status filter")
     if mode == "reviewer" and "reviewer" in user.get("roles", []):
         rows = sorted(
             await db_get_submissions(),
@@ -504,6 +533,13 @@ async def list_submissions(user=Depends(get_current_user), mode: str = "contribu
         review_langs = user.get("review_langs", [])
         if review_langs:
             rows = [s for s in rows if _submission_matches_scope(s, review_langs)]
+        rows = _filter_reviewer_submissions(
+            rows=rows,
+            status=status,
+            source_lang=source_lang,
+            target_lang=target_lang,
+            username=username,
+        )
     else:
         rows = sorted(
             await db_get_submissions(user_id=user["id"]),
