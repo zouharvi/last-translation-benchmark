@@ -244,6 +244,7 @@ def _filter_reviewer_submissions(
 ) -> list[dict]:
     if status == "pending":
         rows = [s for s in rows if s["points"] < 0]
+    # Keep "scored" for backward compatibility with older dashboard bundles.
     elif status in {"scored", "accepted_or_rejected"}:
         rows = [s for s in rows if s["points"] >= 0]
     elif status == "accepted":
@@ -527,6 +528,7 @@ async def list_submissions(
     target_lang: str = "",
     username: str = "",
 ):
+    # Keep "scored" for backward compatibility with older dashboard bundles.
     if status not in {
         "pending",
         "scored",
