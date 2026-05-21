@@ -169,20 +169,19 @@ async def public_dashboard():
     submissions = await db_get_submissions()
     accepted_by_user: dict[int, int] = {}
     for submission in submissions:
-        if submission.get("points") != 1:
+        if submission.get("status") != "accept":
             continue
         user_id = submission.get("user_id")
-        if isinstance(user_id, int):
-            accepted_by_user[user_id] = accepted_by_user.get(user_id, 0) + 1
+        accepted_by_user[user_id] = accepted_by_user.get(user_id, 0) + 1
 
     users_by_id = {u["id"]: u for u in users if isinstance(u.get("id"), int)}
     rows: list[dict] = []
-    anonymous_total = 0
+    anonymous_submissions = 0
+    anonymous_users = set()
+    anonymous_affiliations = set()
 
     for user_id, accepted in accepted_by_user.items():
         user = users_by_id.get(user_id)
-        if user is None:
-            continue
         if user.get("credit_consent", False):
             rows.append(
                 {
@@ -192,22 +191,25 @@ async def public_dashboard():
                 }
             )
         else:
-            anonymous_total += accepted
+            anonymous_submissions += accepted
+            anonymous_users.add(user_id)
+            anonymous_affiliations.add(user.get("affiliation", ""))
 
-    if anonymous_total > 0:
+    if anonymous_submissions > 0:
         rows.append(
             {
-                "name": "Anonymous",
-                "affiliation": "",
-                "accepted_submissions": anonymous_total,
+                "name": f"Anonymous ({len(anonymous_users)} users)",
+                "affiliation": f"Multiple affiliations ({len(anonymous_affiliations)})",
+                "accepted_submissions": anonymous_submissions,
             }
         )
 
     rows.sort(
         key=lambda row: (
-            -int(row["accepted_submissions"]),
-            str(row["name"]).lower(),
-        )
+            int(row["accepted_submissions"]),
+            str(row["name"]),
+        ),
+        reverse=True
     )
     return rows
 
