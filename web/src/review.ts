@@ -61,21 +61,38 @@ $(async () => {
             return;
         }
 
+        const isActive = $(this).hasClass('active');
+        const targetAction = isActive ? 'pending' : action;
+
         try {
-            await scoreSubmission(id, action);
-            const points = action === 'accept' ? 1 : 0;
+            await scoreSubmission(id, targetAction);
+            const status = targetAction === 'accept' ? 'accept' : (targetAction === 'reject' ? 'reject' : 'pending');
             const sug = allSugs.find(s => s.id === id);
-            if (sug) { sug.points = points; }
+            if (sug) { sug.status = status; }
             const $item = $(`#sug-${id}`);
             $item.find('.score-btn').removeClass('active');
-            $(this).addClass('active');
-            $item.find('.sug-meta .badge').replaceWith(scoreBadge(points, (sug?.comments?.length ?? 0) > 0));
+            if (targetAction !== 'pending') {
+                $(this).addClass('active');
+            }
+            $item.find('.sug-meta .badge').replaceWith(scoreBadge(status, (sug?.comments?.length ?? 0) > 0));
+
+            let matchesFilter = true;
             if (curFilter === 'pending') {
+                matchesFilter = status === 'pending';
+            } else if (curFilter === 'accepted_or_rejected') {
+                matchesFilter = status === 'accept' || status === 'reject';
+            } else if (curFilter === 'accepted') {
+                matchesFilter = status === 'accept';
+            } else if (curFilter === 'rejected') {
+                matchesFilter = status === 'reject';
+            }
+
+            if (!matchesFilter) {
                 setTimeout(() => {
                     $item.fadeOut(250, function () {
                         $(this).remove();
                         if (!$('#sen-list .sug-item').length) {
-                            $('#sen-list').html('<div class="empty">No pending submissions</div>');
+                            $('#sen-list').html('<div class="empty">No submissions here</div>');
                         }
                     });
                 }, 400);
@@ -95,12 +112,12 @@ $(async () => {
             await scoreSubmission(id, 'comment', text);
             const sug = allSugs.find(s => s.id === id);
             if (sug) {
-                sug.points = -1;
+                sug.status = 'pending';
                 if (!sug.comments) sug.comments = [];
                 sug.comments.push({ author: currentUser!.username, text, timestamp: new Date().toISOString().slice(0, 16).replace('T', ' ') });
             }
             $input.val('');
-            $(`#sug-${id} .sug-meta .badge`).replaceWith(scoreBadge(-1, true));
+            $(`#sug-${id} .sug-meta .badge`).replaceWith(scoreBadge('pending', true));
             $(`#comment-thread-${id}`).html(renderCommentThreadWrap(sug?.comments ?? []));
         } catch { alert('Failed to save'); }
         $(this).prop('disabled', false).text('Send');
@@ -188,7 +205,7 @@ function renderSug(s: Submission): string {
         ['accept', '#22c55e', 'Accept submission'],
     ];
     const scoreBtns = scoreActions.map(([action, color, label]) => {
-        const act = (action === 'accept' && s.points === 1) || (action === 'reject' && s.points === 0) ? ' active' : '';
+        const act = (action === 'accept' && s.status === 'accept') || (action === 'reject' && s.status === 'reject') ? ' active' : '';
         return `<button class="score-btn${act}" style="background:${color};color:#fff" data-id="${s.id}" data-action="${action}">${label}</button>`;
     }).join('');
     const deleteBtn = currentUser?.roles.includes('admin')
@@ -206,7 +223,7 @@ function renderSug(s: Submission): string {
                 ? '<span class="vpill vpill-fail">✗</span>'
                 : '';
         return `<div class="api-result-row">
-          <span class="api-name">${escHtml(t.api)}</span>
+          <span class="api-name">${escHtml(t.model)}</span>
           <div class="tr-display">${escHtml(t.translation)}</div>
           ${badge}
         </div>`;
@@ -222,7 +239,7 @@ function renderSug(s: Submission): string {
     }).join('');
 
     return `<div class="sug-item" id="sug-${s.id}">
-        <div class="sug-meta">#${s.id} &middot; <b>${escHtml(s.username)}</b> &middot; ${s.source_lang}&rarr;${s.target_lang} &middot; ${fmtDate(s.created_at)} &middot; ${scoreBadge(s.points, (s.comments?.length ?? 0) > 0)}</div>
+        <div class="sug-meta">#${s.id} &middot; <b>${escHtml(s.username)}</b> &middot; ${s.source_lang}&rarr;${s.target_lang} &middot; ${fmtDate(s.created_at)} &middot; ${scoreBadge(s.status, (s.comments?.length ?? 0) > 0)}</div>
         <div class="sug-box" style="margin-bottom:8px"><div class="lbl">SOURCE</div>${renderSource(s)}</div>
         <div style="margin-bottom:8px">${trRows}</div>
         <div style="margin-bottom:8px">${ruleRows}</div>

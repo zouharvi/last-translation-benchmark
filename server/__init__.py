@@ -79,7 +79,7 @@ async def custom_logging(request: Request, call_next):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://last-translation-benchmark.vilda.net"],
     allow_methods=["*"],
     allow_headers=["*"],
 )

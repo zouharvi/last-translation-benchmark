@@ -1,7 +1,6 @@
 <?php
 $target_base = 'https://quest.ms.mff.cuni.cz/ltb/';
 
-// Strip local /ltb/ prefix if present to prevent upstream /ltb/ltb/ 404s
 $clean_uri = preg_replace('#^/ltb/#', '/', $_SERVER['REQUEST_URI']);
 $target_url = $target_base . ltrim($clean_uri, '/');
 
@@ -33,13 +32,14 @@ if (in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'])) {
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_HEADER, true);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
-curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
 
 $response = curl_exec($ch);
 $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-curl_close($ch);
+
+// curl_close is omitted; object lifecycle is handled by PHP garbage collection.
 
 if ($response === false) {
     http_response_code(502);
@@ -66,5 +66,4 @@ foreach ($res_headers as $hdr) {
 }
 
 echo substr($response, $header_size);
-
 ?>

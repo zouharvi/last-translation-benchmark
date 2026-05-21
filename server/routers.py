@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import secrets
+import time
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -47,7 +48,7 @@ router = APIRouter()
 @router.get("/api/me")
 async def me(user=Depends(get_current_user)):
     submissions = await db_get_submissions(user_id=user["id"])
-    total_accepted = sum(1 for s in submissions if s.get("points") == 1)
+    total_accepted = sum(1 for s in submissions if s.get("status") == "accept")
     now = datetime.now(timezone.utc)
     last_active = user.get("last_active", "")
     if (
@@ -94,18 +95,28 @@ async def register_user(req: ProfileReq):
 
     users = await get_users()
 
-    # Generate unique username from email prefix
-    base_username = req.email.split("@")[0].lower()
-    base_username = "".join(c for c in base_username if c.isalnum() or c in "._-")
-    if not base_username:
-        base_username = "user"
+    # Check if email already exists
+    if any(u.get("email", "").strip().lower() == req.email for u in users):
+        raise HTTPException(status_code=400, detail="User already registered")
 
-    username = base_username
-    counter = 1
-    existing_usernames = {u["username"].lower() for u in users}
-    while username.lower() in existing_usernames:
-        username = f"{base_username}{counter}"
-        counter += 1
+    # Generate username from email prefix
+    username = req.email.split("@")[0].lower()
+    username = "".join(c for c in username if c.isalnum() or c in "._-")
+    if not username:
+        raise HTTPException(status_code=400, detail="Cannot generate username from email")
+    
+    original_username = username
+    while True:
+        print(username, [u["username"] for u in users][:10])
+        # Check if username already exists
+        if all(u["username"] != username for u in users):
+            break
+
+        if username == original_username:
+            username += "-"
+
+        # add random suffix to avoid collisions
+        username += secrets.token_hex(5)[:2]
 
     new_user = {
         "id": await next_user_id(),
@@ -125,7 +136,7 @@ async def register_user(req: ProfileReq):
 
 async def _admin_user_view(u: dict) -> dict:
     submissions = await db_get_submissions(user_id=u["id"])
-    total_accepted = sum(1 for s in submissions if s.get("points") == 1)
+    total_accepted = sum(1 for s in submissions if s.get("status") == "accept")
     return {
         "id": u["id"],
         "username": u["username"],
@@ -292,13 +303,13 @@ def _filter_reviewer_submissions(
     username: str,
 ) -> list[dict]:
     if status == "pending":
-        rows = [s for s in rows if s["points"] < 0]
+        rows = [s for s in rows if s.get("status", "pending") == "pending"]
     elif status == "accepted_or_rejected":
-        rows = [s for s in rows if s["points"] >= 0]
+        rows = [s for s in rows if s.get("status", "pending") in ("accept", "reject")]
     elif status == "accepted":
-        rows = [s for s in rows if s["points"] == 1]
+        rows = [s for s in rows if s.get("status", "pending") == "accept"]
     elif status == "rejected":
-        rows = [s for s in rows if s["points"] == 0]
+        rows = [s for s in rows if s.get("status", "pending") == "reject"]
     if source_lang:
         rows = [s for s in rows if s["source_lang"] == source_lang]
     if target_lang:
@@ -352,6 +363,7 @@ async def translate_submission(req: TranslateReq, user=Depends(get_current_user)
         source_media: str = None,
         source_instructions: str = None,
     ):
+        time_start = time.time()
         try:
             if asyncio.iscoroutinefunction(func):
                 res = await func(
@@ -370,16 +382,16 @@ async def translate_submission(req: TranslateReq, user=Depends(get_current_user)
                     source_media=source_media,
                     source_instructions=source_instructions,
                 )
-            return {"api": name, "translation": res, "error": None}
+            return {"model": name, "translation": res, "error": None, "time": round(time.time() - time_start, 1)}
         except Exception as exc:
             # skip unsupported models
             if str(exc).startswith("No endpoints found that support"):
-                return {"api": name, "translation": None, "error": None}
-            return {"api": name, "translation": None, "error": str(exc)}
+                return {"model": name, "translation": None, "error": None}
+            return {"model": name, "translation": None, "error": str(exc)}
 
     tasks = [
-        _run_translate("Lara", translate_lara, req.text, source_name, target_name, source_instructions=req.source_instructions),
-        _run_translate("Google Translate", translate_google, req.text, source_name, target_name, source_instructions=req.source_instructions),
+        _run_translate("Lara", translate_lara, req.text, source_name, target_name, req.source_media, req.source_instructions),
+        _run_translate("Google Translate", translate_google, req.text, source_name, target_name, req.source_media, req.source_instructions),
         _run_translate(
             "Gemini 2.5 Flash",
             functools.partial(translate_openrouter, model="google/gemini-2.5-flash"),
@@ -440,6 +452,17 @@ async def translate_submission(req: TranslateReq, user=Depends(get_current_user)
             "Claude Sonnet 4.5",
             functools.partial(
                 translate_openrouter, model="anthropic/claude-sonnet-4.5"
+            ),
+            req.text,
+            source_name,
+            target_name,
+            req.source_media,
+            req.source_instructions,
+        ),
+        _run_translate(
+            "Cohere Command A",
+            functools.partial(
+                translate_openrouter, model="cohere/command-a"
             ),
             req.text,
             source_name,
@@ -518,7 +541,7 @@ async def create_submission(req: SubmissionReq, user=Depends(get_current_user)):
         "target_lang": req.target_lang,
         "verification_rules": [r.model_dump() for r in req.verification_rules],
         "translations": [t.model_dump() for t in req.translations],
-        "points": -1,
+        "status": "pending",
         "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
         "source_instructions": req.source_instructions,
     }
@@ -545,7 +568,7 @@ async def update_submission(
         "target_lang": req.target_lang,
         "verification_rules": [r.model_dump() for r in req.verification_rules],
         "translations": [t.model_dump() for t in req.translations],
-        "points": -1,
+        "status": "pending",
         "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
         "source_instructions": req.source_instructions,
     }
@@ -587,7 +610,11 @@ async def list_submissions(
     if mode == "reviewer" and "reviewer" in user.get("roles", []):
         rows = sorted(
             await db_get_submissions(),
-            key=lambda s: (s["points"], s["created_at"]),
+            key=lambda s: (
+                0 if s.get("status", "pending") == "pending"
+                else (1 if s.get("status") == "reject" else 2),
+                s["created_at"]
+            ),
         )
         review_langs = user.get("review_langs", [])
         if review_langs:
@@ -614,19 +641,21 @@ async def score_submission(sid: int, req: ScoreReq, user=Depends(get_current_use
         raise HTTPException(
             status_code=403, detail="Only reviewer users can score submissions"
         )
-    if req.action not in ("reject", "accept", "comment"):
+    if req.action not in ("reject", "accept", "comment", "pending"):
         raise HTTPException(
-            status_code=400, detail="Action must be reject, accept, or comment"
+            status_code=400, detail="Action must be reject, accept, comment, or pending"
         )
     submission = await get_submission_by_id(sid)
     if submission is None:
         raise HTTPException(status_code=404, detail="Submission not found")
     if req.action == "accept":
-        submission["points"] = 1
+        submission["status"] = "accept"
     elif req.action == "reject":
-        submission["points"] = 0
+        submission["status"] = "reject"
+    elif req.action == "pending":
+        submission["status"] = "pending"
     else:
-        submission["points"] = -1
+        raise HTTPException(status_code=400, detail="Invalid action")
     if req.comment:
         if "comments" not in submission:
             submission["comments"] = []
@@ -666,7 +695,7 @@ async def add_comment(sid: int, req: CommentReq, user=Depends(get_current_user))
     )
 
     if is_reviewer:
-        submission["points"] = -1
+        submission["status"] = "pending"
 
     await save_submission(submission)
     return {"ok": True}

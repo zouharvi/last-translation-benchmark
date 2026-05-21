@@ -32,7 +32,7 @@ try:
     confirmed_submissions = [
         json.loads(row[0])
         for row in cur.fetchall()
-        if json.loads(row[0]).get("points") == 1
+        if json.loads(row[0]).get("status") == "accept"
     ]
 
     user_points = {}

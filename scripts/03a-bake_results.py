@@ -16,9 +16,9 @@ for submission in data:
     for entry in submission["translations"]:
         if entry["verified"] is None:
             continue
-        if entry["api"] in {"Google", "perfect", "Gemini 2.5 Flash Lite", "MyMemory"}:
+        if entry["model"] in {"Google", "perfect", "Gemini 2.5 Flash Lite", "MyMemory"}:
             continue
-        model_results[entry["api"]].append(entry["verified"])
+        model_results[entry["model"]].append(entry["verified"])
 
 model_results = {
     m: statistics.mean(v)

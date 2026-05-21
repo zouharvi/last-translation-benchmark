@@ -11,7 +11,7 @@ import { esc as escHtml, fmtDate, scoreBadge, accessDenied, renderCommentThread,
 let currentUser: User | null = null;
 
 // Last set of API translation results
-type ApiResult = { api: string; translation: string | null; error: string | null; verified?: boolean | null };
+type ApiResult = { model: string; translation: string | null; error: string | null; verified?: boolean | null };
 let lastResults: ApiResult[] = [];
 let ownVerified: boolean | null = null;
 let editingSubmissionId: number | null = null;
@@ -239,14 +239,14 @@ $(async () => {
         const source_text = String($('#src-text').val() ?? '').trim();
         const ownTranslation = String($('#own-translation').val() ?? '').trim();
 
-        const translations: Array<{ api: string; translation: string; verified: boolean | null }> = [];
+        const translations: Array<{ model: string; translation: string; verified: boolean | null }> = [];
         lastResults.forEach(r => {
             if (r.translation !== null) {
-                translations.push({ api: r.api, translation: r.translation, verified: r.verified ?? null });
+                translations.push({ model: r.model, translation: r.translation, verified: r.verified ?? null });
             }
         });
         if (ownTranslation && !translations.some(t => t.translation === ownTranslation)) {
-            translations.push({ api: 'human', translation: ownTranslation, verified: ownVerified ?? null });
+            translations.push({ model: 'human', translation: ownTranslation, verified: ownVerified ?? null });
         }
 
         const source_lang = String($('#src-lang').val());
@@ -362,7 +362,7 @@ $(async () => {
         $('#verify-result').text('');
 
         // Find own translation if any
-        const ownTr = sub.translations.find(t => t.api === 'human');
+        const ownTr = sub.translations.find(t => t.model === 'human');
         if (ownTr) {
             $('#own-translation').val(ownTr.translation);
             ownVerified = ownTr.verified;
@@ -373,8 +373,8 @@ $(async () => {
         }
 
         // Fill MT results
-        lastResults = sub.translations.filter(t => t.api !== 'human').map(t => ({
-            api: t.api,
+        lastResults = sub.translations.filter(t => t.model !== 'human').map(t => ({
+            model: t.model,
             translation: t.translation,
             error: null,
             verified: t.verified
@@ -465,7 +465,7 @@ function renderApiResults(): void {
         const trText = r.translation ?? `<em class="tr-error">${escHtml(r.error ?? 'Error')}</em>`;
         const verifyBadge = '';
         return `<div class="api-result-row">
-          <span class="api-name">${escHtml(r.api)}</span>
+          <span class="api-name">${escHtml(r.model)}</span>
           <div class="tr-display">${trText}</div>
           <span data-idx="${i}">${verifyBadge}</span>
         </div>`;
@@ -502,7 +502,7 @@ function renderMySug(s: Submission): string {
         sourceHtml += `<div style="margin-top: 4px; font-size: 0.9em; color: #475569; border-left: 2px solid #cbd5e1; padding-left: 6px;"><i>Instructions:</i> ${escHtml(s.source_instructions)}</div>`;
     }
 
-    const humanTr = s.translations.find(t => t.api === 'human')?.translation ?? s.translations[0]?.translation ?? '';
+    const humanTr = s.translations.find(t => t.model === 'human')?.translation ?? s.translations[0]?.translation ?? '';
 
     const rulesHtml = s.verification_rules.map((r, i) =>
         `<div style="margin-bottom: 2px;">${i + 1}. ${escHtml(r.value)}</div>`
@@ -516,7 +516,7 @@ function renderMySug(s: Submission): string {
             <div style="display:flex; align-items:center; justify-content:space-between; margin-top:6px;">
                 <div style="display:flex; gap:8px; align-items:center;">
                     <button class="btn btn-secondary edit-btn" style="padding: 2px 6px; font-size: 0.75em;" data-id="${s.id}">Edit</button>
-                    ${scoreBadge(s.points, (s.comments?.length ?? 0) > 0)}
+                    ${scoreBadge(s.status, (s.comments?.length ?? 0) > 0)}
                 </div>
                 <button class="contrib-send-btn score-btn" style="background:#64748b;color:#fff;margin:0" data-id="${s.id}">Reply</button>
             </div>

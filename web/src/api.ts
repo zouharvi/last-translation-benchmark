@@ -16,7 +16,7 @@ export interface User {
 }
 
 export interface TranslationEntry {
-    api: string;
+    model: string;
     translation: string;
     verified: boolean | null;
 }
@@ -42,7 +42,7 @@ export interface Submission {
     target_lang: string;
     verification_rules: Rule[];
     translations: TranslationEntry[];
-    points: number;
+    status: 'pending' | 'accept' | 'reject';
     created_at: string;
     comments?: Comment[];
 }
@@ -120,7 +120,7 @@ export function getMe() {
 
 export function translate(text: string, source_lang: string, target_lang: string, source_media?: string, source_instructions?: string) {
     return apiCall<{
-        results: Array<{ api: string; translation: string | null; error: string | null }>;
+        results: Array<{ model: string; translation: string | null; error: string | null }>;
         quota_used: number;
         quota: number;
     }>('POST', 'api/translate-submission', { text, source_lang, target_lang, source_media, source_instructions });
@@ -171,7 +171,7 @@ export function createSubmission(data: {
     source_lang: string;
     target_lang: string;
     verification_rules: Rule[];
-    translations: Array<{ api: string; translation: string; verified: boolean | null }>;
+    translations: Array<{ model: string; translation: string; verified: boolean | null }>;
 }) {
     return apiCall<{ ok: boolean }>('POST', 'api/submissions', data);
 }
@@ -183,7 +183,7 @@ export function updateSubmission(id: number, data: {
     source_lang: string;
     target_lang: string;
     verification_rules: Rule[];
-    translations: Array<{ api: string; translation: string; verified: boolean | null }>;
+    translations: Array<{ model: string; translation: string; verified: boolean | null }>;
 }) {
     return apiCall<{ ok: boolean }>('PUT', `api/submissions/${id}`, data);
 }
@@ -193,7 +193,7 @@ export function deleteSubmission(id: number) {
 }
 
 
-export function scoreSubmission(id: number, action: 'reject' | 'accept' | 'comment', comment?: string) {
+export function scoreSubmission(id: number, action: 'reject' | 'accept' | 'comment' | 'pending', comment?: string) {
     return apiCall<{ ok: boolean }>('POST', `api/submissions/${id}/score`, { action, comment });
 }
 

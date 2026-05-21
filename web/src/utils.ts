@@ -9,9 +9,10 @@ export function showToast(msg: string): void {
     setTimeout(() => t.removeClass('show'), 2000);
 }
 
-export function scoreBadge(p: number, hasComments?: boolean): string {
-    if (p < 0) return '<span class="badge badge-pending">Pending</span>';
-    return `<span class="badge badge-score-${p === 1 ? 3 : 0}">${['✗ Rejected', '✓ Accepted'][p] ?? p}</span>`;
+export function scoreBadge(status: 'pending' | 'accept' | 'reject', hasComments?: boolean): string {
+    if (status === 'pending') return '<span class="badge badge-pending">Pending</span>';
+    if (status === 'accept') return '<span class="badge badge-score-3">✓ Accepted</span>';
+    return '<span class="badge badge-score-0">✗ Rejected</span>';
 }
 
 function getUsernameColor(username: string): string {

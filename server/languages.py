@@ -234,6 +234,7 @@ LANGUAGES = [
     {"name": "Yiddish", "code_google": "yi", "code_lara": "ydd-US"},
     {"name": "Yoruba", "code_google": "yo", "code_lara": "yo-NG"},
     {"name": "Zulu", "code_google": "zu", "code_lara": "zu-ZA"},
+    {"name": "American Sign Language", "code_google": None, "code_lara": None},
 ]
 
 if __name__ == "__main__":
