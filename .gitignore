@@ -2,6 +2,7 @@ web/src/model_results.svg
 computed/
 
 config.toml
+scripts/langtransfer/keys.toml
 scripts/data/
 secret/
 
