@@ -1,12 +1,9 @@
 logs/
 web/src/model_results.svg
 computed/
-.vscode/
-humeval/
-nohup.out
-*tmp*
 
 config.toml
+scripts/langtransfer/keys.toml
 scripts/data/
 secret/
 
@@ -26,6 +23,3 @@ node_modules/
 package-lock.json
 web/node_modules/
 web/package-lock.json
-
-# Ignore the symlink created for VS Code Pylance
-last_translation_benchmark
