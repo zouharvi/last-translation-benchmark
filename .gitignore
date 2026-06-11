@@ -3,6 +3,7 @@ computed/
 
 config.toml
 scripts/langtransfer/keys.toml
+scripts/langtransfer/misc/
 scripts/data/
 secret/
 
@@ -22,3 +23,4 @@ node_modules/
 package-lock.json
 web/node_modules/
 web/package-lock.json
+AGENTS.md
