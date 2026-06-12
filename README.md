@@ -57,6 +57,11 @@ Some API services need API keys:
 
 The instructions in [web/src/assets/instructions.html](web/src/assets/instructions.html) are based on upstream document written in Typst and should not be edited locally in this repo.
 
+## License
+
+The source code in this repository is licensed under [MIT](LICENSE).
+The benchmark data (under [data/](data/)) is licensed under [CC BY 4.0](data/LICENSE).
+
 ## Contributing
 
 We welcome bugreports, hands-on, and research contributions.
