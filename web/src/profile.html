@@ -3,9 +3,9 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=800">
   <title>Last Translation Benchmark</title>
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <style>
     .profile-wrap {
       max-width: 500px;
@@ -38,9 +38,7 @@
       align-items: flex-start;
       margin-bottom: 20px;
       padding: 12px;
-      background: #f8fafc;
-      border-radius: 6px;
-      border: 1px solid #e2e8f0;
+      background: white;
     }
 
     .check-row input[type="checkbox"] {
@@ -48,6 +46,7 @@
       width: 18px;
       height: 18px;
       cursor: pointer;
+      flex-shrink: 0;
     }
 
     .check-row label {
@@ -60,7 +59,7 @@
 
     .legal-notice {
       font-size: 0.85em;
-      color: #94a3b8;
+      color: #999;
       text-align: center;
       margin-bottom: 24px;
       line-height: 1.4;
@@ -83,17 +82,23 @@
 <body>
   <header>
     <a href="/" style="text-decoration:none;color:inherit;">
-      <h1><img src="favicon.svg" style="height: 1em;"> Last Translation Benchmark</h1>
+      <h1><img src="assets/favicon.svg" style="height: 1em;"> Last Translation Benchmark</h1>
     </a>
+    <div id="header-status" style="display: none; align-items: center; gap: 16px;">
+      <span class="info" title="How many times you can run the translation.">
+        <span id="quota-text"></span>
+      </span>
+      <span class="info" title="Total confirmed contributions.">
+        <span id="total-points">0</span> accepted
+      </span>
+      <span id="username-info" class="info"></span>
+    </div>
   </header>
 
-  <div class="container">
-    <button id="show-instructions-btn" class="btn btn-instructions">📖 Show guidelines for contributing &
-      reviewing</button>
-    <div id="instructions-box" style="margin-bottom: 20px;"></div>
-
-    <div class="card profile-wrap">
-      <h2>Complete your profile</h2>
+  <div class="card profile-wrap">
+    <h2>Complete your profile</h2>
+    
+    <div id="registration-form">
       <p class="sub">This information is required before you can contribute.</p>
 
       <div class="form-group">
@@ -112,9 +117,16 @@
       </div>
 
       <div class="check-row">
-        <input type="checkbox" id="credit-consent">
+        <input type="checkbox" id="credit-consent" checked>
         <label for="credit-consent">
           I wish to be credited non-anonymously in any resulting publication under the above name & affiliation.
+        </label>
+      </div>
+
+      <div class="check-row">
+        <input type="checkbox" id="notification-consent" checked>
+        <label for="notification-consent">
+          Send me updates about my submissions.
         </label>
       </div>
 
@@ -124,7 +136,27 @@
 
       <button class="btn btn-success btn-full" id="save-btn">Save &amp; Continue</button>
       <div id="status-msg"></div>
+
+      <div id="recover-link-container" style="text-align: center; margin-top: 24px; display: none;">
+        <button id="show-recover-btn" class="btn-underlined" style="font-size: 0.9em;">I've lost my login link</button>
+      </div>
     </div>
+
+    <div id="recover-window" style="display: none;">
+      <div id="recover-form-content">
+        <p class="sub">Enter your registered email to receive a new login link.</p>
+        <div class="form-group">
+          <label for="recover-email">Email Address</label>
+          <input type="email" id="recover-email" placeholder="jane@example.com">
+        </div>
+        <button class="btn btn-success btn-full" id="send-recover-btn">Send Login Link</button>
+        <div style="text-align: center; margin-top: 24px;">
+          <button id="back-to-register-btn" class="btn-underlined" style="font-size: 0.9em;">Back to registration</button>
+        </div>
+      </div>
+      <div id="recover-status-msg" style="margin-top: 16px; text-align: center; min-height: 20px;"></div>
+    </div>
+
   </div>
 </body>
 

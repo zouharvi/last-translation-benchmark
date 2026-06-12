@@ -2,6 +2,13 @@ import $ from 'jquery';
 
 // ---------- Types ----------
 
+export interface Notification {
+    created: string;
+    type: string;
+    status: 'unread' | 'viewed' | 'emailed';
+    content: string;
+}
+
 export interface User {
     username: string;
     roles: string[];
@@ -13,23 +20,25 @@ export interface User {
     affiliation: string;
     email: string;
     credit_consent: boolean;
+    notification_consent: boolean;
+    notifications: Notification[];
+    review_langs?: string[];
 }
 
 export interface TranslationEntry {
-    api: string;
+    model: string;
     translation: string;
-    verified: boolean | null;
+    verified: boolean[] | null;
 }
 
 export interface Comment {
     author: string;
-    role: 'reviewer' | 'contributor';
+    author_name?: string;
     text: string;
-    timestamp: string;
+    created_at: string;
 }
 
 export interface Rule {
-    type: 'llm' | 'contains' | 'not_contains' | '';
     value: string;
 }
 
@@ -37,21 +46,29 @@ export interface Submission {
     id: number;
     user_id: number;
     username: string;
+    user_name?: string;
     source_text: string;
+    source_media?: string;
+    source_instructions?: string;
     source_lang: string;
     target_lang: string;
     verification_rules: Rule[];
     translations: TranslationEntry[];
-    points: number;
-    reviewer_comment: string;
+    status: 'pending' | 'accept' | 'return';
     created_at: string;
     comments?: Comment[];
+}
+
+export interface PublicDashboardRow {
+    name: string;
+    affiliation: string;
+    accepted_submissions: number;
 }
 
 // ---------- Cookie helpers ----------
 
 function setCookie(name: string, value: string): void {
-    const maxAge = 30 * 24 * 60 * 60; // 30 days
+    const maxAge = 10 * 365 * 24 * 60 * 60; // 10 years (effectively infinite)
     const secure = window.location.protocol === 'https:' ? '; Secure' : '';
     document.cookie = `${name}=${encodeURIComponent(value)}; max-age=${maxAge}; path=/; SameSite=Strict${secure}`;
 }
@@ -98,8 +115,11 @@ function apiCall<T>(method: string, url: string, data?: object): Promise<T> {
             dataType: 'json',
             success: (x: T) => resolve(x),
             error: (xhr: JQuery.jqXHR) => {
-                const detail = (xhr.responseJSON as { detail?: string })?.detail ?? 'Request failed';
-                reject(detail);
+                let detail = (xhr.responseJSON as any)?.detail;
+                if (detail !== undefined && typeof detail !== 'string') {
+                    detail = JSON.stringify(detail);
+                }
+                reject(detail ?? 'Request failed');
             },
         };
         if (data !== undefined) settings.data = JSON.stringify(data);
@@ -113,50 +133,83 @@ export function getMe() {
     return apiCall<User>('GET', 'api/me');
 }
 
-export function translate(text: string, source_lang: string, target_lang: string) {
+export function translate(text: string, source_lang: string, target_lang: string, source_media?: string, source_instructions?: string) {
     return apiCall<{
-        results: Array<{ api: string; translation: string | null; error: string | null }>;
+        results: Array<{ model: string; translation: string | null; error: string | null }>;
         quota_used: number;
         quota: number;
-    }>('POST', 'api/translate-submission', { text, source_lang, target_lang });
+    }>('POST', 'api/translate-submission', { text, source_lang, target_lang, source_media, source_instructions });
 }
+
+
 
 export function verify(
     source_text: string,
     translations: string[],
     verification_rules: Rule[],
+    source_media?: string,
 ) {
-    return apiCall<{ results: boolean[]; detail: string }>(
-        'POST', 'api/verify-submission', { source_text, translations, verification_rules }
+    return apiCall<{ results: boolean[][]; detail: string; quota: number; quota_used: number }>(
+        'POST', 'api/verify-submission', { source_text, translations, verification_rules, source_media }
     );
 }
 
-export function getSubmissions(mode: 'contributor' | 'reviewer' = 'contributor') {
-    return apiCall<Submission[]>('GET', `api/submissions?mode=${mode}`);
+export function getSubmissions(
+    mode: 'contributor' | 'reviewer' = 'contributor',
+    filters?: {
+        status?: 'pending' | 'accepted_or_returned' | 'accepted' | 'returned' | 'all';
+        source_langs?: string[];
+        target_langs?: string[];
+        username?: string;
+    },
+) {
+    const query = new URLSearchParams({ mode });
+    const status = filters?.status;
+    const sourceLangs = filters?.source_langs;
+    const targetLangs = filters?.target_langs;
+    const username = filters?.username;
+    if (status && status.trim() !== '') query.set('status', status);
+    if (sourceLangs && sourceLangs.length > 0) sourceLangs.forEach(l => query.append('source_langs', l));
+    if (targetLangs && targetLangs.length > 0) targetLangs.forEach(l => query.append('target_langs', l));
+    if (username && username.trim() !== '') query.set('username', username);
+    return apiCall<Submission[]>('GET', `api/submissions?${query.toString()}`);
+}
+
+export function getPublicDashboard() {
+    return apiCall<PublicDashboardRow[]>('GET', 'api/public-dashboard');
 }
 
 export function createSubmission(data: {
     source_text: string;
+    source_media?: string;
+    source_instructions?: string;
     source_lang: string;
     target_lang: string;
     verification_rules: Rule[];
-    translations: Array<{ api: string; translation: string; verified: boolean | null }>;
+    translations: Array<{ model: string; translation: string; verified: boolean[] | null }>;
 }) {
     return apiCall<{ ok: boolean }>('POST', 'api/submissions', data);
 }
 
 export function updateSubmission(id: number, data: {
     source_text: string;
+    source_media?: string;
+    source_instructions?: string;
     source_lang: string;
     target_lang: string;
     verification_rules: Rule[];
-    translations: Array<{ api: string; translation: string; verified: boolean | null }>;
+    translations: Array<{ model: string; translation: string; verified: boolean[] | null }>;
 }) {
     return apiCall<{ ok: boolean }>('PUT', `api/submissions/${id}`, data);
 }
 
-export function scoreSubmission(id: number, action: 'reject' | 'accept' | 'comment', comment?: string) {
-    return apiCall<{ ok: boolean }>('POST', `api/submissions/${id}/score`, { action, comment });
+export function deleteSubmission(id: number) {
+    return apiCall<{ ok: boolean }>('DELETE', `api/submissions/${id}`);
+}
+
+
+export function scoreSubmission(id: number, action: 'return' | 'accept' | 'pending') {
+    return apiCall<{ ok: boolean }>('POST', `api/submissions/${id}/score`, { action });
 }
 
 export function updateProfile(data: {
@@ -164,6 +217,7 @@ export function updateProfile(data: {
     affiliation: string;
     email: string;
     credit_consent: boolean;
+    notification_consent: boolean;
 }) {
     return apiCall<{ ok: boolean }>('PUT', 'api/profile', data);
 }
@@ -173,8 +227,13 @@ export function registerUser(data: {
     affiliation: string;
     email: string;
     credit_consent: boolean;
+    notification_consent: boolean;
 }) {
     return apiCall<{ ok: boolean }>('POST', 'api/register', data);
+}
+
+export function recoverLink(email: string) {
+    return apiCall<{ ok: boolean }>('POST', 'api/recover-link', { email });
 }
 
 export interface AdminUser {
@@ -191,20 +250,31 @@ export interface AdminUser {
     total_accepted: number;
     total_submitted: number;
     review_langs: string[];
-    invite_sent: string;
     last_active: string;
+    review_suggestions: ReviewSuggestion[];
 }
 
-export function getAdminUsers() {
-    return apiCall<AdminUser[]>('GET', 'api/admin/users');
+export interface ReviewSuggestion {
+    id: number;
+    source_lang: string;
+    target_lang: string;
+    username: string;
+    user_name?: string;
+}
+
+export interface AdminOverview {
+    users: AdminUser[];
+    submissions_without_reviewer: ReviewSuggestion[];
+    submissions_total: Record<string, number>;
+    pending_languages: Record<string, number>;
+}
+
+export function getAdminOverview() {
+    return apiCall<AdminOverview>('GET', 'api/admin');
 }
 
 export function deleteAdminUser(uid: number) {
     return apiCall<{ ok: boolean }>('DELETE', `api/admin/users/${uid}`);
-}
-
-export function rotateAdminToken(uid: number) {
-    return apiCall<{ magic_token: string }>('POST', `api/admin/users/${uid}/rotate-token`);
 }
 
 export function adjustAdminQuota(uid: number, delta: number) {
@@ -219,12 +289,12 @@ export function updateAdminReviewScope(uid: number, review_langs: string[]) {
     return apiCall<AdminUser>('POST', `api/admin/users/${uid}/review-scope`, { review_langs });
 }
 
-export function markInviteSent(uid: number) {
-    return apiCall<{ invite_sent: string }>('POST', `api/admin/users/${uid}/mark-invite-sent`);
-}
-
 export function addComment(id: number, comment: string) {
     return apiCall<{ ok: boolean }>('POST', `api/submissions/${id}/comment`, { comment });
+}
+
+export function handleNotifications(action: 'view' | 'clear') {
+    return apiCall<{ ok: boolean }>('POST', 'api/notifications', { action });
 }
 
 // ---------- UI helpers ----------
@@ -238,47 +308,38 @@ export function renderRoleSwitcher(roles: string[]): void {
     if (roles.includes('contributor')) {
         const btn = document.createElement('a');
         btn.textContent = 'Contribute';
-        btn.className = 'btn btn-secondary';
-        btn.style.padding = '3px 8px';
-        btn.style.fontSize = '0.8em';
-        btn.style.textDecoration = 'none';
+        btn.className = 'btn-underlined';
+        btn.style.fontSize = '0.85em';
         btn.href = 'contribute';
         container.appendChild(btn);
     }
     if (roles.includes('reviewer')) {
         const btn = document.createElement('a');
         btn.textContent = 'Review';
-        btn.className = 'btn btn-secondary';
-        btn.style.padding = '3px 8px';
-        btn.style.fontSize = '0.8em';
-        btn.style.textDecoration = 'none';
+        btn.className = 'btn-underlined';
+        btn.style.fontSize = '0.85em';
         btn.href = 'review';
         container.appendChild(btn);
     }
     if (roles.includes('admin')) {
         const btn = document.createElement('a');
         btn.textContent = 'Admin';
-        btn.className = 'btn btn-secondary';
-        btn.style.padding = '3px 8px';
-        btn.style.fontSize = '0.8em';
-        btn.style.textDecoration = 'none';
+        btn.className = 'btn-underlined';
+        btn.style.fontSize = '0.85em';
         btn.href = 'admin';
         container.appendChild(btn);
     }
     const profileBtn = document.createElement('a');
     profileBtn.textContent = 'Profile';
-    profileBtn.className = 'btn btn-secondary';
-    profileBtn.style.padding = '3px 8px';
-    profileBtn.style.fontSize = '0.8em';
-    profileBtn.style.textDecoration = 'none';
+    profileBtn.className = 'btn-underlined';
+    profileBtn.style.fontSize = '0.85em';
     profileBtn.href = 'profile';
     container.appendChild(profileBtn);
 
     const logoutBtn = document.createElement('button');
     logoutBtn.textContent = 'Logout';
-    logoutBtn.className = 'btn btn-secondary';
-    logoutBtn.style.padding = '3px 8px';
-    logoutBtn.style.fontSize = '0.8em';
+    logoutBtn.className = 'btn-underlined';
+    logoutBtn.style.fontSize = '0.85em';
     logoutBtn.addEventListener('click', logout);
     container.appendChild(logoutBtn);
 

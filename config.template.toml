@@ -1,12 +1,17 @@
 # last-translation-benchmark configuration file
 
-OPENAI_API_KEY = ""
 DEEPL_API_KEY = ""
-LIBRE_API_KEY = ""
 LIBRE_URL = ""
 OPENROUTER_API_KEY = ""
 LARA_API_ID = ""
 LARA_API_SECRET = ""
+GOOGLE_TRANSLATE_API_KEY = ""
 
-CONTRIBUTOR_QUOTA_DEFAULT = 10
+CONTRIBUTOR_QUOTA_DEFAULT = 100
 DB_PATH = "data/db.sqlite"
+DB_PATH_CACHE = "data/db_cache.sqlite"
+
+# specific to our FORPSI email
+EMAIL_SENDER = ""
+EMAIL_PASSWORD = ""
+EMAIL_SMTP_SERVER_PORT = ""

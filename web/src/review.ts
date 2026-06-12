@@ -1,28 +1,32 @@
-import './style.css';
+import './assets/style.css';
 import $ from 'jquery';
 import {
     getMe, getCookie,
-    getSubmissions, scoreSubmission, addComment, renderRoleSwitcher,
-    Submission,
+    getSubmissions, scoreSubmission, User, renderRoleSwitcher,
+    Submission, deleteSubmission, addComment,
 } from './api';
 
-import { esc as escHtml, fmtDate, scoreBadge, accessDenied, renderCommentThread, setupInstructions } from './utils';
+import { esc as escHtml, fmtDate, scoreBadge, accessDenied, renderCommentThread, renderHeaderStatus, renderSource, sortSubmissions } from './utils';
+import instructionsHtml from './assets/instructions.html';
 
 let allSugs: Submission[] = [];
 let curFilter = 'pending';
+let curSort = 'last_updated';
+let currentUser: User | null = null;
 
 $(async () => {
-    setupInstructions('all');
+    $('#instructions-box').html(instructionsHtml);
     if (!getCookie('ltb_token')) { window.location.href = 'index.html'; return; }
 
     try {
-        const user = await getMe();
-        renderRoleSwitcher(user.roles);
-        if (!user.roles.includes('reviewer')) {
-            accessDenied(user.roles, 'reviewer');
+        currentUser = await getMe();
+        renderHeaderStatus(currentUser);
+        renderRoleSwitcher(currentUser.roles);
+        if (!currentUser.roles.includes('reviewer')) {
+            accessDenied(currentUser.roles, 'reviewer');
             return;
         }
-        $('#sen-info').text(user.username);
+        $('#sen-info').text(currentUser.username);
     } catch {
         window.location.href = 'index.html';
         return;
@@ -33,20 +37,23 @@ $(async () => {
     // Status filter dropdown
     $('#filter-status').on('change', function () {
         curFilter = String($(this).val());
+        loadSubmissions();
+    });
+
+    // Sort filter dropdown
+    $('#filter-sort').on('change', function () {
+        curSort = String($(this).val());
         renderList();
     });
 
     // Language / user filter selects
-    $('#filter-lang, #filter-user').on('change', renderList);
+    $('#filter-source-lang, #filter-target-lang, #filter-user').on('change', loadSubmissions);
 
-    // Refresh
-    $('#refresh-btn').on('click', loadSubmissions);
-
-    // Action buttons (event delegation — list re-renders on each load)
-    $('#sen-list').on('click', '.score-btn', async function () {
+    $('#sen-list').on('click', '.score-btn:not(.comment-send-btn)', async function () {
+        if ($(this).prop('disabled')) return;
         const id = parseInt(String($(this).data('id')));
-        const action = String($(this).data('action')) as 'reject' | 'accept' | 'comment';
-        if (!['reject', 'accept', 'comment'].includes(action)) return;
+        const action = String($(this).data('action')) as 'return' | 'accept' | 'comment';
+        if (!['return', 'accept', 'comment'].includes(action)) return;
         if (action === 'comment') {
             // Toggle inline comment box instead of using prompt()
             const $box = $(`#comment-box-${id}`);
@@ -54,29 +61,26 @@ $(async () => {
             $box.css('display', visible ? 'none' : 'flex');
             if (!visible) {
                 $box.find('.comment-input').trigger('focus');
+                $(this).hide();
+                $(`#sug-${id} .comment-send-btn`).css('display', 'inline-block');
             }
             return;
         }
 
+        const isActive = $(this).hasClass('active');
+        const targetAction = isActive ? 'pending' : action;
+
         try {
-            await scoreSubmission(id, action);
-            const points = action === 'accept' ? 1 : 0;
+            await scoreSubmission(id, targetAction);
+            const status = targetAction === 'accept' ? 'accept' : (targetAction === 'return' ? 'return' : 'pending');
             const sug = allSugs.find(s => s.id === id);
-            if (sug) { sug.points = points; sug.reviewer_comment = ''; }
+            if (sug) { sug.status = status; }
             const $item = $(`#sug-${id}`);
             $item.find('.score-btn').removeClass('active');
-            $(this).addClass('active');
-            $item.find('.sug-meta .badge').replaceWith(scoreBadge(points, ''));
-            if (curFilter === 'pending') {
-                setTimeout(() => {
-                    $item.fadeOut(250, function () {
-                        $(this).remove();
-                        if (!$('#sen-list .sug-item').length) {
-                            $('#sen-list').html('<div class="empty">No pending submissions</div>');
-                        }
-                    });
-                }, 400);
+            if (targetAction !== 'pending') {
+                $(this).addClass('active');
             }
+            $item.find('.sug-meta .badge').replaceWith(scoreBadge(status, (sug?.comments?.length ?? 0) > 0));
         } catch { alert('Failed to save'); }
     });
 
@@ -89,27 +93,57 @@ $(async () => {
 
         $(this).prop('disabled', true).text('Sending…');
         try {
-            await scoreSubmission(id, 'comment', text);
+            await addComment(id, text);
             const sug = allSugs.find(s => s.id === id);
             if (sug) {
-                sug.points = -1;
-                sug.reviewer_comment = text;
                 if (!sug.comments) sug.comments = [];
-                sug.comments.push({ author: 'You', role: 'reviewer', text, timestamp: new Date().toISOString().slice(0, 16).replace('T', ' ') });
+                sug.comments.push({ author: currentUser!.username, author_name: currentUser!.name, text, created_at: new Date().toISOString().slice(0, 16).replace('T', ' ') });
             }
             $input.val('');
-            $(`#comment-box-${id}`).hide();
-            $(`#sug-${id} .sug-meta .badge`).replaceWith(scoreBadge(-1, text));
-            $(`#comment-thread-${id}`).html(renderCommentThreadWrap(sug?.comments ?? []));
+            if (sug) {
+                $(`#sug-${id} .sug-meta .badge`).replaceWith(scoreBadge(sug.status, true));
+                $(`#comment-thread-${id}`).html(renderCommentThreadWrap(sug.comments));
+            }
         } catch { alert('Failed to save'); }
         $(this).prop('disabled', false).text('Send');
+    });
+
+    // Delete submission (admin only)
+    $('#sen-list').on('click', '.delete-btn', async function () {
+        const id = parseInt(String($(this).data('id')));
+        if (!confirm(`Are you sure you want to delete submission #${id}? In most cases you should return with a reason for return so that the contributor can fix their submission.`)) return;
+
+        try {
+            await deleteSubmission(id);
+            allSugs = allSugs.filter(s => s.id !== id);
+            $(`#sug-${id}`).fadeOut(250, function () {
+                $(this).remove();
+                if (!$('#sen-list .sug-item').length) {
+                    $('#sen-list').html('<div class="empty">No submissions here</div>');
+                }
+            });
+        } catch (err) {
+            alert('Failed to delete: ' + err);
+        }
     });
 });
 
 async function loadSubmissions(): Promise<void> {
     $('#sen-list').html('<div class="empty">Loading…</div>');
+    const sourceLangVal = String($('#filter-source-lang').val() ?? '');
+    const targetLangVal = String($('#filter-target-lang').val() ?? '');
+    const userFilter = String($('#filter-user').val() ?? '');
+    
+    let source_langs = sourceLangVal === 'my_langs' ? [...(currentUser?.review_langs || []), 'English'] : (sourceLangVal ? [sourceLangVal] : []);
+    let target_langs = targetLangVal === 'my_langs' ? [...(currentUser?.review_langs || []), 'English'] : (targetLangVal ? [targetLangVal] : []);
+
     try {
-        allSugs = await getSubmissions('reviewer');
+        allSugs = await getSubmissions('reviewer', {
+            status: curFilter as 'pending' | 'accepted_or_returned' | 'accepted' | 'returned' | 'all',
+            source_langs: source_langs,
+            target_langs: target_langs,
+            username: userFilter,
+        });
         populateFilters();
         renderList();
     } catch {
@@ -118,83 +152,104 @@ async function loadSubmissions(): Promise<void> {
 }
 
 function populateFilters(): void {
-    const langVal = String($('#filter-lang').val() ?? '');
+    const sourceLangVal = String($('#filter-source-lang').val() ?? '');
+    const targetLangVal = String($('#filter-target-lang').val() ?? '');
     const userVal = String($('#filter-user').val() ?? '');
-    const langs = [...new Set(allSugs.map(s => `${s.source_lang}→${s.target_lang}`))];
-    const users = [...new Set(allSugs.map(s => s.username))];
-    $('#filter-lang').html('<option value="">All Languages</option>' +
-        langs.map(l => `<option value="${l}"${l === langVal ? ' selected' : ''}>${escHtml(l)}</option>`).join(''));
+
+    const getOptions = (id: string) => {
+        return $(id).find('option').map((_, el) => $(el).attr('value')).get().filter(v => v !== '');
+    };
+
+    const existingSourceLangs = getOptions('#filter-source-lang').filter(v => v !== 'my_langs');
+    const existingTargetLangs = getOptions('#filter-target-lang').filter(v => v !== 'my_langs');
+    const existingUsers = getOptions('#filter-user');
+
+    const sourceLangs = [...new Set([...existingSourceLangs, ...allSugs.map(s => s.source_lang)])].sort();
+    const targetLangs = [...new Set([...existingTargetLangs, ...allSugs.map(s => s.target_lang)])].sort();
+    const users = [...new Set([...existingUsers, ...allSugs.map(s => s.username)])].sort();
+
+    let mySourceLangsOption = '';
+    let myTargetLangsOption = '';
+    if (currentUser?.roles.includes('admin')) {
+        mySourceLangsOption = `<option value="my_langs" ${sourceLangVal === 'my_langs' ? 'selected' : ''}>My languages only</option>`;
+        myTargetLangsOption = `<option value="my_langs" ${targetLangVal === 'my_langs' ? 'selected' : ''}>My languages only</option>`;
+    }
+
+    $('#filter-source-lang').html('<option value="">All Source Languages</option>' + mySourceLangsOption +
+        sourceLangs.map(l => `<option value="${l}"${l === sourceLangVal ? ' selected' : ''}>${escHtml(l)}</option>`).join(''));
+    $('#filter-target-lang').html('<option value="">All Target Languages</option>' + myTargetLangsOption +
+        targetLangs.map(l => `<option value="${l}"${l === targetLangVal ? ' selected' : ''}>${escHtml(l)}</option>`).join(''));
+    const userDisplay = (u: string) => {
+        const sub = allSugs.find(s => s.username === u);
+        return sub?.user_name || u;
+    };
     $('#filter-user').html('<option value="">All Users</option>' +
-        users.map(u => `<option value="${u}"${u === userVal ? ' selected' : ''}>${escHtml(u)}</option>`).join(''));
+        users.map(u => `<option value="${u}"${u === userVal ? ' selected' : ''}>${escHtml(userDisplay(u))}</option>`).join(''));
 }
 
 function renderList(): void {
-    let list = allSugs;
-    if (curFilter === 'pending') list = list.filter(s => s.points < 0);
-    else if (curFilter === 'scored') list = list.filter(s => s.points >= 0);
-
-    const langFilter = String($('#filter-lang').val() ?? '');
-    const userFilter = String($('#filter-user').val() ?? '');
-    if (langFilter) list = list.filter(s => `${s.source_lang}→${s.target_lang}` === langFilter);
-    if (userFilter) list = list.filter(s => s.username === userFilter);
-
     const $el = $('#sen-list');
-    if (!list.length) { $el.html('<div class="empty">No submissions here</div>'); return; }
-    $el.html(list.map(renderSug).join(''));
+    if (!allSugs.length) { $el.html('<div class="empty">No submissions here</div>'); return; }
+    sortSubmissions(allSugs, curSort, currentUser!.username);
+    $el.html(allSugs.map(renderSug).join(''));
 }
 
 function renderCommentThreadWrap(comments: Submission['comments']): string {
-    return renderCommentThread(comments, 'reviewer');
+    return renderCommentThread(comments, currentUser!.username);
 }
 
 function renderSug(s: Submission): string {
-    const scoreActions: Array<['reject' | 'accept', string, string]> = [
-        ['reject', '#ef4444', 'Reject'],
-        ['accept', '#22c55e', 'Accept'],
+    const scoreActions: Array<['return' | 'accept', string, string]> = [
+        ['return', '#ef4444', 'Return submission'],
+        ['accept', '#22c55e', 'Accept submission'],
     ];
+    const isOwner = s.username === currentUser!.username;
+    const isAdmin = currentUser!.roles.includes('admin');
+    const canScore = !(isOwner && !isAdmin);
+
     const scoreBtns = scoreActions.map(([action, color, label]) => {
-        const act = (action === 'accept' && s.points === 1) || (action === 'reject' && s.points === 0) ? ' active' : '';
-        return `<button class="score-btn${act}" style="background:${color};color:#fff" data-id="${s.id}" data-action="${action}">${label}</button>`;
+        const act = (action === 'accept' && s.status === 'accept') || (action === 'return' && s.status === 'return') ? ' active' : '';
+        const style = canScore
+            ? `style="background:${color};color:#fff"`
+            : `style="background:${color};color:#fff;opacity:0.3;cursor:not-allowed"`;
+        const disabled = canScore ? '' : ' disabled';
+        return `<button class="score-btn${act}" ${style}${disabled} data-id="${s.id}" data-action="${action}">${label}</button>`;
     }).join('');
-    const commentBtn = `<button class="score-btn" style="background:#64748b;color:#fff" data-id="${s.id}" data-action="comment">Comment</button>`;
-    const btns = scoreBtns + commentBtn;
+    const deleteBtn = currentUser?.roles.includes('admin')
+        ? `<button class="delete-btn btn-underlined" style="margin-left:8px;font-size:0.8em" data-id="${s.id}">Delete submission</button>`
+        : '';
+    const commentBtn = `<button class="score-btn" style="background:#64748b;color:#fff;margin-left:auto" data-id="${s.id}" data-action="comment">Comment submission</button>`;
+    const sendBtn = `<button class="score-btn comment-send-btn" style="background:#64748b;color:#fff;display:none;margin-left:auto" data-id="${s.id}">Send comment</button>`;
+    const btns = scoreBtns + deleteBtn + commentBtn + sendBtn;
+
 
     const trRows = s.translations.map(t => {
-        const badge = t.verified === true
-            ? '<span class="vpill vpill-pass">✓</span>'
-            : t.verified === false
-                ? '<span class="vpill vpill-fail">✗</span>'
-                : '';
-        return `<div class="api-result-row">
-          <span class="api-name">${escHtml(t.api)}</span>
+        const badge = Array.isArray(t.verified)
+            ? t.verified.map(v => v ? '<span class="vpill vpill-pass">✓</span>' : '<span class="vpill vpill-fail">✗</span>').join('')
+            : '';
+        return `<div class="translation-result-row">
+          <span class="api-name">${escHtml(t.model)}</span>
           <div class="tr-display">${escHtml(t.translation)}</div>
-          ${badge}
+          <div style="display: flex; gap: 4px; flex-wrap: wrap;">${badge}</div>
         </div>`;
     }).join('');
 
     const ruleRows = s.verification_rules.map(r => {
-        let label = r.type.toUpperCase();
-        if (r.type === 'contains') label = "HAS TO CONTAIN";
-        else if (r.type === 'not_contains') label = "CAN'T CONTAIN";
-        else if (r.type === 'llm') label = "LLM-VERIFICATION";
-
         return `<div class="sug-box" style="margin-bottom:4px; font-size: 0.9em;">
-            <div class="lbl" style="font-size: 0.7em;">RULE: ${label}</div>
+            <div class="lbl"">VERIFICATION</div>
             ${escHtml(r.value)}
         </div>`;
     }).join('');
 
     return `<div class="sug-item" id="sug-${s.id}">
-        <div class="sug-meta">#${s.id} &middot; <b>${escHtml(s.username)}</b> &middot; ${s.source_lang}&rarr;${s.target_lang} &middot; ${fmtDate(s.created_at)} &middot; ${scoreBadge(s.points, s.reviewer_comment)}</div>
-        <div class="sug-box" style="margin-bottom:8px"><div class="lbl">SOURCE</div>${escHtml(s.source_text)}</div>
+        <div class="sug-meta">#${s.id} &middot; <b>${escHtml(s.user_name || s.username)}</b> &middot; ${s.source_lang}&rarr;${s.target_lang} &middot; ${fmtDate(s.created_at)} &middot; ${scoreBadge(s.status, (s.comments?.length ?? 0) > 0)}</div>
+        <div class="sug-box" style="margin-bottom:8px"><div class="lbl">INPUT</div>${renderSource(s)}</div>
         <div style="margin-bottom:8px">${trRows}</div>
         <div style="margin-bottom:8px">${ruleRows}</div>
         <div id="comment-thread-${s.id}">${renderCommentThreadWrap(s.comments)}</div>
         <div id="comment-box-${s.id}" style="display:none;margin-top:8px;flex-direction:row;align-items:flex-start;gap:6px">
             <textarea class="comment-input" placeholder="Write a comment for the contributor…" rows="2" style="flex:1;margin-bottom:0"></textarea>
-            <button class="comment-send-btn score-btn" style="background:#64748b;color:#fff;align-self:stretch" data-id="${s.id}">Send</button>
         </div>
         <div class="sug-scoring">${btns}</div>
     </div>`;
 }
-

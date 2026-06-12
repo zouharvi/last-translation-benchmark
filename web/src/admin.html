@@ -3,22 +3,11 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Last Translation Benchmark — Admin</title>
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <meta name="viewport" content="width=800">
+  <title>Last Translation Benchmark</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <style>
-    .admin-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      align-items: stretch;
-    }
 
-    @media (max-width: 860px) {
-      .admin-grid {
-        grid-template-columns: 1fr;
-      }
-    }
 
     .tbl-wrap {
       overflow-x: auto;
@@ -34,21 +23,19 @@
     th {
       text-align: left;
       padding: 10px;
-      background: #f8fafc;
       color: #475569;
       font-weight: 700;
-      border-bottom: 2px solid #e5e7eb;
+      border-bottom: 1px solid #e2e8f0;
     }
 
     td {
       padding: 10px;
-      border-bottom: 1px solid #f1f5f9;
       vertical-align: middle;
       color: #334155;
     }
 
     tr:hover td {
-      background: #f8fafc;
+      background: #ddd;
     }
 
     .role-tag {
@@ -59,17 +46,11 @@
       font-weight: 700;
       margin-right: 4px;
       cursor: pointer;
-      transition: opacity 0.1s, transform 0.1s;
       user-select: none;
     }
 
     .role-tag:hover {
       opacity: 0.8;
-      transform: translateY(-1px);
-    }
-
-    .role-tag:active {
-      transform: translateY(0);
     }
 
     .role-inactive {
@@ -108,19 +89,13 @@
       border-radius: 4px;
       cursor: pointer;
       font-size: 0.8em;
-      transition: opacity .1s;
     }
 
     .act-btn:hover {
-      opacity: .7;
+      opacity: 0.6;
     }
 
-    .act-copy {
-      background: #e0f2fe;
-      color: #0369a1;
-    }
-
-    .act-rotate {
+    .act-quota {
       background: #fef9c3;
       color: #92400e;
     }
@@ -141,7 +116,6 @@
       border-radius: 20px;
       font-size: 0.85em;
       opacity: 0;
-      transition: opacity .2s;
       z-index: 100;
     }
 
@@ -152,6 +126,12 @@
     .uname {
       font-family: monospace;
       font-size: 1.1em;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .uname:hover {
+      text-decoration: underline;
     }
 
     .admin-input {
@@ -173,10 +153,21 @@
     }
 
     .email-cell {
-      max-width: 160px;
+      max-width: 120px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .affil-cell {
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .sugg-cell {
+      min-width: 100px;
     }
 
     .email-cell a {
@@ -184,9 +175,8 @@
     }
 
     .scope-cell {
-      width: 100px;
-      max-width: 200px;
-      min-width: 100px;
+      width: 90px;
+      min-width: 90px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -198,26 +188,36 @@
       cursor: pointer;
       color: #475569;
     }
-
-    td.scope-cell:hover {
-      background: #f1f5f9;
-    }
   </style>
 </head>
 
 <body>
   <header>
     <a href="/" style="text-decoration:none;color:inherit;">
-      <h1><img src="favicon.svg" style="height: 1em;"> Last Translation Benchmark</h1>
+      <h1><img src="assets/favicon.svg" style="height: 1em;">
+        Last Translation Benchmark
+      </h1>
     </a>
-    <div style="display: flex; align-items: center; gap: 16px;">
-      <span id="admin-info" class="info"></span>
+    <div id="header-status" style="display: none; align-items: center; gap: 16px;">
+      <span class="info" title="How many times you can run the translation.">
+        <span id="quota-text"></span>
+      </span>
+      <span class="info" title="Total confirmed contributions.">
+        <span id="total-points">0</span> accepted
+      </span>
+      <span id="username-info" class="info"></span>
     </div>
   </header>
 
   <div class="container" style="max-width: 1400px;">
-    <div class="admin-grid">
-      <div class="card">
+    <div class="card" style="margin-bottom: 20px;" id="overview-card">
+      <h2 style="margin:0; margin-bottom:12px;">Submission overview</h2>
+      <div id="overview-content" style="font-size: 0.9em; line-height: 1.5;">Loading...</div>
+    </div>
+
+    <hr style="border: 0; border-top: 4px solid black; margin: 24px 0;">
+
+    <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           <h2 style="margin:0">Users</h2>
           <div style="display:flex; gap:8px;">
@@ -237,7 +237,6 @@
         </div>
         <span id="filtered-count"></span>
       </div>
-    </div>
   </div>
   <div id="toast"></div>
 </body>

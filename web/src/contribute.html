@@ -3,84 +3,29 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=800">
   <title>Last Translation Benchmark</title>
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <style>
-    /* ---------- two-column contributor layout ---------- */
-    #contributor-layout {
-      display: grid;
-      grid-template-columns: 1fr 450px;
-      gap: 20px;
-      align-items: start;
-    }
-
-    @media (max-width: 800px) {
-      #contributor-layout {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    #main-col .card {
-      margin-bottom: 0;
-    }
-
-    #sidebar-card {
-      height: calc(100vh - 140px);
-      overflow-y: auto;
-      position: sticky;
-      top: 20px;
-    }
 
     /* ---------- sidebar mini-submission ---------- */
     .sug-mini {
-      border: 1px solid #e5e7eb;
-      border-radius: 6px;
+      border-bottom: 1px solid #aaa;
       padding: 10px;
       margin-bottom: 8px;
       font-size: 0.85em;
     }
 
+    .sug-mini:last-child {
+      border-bottom: none;
+    }
+
     .sug-mini-meta {
       font-size: 0.75em;
-      color: #94a3b8;
-      margin-bottom: 4px;
+      color: #64748b;
+      margin-bottom: 8px;
     }
 
-    .sug-mini-text {
-      color: #1e293b;
-      font-weight: 500;
-      margin-bottom: 2px;
-      word-break: break-word;
-    }
-
-    .sug-mini-tr {
-      color: #475569;
-      font-size: 0.88em;
-      margin-bottom: 4px;
-      word-break: break-word;
-    }
-
-    .sug-mini-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .sug-mini-vc {
-      background: #f1f5f9;
-      padding: 1px 5px;
-      border-radius: 3px;
-      font-size: 0.82em;
-      max-width: 150px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      display: inline-block;
-    }
 
     /* ---------- misc contributor items ---------- */
     #lang-row {
@@ -92,63 +37,70 @@
     #lang-row>* {
       flex: 1;
     }
-
-    /* .lang-input is now handled by global styles */
   </style>
 </head>
 
 <body>
   <header>
     <a href="/" style="text-decoration:none;color:inherit;">
-      <h1><img src="favicon.svg" style="height: 1em;"> Last Translation Benchmark</h1>
+      <h1><img src="assets/favicon.svg" style="height: 1em;"> Last Translation Benchmark</h1>
     </a>
-    <div style="display: flex; align-items: center; gap: 16px;">
-      <span class="info">
-        🔋 <span id="quota-text"></span>
+    <div id="header-status" style="display: none; align-items: center; gap: 16px;">
+      <span class="info" title="How many times you can run the translation.">
+        <span id="quota-text"></span>
       </span>
-      <span class="info">
-        ⭐ <span id="total-points">0</span> points
+      <span class="info" title="Total confirmed contributions.">
+        <span id="total-points">0</span> accepted
       </span>
-      <span id="ann-info" class="info"></span>
+      <span id="username-info" class="info"></span>
     </div>
   </header>
 
   <div class="container">
-    <button id="show-instructions-btn" class="btn btn-instructions">📖 Show guidelines for contributing</button>
-    <div id="instructions-box" style="margin-bottom: 20px;"></div>
-
-    <div id="contributor-layout">
-
       <!-- ===== MAIN FORM COLUMN ===== -->
-      <div id="main-col">
-        <div class="card">
+      <div class="card">
           <h2>New Submission</h2>
           <ul style="margin-left: -20pt; color: #475569; font-size: 0.9em;">
             <li>Remember: The inputs need to be self-contained and its meaning clear.</li>
             <li>Remember: The inputs should not be too unrealistic or contrived.</li>
-            <li>Read the full instructions before contributing.</li>
+
+            <li>Remember: Read the full instructions before contributing.</li>
           </ul>
 
           <div id="lang-row">
             <div>
-              <label for="src-lang">Source Language</label>
+              <label for="src-lang">Translate from</label>
               <input type="text" id="src-lang" list="src-langs" value="English" placeholder="e.g. English, custom...">
               <datalist id="src-langs"></datalist>
             </div>
             <div>
-              <label for="tgt-lang">Target Language</label>
+              <label for="tgt-lang">Translate into</label>
               <input type="text" id="tgt-lang" list="tgt-langs" value="" placeholder="e.g. German, custom...">
               <datalist id="tgt-langs"></datalist>
             </div>
           </div>
 
           <label for="src-text">Input</label>
-          <textarea id="src-text" placeholder="Enter the source text…" style="min-height: 200px;"></textarea>
+          <textarea id="src-text" placeholder="Enter the source text…" style="min-height: 100px;"></textarea>
+          <textarea id="src-instructions" placeholder="Enter additional instructions/context for this translation, such as the rest of the document or translation requirements…"
+            style="min-height: 80px; margin-top: 10px; display: none;"></textarea>
 
-          <div
-            style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
-            <span id="tr-status" style="font-size:0.85em;color:#64748b"></span>
-            <button class="btn btn-secondary" id="tr-btn">⟳ Translate by all models</button>
+          <input type="file" id="src-file" style="display: none;" accept=".mp3,.wav,.png,.jpg,.jpeg,.mp4,.webm,.mpeg,.mov">
+          <div id="media-preview"></div>
+
+          <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="display: flex; flex-direction: column; font-size: 0.85em; gap: 4px;">
+              <button id="add-media-btn" class="btn-underlined" style="text-align: left;">
+                Add image/audio/video
+              </button>
+              <button id="add-context-btn" class="btn-underlined" style="text-align: left;">
+                Add instructions/context
+              </button>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
+              <span id="tr-status" style="font-size:0.85em;color:#64748b;"></span>
+              <button class="btn btn-success" id="tr-btn">⟳ Translate by all models</button>
+            </div>
           </div>
 
 
@@ -160,52 +112,62 @@
             </div>
             <!-- Own Translation -->
 
-            <div class="api-result-row" style="margin-bottom: 12px; background: #fff; border-color: #cbd5e1;">
+            <div class="translation-result-row" style="margin-bottom: 12px; background: white;">
               <span class="api-name">Human translation</span>
               <div class="tr-display" style="flex: 1; display: flex;">
                 <textarea id="own-translation" placeholder="Type your own translation here..."
                   style="width: 100%; border: none; outline: none; background: transparent; color: inherit; resize: vertical; min-height: 24px; padding: 0; margin: 0;"></textarea>
               </div>
-              <span class="verify-pill" id="own-verify-badge"></span>
+              <div id="own-verify-badge" style="display: flex; gap: 4px; flex-wrap: wrap;"></div>
             </div>
             <div id="api-results-body"></div>
           </div>
 
-          <label id="vc-label">
-            Verification rules
-            <span class="hint">(all rules must pass)</span>
+          <label>
+            Verification rules <span style="font-size: 0.8em; font-weight: normal; color: #64748b;">(all must pass)</span>
           </label>
           <div id="rules-container" style="margin-bottom: 8px;"></div>
-          <button class="btn btn-secondary" id="add-rule-btn"
-            style="margin-bottom: 12px; padding: 4px 10px; font-size: 0.85em;">+ Add Rule</button>
+          <button class="btn-underlined" id="add-rule-btn" style="margin-bottom: 12px; font-size: 0.85em;">+ Add
+            Rule</button>
 
 
           <div
             style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
             <span id="verify-result"></span>
-            <button class="btn btn-secondary" id="verify-btn">✓ Verify translations</button>
+            <button class="btn btn-success" id="verify-btn" disabled>✓ Verify translations</button>
           </div>
 
           <div style="display: flex; justify-content: flex-end; align-items: center;">
             <span id="submit-status" style="margin-right:10px;font-size:0.85em"></span>
+            <span id="submit-reason" style="margin-right:10px;font-size:0.85em;color:#64748b;"></span>
             <button class="btn btn-secondary" id="cancel-edit-btn" style="display:none; margin-right:10px;">Cancel
               Edit</button>
-            <button class="btn btn-success" id="submit-btn">Submit Input, Translations & Rule</button>
+            <button class="btn btn-success" id="submit-btn" disabled>Submit Input, Translations & Rule</button>
           </div>
         </div>
-      </div>
 
       <!-- ===== SIDEBAR COLUMN ===== -->
-      <div>
-        <div id="sidebar-card" class="card">
+      <div id="sidebar-card" class="card" style="border-top: 4px solid black;">
           <h2>My Submissions</h2>
-          <div id="my-submissions">
+          <div style="display: flex; gap: 10px; margin-bottom: 10px; font-size: 0.9em; flex-wrap: wrap;">
+            <label><input type="checkbox" id="filter-pending" checked> Pending</label>
+            <label><input type="checkbox" id="filter-returned" checked> Returned</label>
+            <label><input type="checkbox" id="filter-accepted"> Accepted</label>
+            <div style="margin-bottom: 10px;">
+              <select id="filter-sort" class="tab" style="width: 180px; padding: 4px; border-radius: 4px; border: 1px solid #ccc;">
+                <option value="last_updated">Last updated</option>
+                <option value="last_commented">Last commented</option>
+                <option value="oldest_updated">Oldest updated</option>
+                <option value="oldest_commented">Oldest commented</option>
+              </select>
+            </div>
+          </div>
+            <div id="my-submissions" style="max-height: 500px; overflow-y: auto; padding-right: 10px;">
             <div class="empty">No submissions yet</div>
           </div>
         </div>
-      </div>
 
-    </div>
+    <div id="instructions-box" class="card" style="border-top: 4px solid black;"></div>
   </div>
 </body>
 

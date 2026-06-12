@@ -1,15 +1,49 @@
-import './style.css';
+import './assets/style.css';
 import $ from 'jquery';
 import {
-    getMe, getCookie, getAdminUsers, deleteAdminUser,
-    rotateAdminToken, adjustAdminQuota, updateAdminRoles, updateAdminReviewScope, renderRoleSwitcher, AdminUser,
-    markInviteSent,
+    getMe, getCookie, getAdminOverview, deleteAdminUser,
+    adjustAdminQuota, updateAdminRoles, updateAdminReviewScope, renderRoleSwitcher, AdminUser, AdminOverview
 } from './api';
 
-import { esc, showToast, accessDenied } from './utils';
+import { esc, showToast, accessDenied, renderHeaderStatus } from './utils';
 
 let allUsers: AdminUser[] = [];
-let adminName: string = '';
+let adminOverview: AdminOverview | null = null;
+
+function renderOverview(data: AdminOverview) {
+    const statusCounts = Object.entries(data.submissions_total)
+        .map(([status, count]) => `<strong>${count}</strong> ${esc(status)}`)
+        .join(', ');
+    
+    let html = `<p style="margin-top:0;"><strong>Total Submissions:</strong> ${statusCounts}. `;
+    
+    if (data.submissions_without_reviewer.length > 0) {
+        html += `<p style="font-weight: bold; margin-bottom: 4px;">Pending submissions with no elligible reviewers (${data.submissions_without_reviewer.length}):</p>`;
+        html += `<ul style="margin-top: 0; margin-bottom: 12px;">`;
+        const grouped: Record<string, number[]> = {};
+        for (const sub of data.submissions_without_reviewer) {
+            const key = `${esc(sub.source_lang)} &rarr; ${esc(sub.target_lang)} by ${esc(sub.user_name || sub.username)}`;
+            (grouped[key] ||= []).push(sub.id);
+        }
+        for (const [key, ids] of Object.entries(grouped)) {
+            html += `<li>${key} (${ids.map(id => `#${id}`).join(', ')})</li>`;
+        }
+        html += `</ul>`;
+    }
+
+    const pendingLangsCount = Object.keys(data.pending_languages || {}).length;
+    if (pendingLangsCount > 0) {
+        const sortedLangs = Object.entries(data.pending_languages)
+            .sort((a: [string, number], b: [string, number]) => b[1] - a[1])
+            .map(([lang, count]: [string, number]) => `<strong>${count}</strong> ${esc(lang)}`)
+            .join(', ');
+        html += `<p style="margin-top: 0; margin-bottom: 12px;"><strong>Pending by language:</strong> ${sortedLangs}</p>`;
+    }
+
+    html += `</p>`
+    
+    $('#overview-content').html(html);
+}
 
 function renderTable(users: AdminUser[]): void {
     if (!users.length) {
@@ -26,53 +60,55 @@ function renderTable(users: AdminUser[]): void {
             return `<span class="role-tag role-${r} ${active ? '' : 'role-inactive'}" data-role="${r}">${esc(r)}</span>`;
         }).join('');
 
-        let statusLabel: string;
-        let statusTitle: string;
-        if (u.total_submitted > 0) {
-            statusLabel = 'submitted';
-            statusTitle = u.last_active ? `Last active: ${u.last_active}` : '';
-        } else if (u.last_active) {
-            statusLabel = 'logged-in';
-            statusTitle = `Last active: ${u.last_active}`;
-        } else if (u.invite_sent) {
-            statusLabel = 'invite-sent';
-            statusTitle = `Invite sent: ${u.invite_sent}`;
-        } else {
-            statusLabel = 'registered';
-            statusTitle = '';
+        const sugg = u.review_suggestions || [];
+        let suggHtml = sugg.length === 0 ? '<span class="muted" style="font-size: 0.8em;">none</span>' : `<span class="sugg-toggle" style="cursor:pointer;" data-uid="${u.id}">${sugg.length} possible</span>`;
+        if (sugg.length > 0 && !u.roles.includes('reviewer')) {
+             suggHtml += `<br><span style="font-size: 0.8em;">not a reviewer</span>`;
         }
-        const statusBadge = `<span style="font-size:0.8em;white-space:nowrap" title="${esc(statusTitle)}">${statusLabel}</span>`;
+
+        let suggListHtml = '';
+        if (sugg.length > 0) {
+            const groupedSugg: Record<string, number[]> = {};
+            for (const s of sugg) {
+                const key = `${esc(s.source_lang)} &rarr; ${esc(s.target_lang)} by ${esc(s.user_name || s.username)}`;
+                (groupedSugg[key] ||= []).push(s.id);
+            }
+            suggListHtml = `<tr class="sugg-row-${u.id}" style="display:none;">
+                <td colspan="10" style="padding: 10px 20px; border-bottom: 1px solid #e2e8f0;">
+                    <ul style="margin: 0; padding-left: 20px; font-size: 0.9em;">
+                        ${Object.entries(groupedSugg).map(([k, ids]) => `<li>${k} (${ids.map(id => `#${id}`).join(', ')})</li>`).join('')}
+                    </ul>
+                </td>
+            </tr>`;
+        }
 
         return `<tr data-uid="${u.id}">
-            <td><span class="uname">${esc(u.username)}</span></td>
+            <td><a href="${link}" class="uname" target="_blank">${esc(u.username)}</a></td>
+            <td>${u.name ? esc(u.name) : '<span class="muted">—</span>'}</td>
             <td style="width:1%;white-space:nowrap">${rolesHtml}</td>
             <td class="scope-cell" data-uid="${u.id}" title="Click to edit language scope">${u.review_langs && u.review_langs.length ? esc(u.review_langs.join(',')) : '<span class="muted">all</span>'}</td>
-            <td>${u.name ? esc(u.name) : '<span class="muted">—</span>'}</td>
-            <td>${u.affiliation ? esc(u.affiliation) : '<span class="muted">—</span>'}</td>
-            <td class="email-cell"><a href="mailto:${esc(u.email)}">${esc(u.email)}</a></td>
-            <td style="text-align:right">${u.quota_used} / ${u.quota}</td>
-            <td style="text-align:right">${u.total_accepted} / ${u.total_submitted}</td>
-            <td>${statusBadge}</td>
+            <td class="sugg-cell">${suggHtml}</td>
+            <td class="affil-cell" title="${esc(u.affiliation)}">${u.affiliation ? esc(u.affiliation) : '<span class="muted">—</span>'}</td>
+            <td class="email-cell" title="${esc(u.email)}"><a href="mailto:${esc(u.email)}">${esc(u.email)}</a></td>
+            <td style="text-align:right;white-space:nowrap">${u.quota_used}&nbsp;/&nbsp;<button class="act-btn act-quota" data-uid="${u.id}" title="Adjust quota">${u.quota}</button></td>
+            <td style="text-align:right">${u.total_accepted}&nbsp;/&nbsp;${u.total_submitted}</td>
             <td>
               <div class="action-btns">
-                <a class="act-btn act-copy" data-uid="${u.id}" title="Login link" href="${link}">🔗</a>
-                ${(() => {
-                const subject = 'Your Last Translation Benchmark Login Link';
-                const body = `Dear ${u.name || u.username},\n\nThank you for your interest in Last Translation Benchmark. You can submit hard-to-translate inputs via this link (do not share with anyone):\n\n${link}\n\nPlease make sure that you read the instructions in detail.\nLet us know if you have any questions or need to increase your submission quota.\n\nOn behalf of LTB organizers,\n${adminName}`;
-                return `<a class="act-btn act-email-link" data-uid="${u.id}" title="Send magic link via email" target="_blank" href="mailto:${encodeURIComponent(u.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}" style="background:#e0e7ff;color:#4338ca;text-decoration:none;">📧</a>`;
-            })()}
-                <button class="act-btn act-rotate" data-uid="${u.id}" title="Rotate magic token">🔄</button>
-                <button class="act-btn act-quota" data-uid="${u.id}" title="Adjust quota">±</button>
                 <button class="act-btn act-delete" data-uid="${u.id}" title="Remove user">✕</button>
               </div>
             </td>
-        </tr>`;
+        </tr>${suggListHtml}`;
     }).join('');
 
     $('#user-table').html(`<table>
-        <thead><tr><th>Username</th><th style="width:1%;white-space:nowrap">Roles</th><th class="scope-cell">Scope</th><th>Name</th><th>Affiliation</th><th>Email</th><th style="text-align:right">Used&nbsp;/<br>Quota</th><th style="text-align:right">Accepted&nbsp;/<br>Submitted</th><th>Status</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Username</th><th>Name</th><th style="width:1%;white-space:nowrap">Roles</th><th class="scope-cell">Reviewer<br>scope</th><th class="sugg-cell">Reviewer<br>suggestions</th><th class="affil-cell">Affiliation</th><th class="email-cell">Email</th><th style="text-align:right">Used&nbsp;/<br>Quota</th><th style="text-align:right">Accepted&nbsp;/<br>Submitted</th><th>Actions</th></tr></thead>
         <tbody>${rows}</tbody>
     </table>`);
+
+    $('.sugg-toggle').on('click', function () {
+        const uid = $(this).data('uid');
+        $(`.sugg-row-${uid}`).toggle();
+    });
 
     $('.role-tag').on('click', async function () {
         const uid = $(this).closest('tr').data('uid');
@@ -95,38 +131,9 @@ function renderTable(users: AdminUser[]): void {
         } catch (e) { alert(e); }
     });
 
-    $('.act-rotate').on('click', async function () {
-        const uid = $(this).data('uid');
-        if (!confirm('Rotate magic token?')) return;
-        try {
-            const res = await rotateAdminToken(uid);
-            allUsers.find(u => u.id === uid)!.magic_token = res.magic_token;
-            showToast('Token rotated');
-        } catch (e) { alert(e); }
-    });
-
-
-    $('.act-email-link').on('click', async function (e) {
-        e.preventDefault();
-        const href = $(this).attr('href');
-        const uid = $(this).data('uid');
-
-        if (href) {
-            window.open(href, '_blank');
-        }
-
-        try {
-            const res = await markInviteSent(uid);
-            const u = allUsers.find(u => u.id === uid);
-            if (u) u.invite_sent = res.invite_sent;
-            applyFilter();
-            showToast('Invite marked as sent');
-        } catch { alert('Failed to mark invite as sent.'); }
-    });
-
     $('.act-delete').on('click', async function () {
         const uid = $(this).data('uid');
-        if (!confirm('Delete user?')) return;
+        if (!confirm(`Delete user ${uid}?`)) return;
         try {
             await deleteAdminUser(uid);
             allUsers = allUsers.filter(u => u.id !== uid);
@@ -183,11 +190,12 @@ $(async () => {
     if (!getCookie('ltb_token')) { window.location.href = 'index.html'; return; }
     try {
         const user = await getMe();
-        adminName = user.name || user.username;
+        renderHeaderStatus(user);
         renderRoleSwitcher(user.roles);
         if (!user.roles.includes('admin')) { accessDenied(user.roles, 'admin'); return; }
-        $('#admin-info').text(user.username);
-        allUsers = await getAdminUsers();
+        adminOverview = await getAdminOverview();
+        allUsers = adminOverview.users;
+        renderOverview(adminOverview);
         applyFilter();
     } catch { window.location.href = 'index.html'; }
 

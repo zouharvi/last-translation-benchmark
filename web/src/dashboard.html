@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=800">
+  <title>Last Translation Benchmark</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+
+<body>
+  <header>
+    <a href="/" style="text-decoration:none;color:inherit;">
+      <h1><img src="assets/favicon.svg" style="height: 1em;"> Last Translation Benchmark</h1>
+    </a>
+    <div id="header-status" style="display: none; align-items: center; gap: 16px;">
+      <span class="info" title="How many times you can run the translation.">
+        <span id="quota-text"></span>
+      </span>
+      <span class="info" title="Total confirmed contributions.">
+        <span id="total-points">0</span> accepted
+      </span>
+      <span id="username-info" class="info"></span>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      Public contributor dashboard showing preliminary results and updated in real time.
+      <table style="width:100%; border-collapse:collapse; margin-top:20px;">
+        <thead style="border-bottom: 4px solid black;">
+          <tr>
+            <th style="text-align:left; padding:8px 6px; border-bottom:1px solid #e5e7eb;">Name</th>
+            <th style="text-align:left; padding:8px 6px; border-bottom:1px solid #e5e7eb;">Affiliation</th>
+            <th style="text-align:right; padding:8px 6px; border-bottom:1px solid #e5e7eb;">Accepted submissions</th>
+          </tr>
+        </thead>
+        <tbody id="dashboard-body">
+          <tr>
+            <td colspan="3" class="empty">Loading…</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+
+</html>

@@ -3,41 +3,53 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=800">
   <title>Last Translation Benchmark</title>
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 </head>
 
 <body>
   <header>
     <a href="/" style="text-decoration:none;color:inherit;">
-      <h1><img src="favicon.svg" style="height: 1em;"> Last Translation Benchmark</h1>
+      <h1><img src="assets/favicon.svg" style="height: 1em;"> Last Translation Benchmark</h1>
     </a>
-    <div style="display: flex; align-items: center; gap: 16px;">
-      <span id="sen-info" class="info"></span>
+    <div id="header-status" style="display: none; align-items: center; gap: 16px;">
+      <span class="info" title="How many times you can run the translation.">
+        <span id="quota-text"></span>
+      </span>
+      <span class="info" title="Total confirmed contributions.">
+        <span id="total-points">0</span> accepted
+      </span>
+      <span id="username-info" class="info"></span>
     </div>
   </header>
 
   <div class="container">
-    <button id="show-instructions-btn" class="btn btn-instructions">📖 Show guidelines for reviewing</button>
-    <div id="instructions-box" style="margin-bottom: 20px;"></div>
-
     <div class="card">
-      <h2>Review Submissions</h2>
       <div class="tabs">
-        <select id="filter-status" class="tab" style="width:auto">
+        <div id="instructions-box" class="card" style="margin-bottom: 24px; max-height: 400px; overflow-y: auto; border-left: 4px solid black;"></div>
+        <select id="filter-status" class="tab" style="width:150px">
           <option value="pending">Pending</option>
-          <option value="scored">Scored</option>
+          <option value="accepted_or_returned">Accepted or Returned</option>
+          <option value="accepted">Accepted</option>
+          <option value="returned">Returned</option>
           <option value="all">All</option>
         </select>
-        <select id="filter-lang" class="tab" style="width:auto">
-          <option value="">All Languages</option>
+        <select id="filter-source-lang" class="tab" style="width:180px">
+          <option value="">All Source Languages</option>
         </select>
-        <select id="filter-user" class="tab" style="width:auto">
+        <select id="filter-target-lang" class="tab" style="width:180px">
+          <option value="">All Target Languages</option>
+        </select>
+        <select id="filter-user" class="tab" style="width:180px">
           <option value="">All Users</option>
         </select>
-        <button class="tab" style="margin-left:auto" id="refresh-btn">↻ Refresh</button>
+        <select id="filter-sort" class="tab" style="width:180px">
+          <option value="last_updated">Last updated</option>
+          <option value="last_commented">Last commented</option>
+          <option value="oldest_updated">Oldest updated</option>
+          <option value="oldest_commented">Oldest commented</option>
+        </select>
       </div>
       <div id="sen-list">
         <div class="empty">Loading…</div>

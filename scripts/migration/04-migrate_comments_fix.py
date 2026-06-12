@@ -1,0 +1,28 @@
+import asyncio
+
+from last_translation_benchmark.db import get_submissions, save_submission
+
+async def migrate_comments_fix():
+    print("Fetching submissions...")
+    submissions = await get_submissions()
+    
+    updated_count = 0
+    for sub in submissions:
+        updated = False
+        
+        if "comments" in sub and isinstance(sub["comments"], list):
+            original_len = len(sub["comments"])
+            # Remove comments with author "Reviewer" (case-sensitive)
+            sub["comments"] = [c for c in sub["comments"] if c.get("author") != "Reviewer"]
+            
+            if len(sub["comments"]) != original_len:
+                updated = True
+                
+        if updated:
+            await save_submission(sub)
+            updated_count += 1
+            
+    print(f"Migration fix completed. Updated {updated_count} submissions.")
+
+if __name__ == "__main__":
+    asyncio.run(migrate_comments_fix())

@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /$
+Allow: /index.html
+Allow: /index.bundle.js
+Allow: /style.css
+Allow: /assets/style.css
+Allow: /favicon.ico
+Allow: /assets/favicon.svg
+Disallow: /

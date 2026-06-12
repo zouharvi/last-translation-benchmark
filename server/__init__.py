@@ -2,6 +2,7 @@
 Last Translation Benchmark - FastAPI backend
 """
 
+import asyncio
 import logging
 import os
 import time
@@ -14,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .db import get_users, init_db
 from .routers import router
+from .utils import schedule_daily_backup, schedule_daily_notifications
 
 
 @asynccontextmanager
@@ -28,7 +30,23 @@ async def lifespan(app: FastAPI):
             f"  {user['username']:>20}  {host_public}/?user={user['username']}&token={user['magic_token']}"
         )
     print("=========================\n")
-    yield
+    
+
+
+    backup_task = asyncio.create_task(schedule_daily_backup())
+    notif_task = asyncio.create_task(schedule_daily_notifications())
+    try:
+        yield
+    finally:
+        backup_task.cancel()
+        notif_task.cancel()
+        try:
+            await backup_task
+            await notif_task
+        except asyncio.CancelledError:
+            pass
+
+
 
 
 # ---------------------------------------------------------------------------
@@ -48,8 +66,8 @@ async def custom_logging(request: Request, call_next):
     request._receive = receive
     response = await call_next(request)
 
-    # mask all common file requests
-    if request.url.path.endswith((".css", ".js", ".svg", ".png", ".json")):
+    # mask all common file requests and /api/me
+    if request.url.path.endswith((".css", ".js", ".svg", ".png", ".json", ".ico")) or request.url.path == "/api/me":
         return response
 
     print(
@@ -66,7 +84,7 @@ async def custom_logging(request: Request, call_next):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://last-translation-benchmark.vilda.net"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -99,6 +117,17 @@ async def serve_review():
 @app.get("/profile")
 async def serve_profile():
     return FileResponse(_STATIC_DIR + "/profile.html")
+
+
+@app.get("/dashboard")
+async def serve_dashboard():
+    return FileResponse(_STATIC_DIR + "/dashboard.html")
+
+
+# redirect favicon.ico to assets/favicon.svg to avoid 404 errors in logs
+@app.get("/favicon.ico")
+async def serve_favicon():
+    return FileResponse(_STATIC_DIR + "/assets/favicon.svg")
 
 
 # ---------------------------------------------------------------------------

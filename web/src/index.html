@@ -3,48 +3,67 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=800">
   <title>Last Translation Benchmark</title>
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="Last Translation Benchmark">
+  <meta name="description" content="Current machine translation benchmarks are saturated. Last Translation Benchmark crowdsources a dataset of inputs that demonstrably break state-of-the-art translation models.">
+  <meta name="keywords" content="Machine Translation, Benchmark, Dataset, NLP, Translation Models">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Last Translation Benchmark">
+  <meta property="og:description" content="Current machine translation benchmarks are saturated. Last Translation Benchmark crowdsources a dataset of inputs that demonstrably break state-of-the-art translation models.">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary">
+  <meta property="twitter:title" content="Last Translation Benchmark">
+  <meta property="twitter:description" content="Current machine translation benchmarks are saturated. Last Translation Benchmark crowdsources a dataset of inputs that demonstrably break state-of-the-art translation models.">
+
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <style>
     .hero {
-      max-width: 600px;
+      max-width: 1100px;
       margin: 100px auto 20px auto;
       padding: 40px;
       text-align: center;
     }
 
     .hero h1 {
-      font-size: 2.2em;
-      color: #1e293b;
-      margin-bottom: 30px;
-      letter-spacing: -0.02em;
+      font-size: 3.5em;
+      font-weight: 800;
+      margin-bottom: 50px;
+      letter-spacing: -0.03em;
+      color: black;
     }
 
-    .hero p {
-      color: #334155;
-      line-height: 1.8;
-      margin-bottom: 20px;
-      text-align: left;
-    }
-
-    .hero .cta-info {
-      padding: 24px;
-      background: #f1f5f9;
-      border-radius: 12px;
-      font-size: 0.95em;
+    .top-container p {
       color: #475569;
-      border: 1px solid #e2e8f0;
+      font-size: 1.1em;
+      line-height: 1.8;
+      margin: 0 auto 24px auto;
+      max-width: 850px;
+      text-align: justify;
+    }
+
+    .top-container .cta-info {
+      padding: 32px 24px;
+      font-size: 1em;
+      color: #475569;
+      border-left: 4px solid black;
+      margin-top: 40px;
+      text-align: center;
+      margin-left: auto;
+      margin-right: auto;
+      width: 70%;
     }
 
     .auth-error {
       display: none;
       margin-top: 24px;
       padding: 16px;
-      background: #fef2f2;
-      border: 1px solid #fca5a5;
-      border-radius: 8px;
-      color: #b91c1c;
+      background: #ffefef;
       font-size: 0.9em;
       font-weight: 500;
     }
@@ -54,48 +73,78 @@
       margin-left: 5px;
       margin-right: 5px;
     }
+
+    #role-buttons>a {
+      margin-bottom: 10px;
+      display: inline-block;
+    }
+
+    .role-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .role-actions .btn {
+      margin: 0;
+    }
+
+    #instructions-box {
+      border-top: 4px solid black;
+    }
   </style>
 </head>
 
 <body>
-  <div class="hero">
-    <h1><img src="favicon.svg" style="height: 1em;"> Last Translation Benchmark</h1>
+  <div class="hero top-container">
+    <h1><img src="assets/favicon.svg" style="height: 1em;"> Last Translation Benchmark</h1>
 
-    <div class="card">
       <p>
-        This platform gathers inputs (text, video, audio, images, documents) that are challenging for modern machine
-        translation systems.
+        Current machine translation benchmarks are saturated, and evaluation metrics are either
+        unreliable or unscalable.
+        The Last Translation Benchmark addresses this by curating a dataset of inputs (text, image, audio, video) that
+        demonstrably break state-of-the-art translation models.
       </p>
       <p>
-        Contributors submit these inputs alongside machine translation outputs and a verification rule.
-        Approved contributions are eligible for inclusion in upcoming research publications.
+        Contribute by submitting an input that modern machine translation models get provably wrong.
+        Provide a robust pass/fail verification rule to automatically evaluate shown and future translations.
+        Contributors with 10 approved submissions are welcome to co-authorship on the resulting publication.
       </p>
 
-      <div id="cta-info-unauth" class="cta-info">
-        To access the platform, please use the <strong>magic link</strong> provided you received in your email.
+      <div id="cta-info-unauth" class="cta-info" style="display: none;">
+        To access the interactive platform, please use the <strong>magic link</strong> provided you received in your
+        email.
         <br>
         <br>
         <a href="profile.html" id="register-btn" class="btn btn-success" style="margin-right: 8px; margin-top: 20px;">📝
           Register as Contributor</a>
+        <a href="dashboard" class="btn btn-success" style="margin-top: 20px;">📊 Public Dashboard</a>
       </div>
 
-      <div id="role-buttons" class="cta-info"
-        style="display: none; margin-top: 16px; text-align: center; margin: auto; width: max-content; max-width: 90%;">
+      <div id="role-buttons" class="cta-info" style="display: none;">
       </div>
 
-      <div id="auth-error" class="auth-error">
+      <div id="notifications-box" class="cta-info" style="display: none;">
+      </div>
+
+      <div id="auth-error" class="auth-error cta-info">
         Invalid or expired magic link. Please request a new one from the administrators.
       </div>
-    </div>
+
+
+      <p style="margin-top: 50px;">
+          We will be collecting contributions continuously with first dataset release planned for September 2026.
+        This effort is organized by a collective of researchers from ETH Zurich, JHU, CUNI, UvA, KIT, and many others.
+        Reach out to <a href="mailto:last-translation-benchmark@vilda.net"
+          style="color: black; margin: 0; text-decoration: underline;">last-translation-benchmark@vilda.net</a> with
+        inquiries or file bug reports on <a href="https://github.com/zouharvi/last-translation-benchmark"
+          style="color: black; margin: 0; text-decoration: underline;">github.com/zouharvi/last-translation-benchmark</a>
+      </p>
   </div>
 
-  <div class="container" style="text-align: center; margin-top: -60px;">
-    <div style="margin-bottom: 16px;">
-      <button id="show-instructions-btn" class="btn btn-instructions">📖 Show guidelines for contributing &
-        reviewing</button>
-    </div>
-    <div id="instructions-box" style="text-align: left;"></div>
-  </div>
+  <div id="instructions-box" class="hero" style="margin-top: 100px; text-align: left;"></div>
 </body>
 
 </html>

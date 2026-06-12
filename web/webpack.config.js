@@ -7,6 +7,7 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 module.exports = (env, argv) => ({
   entry: {
     index: './src/index.ts',
+    dashboard: './src/dashboard.ts',
     contributor: './src/contribute.ts',
     reviewer: './src/review.ts',
     profile: './src/profile.ts',
@@ -32,6 +33,7 @@ module.exports = (env, argv) => ({
     rules: [
       { test: /\.ts$/, use: 'ts-loader', exclude: /node_modules/ },
       { test: /\.css$/, use: [MiniCssExtractPlugin.loader, 'css-loader'] },
+      { test: /src\/assets\/.*\.html$/, type: 'asset/source' }
     ],
   },
   resolve: { extensions: ['.ts', '.js'] },
@@ -41,6 +43,12 @@ module.exports = (env, argv) => ({
       template: './src/index.html',
       filename: 'index.html',
       chunks: ['index'],
+      hash: true,
+    }),
+    new HtmlWebpackPlugin({
+      template: './src/dashboard.html',
+      filename: 'dashboard.html',
+      chunks: ['dashboard'],
       hash: true,
     }),
     new HtmlWebpackPlugin({
@@ -70,8 +78,8 @@ module.exports = (env, argv) => ({
 
     new CopyWebpackPlugin({
       patterns: [
-        { from: 'src/favicon.svg', to: '.' },
-        { from: 'src/instructions.html', to: '.' },
+        { from: 'src/assets/', to: 'assets' },
+        { from: 'src/robots.txt', to: 'robots.txt' }
       ],
     }),
   ],
