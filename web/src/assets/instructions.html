@@ -23,7 +23,7 @@
     <ul>
       <li><strong>Verification rules are targeting tricky things about your input</strong>. Together, your rules should check for what you think and observe could go wrong with translating it. They should certainly cover the issues you spotted with the systems that you try in our interface, but they do not have to be limited to these issues. You can include a rule for something else you believe is tricky, even though the systems you tried happened to get it right.</li>
       <li><strong>Format</strong>: Write a short instruction for an AI judge, e.g. <em>“Check whether the translation conveys that the speaker feels no inner peace.”</em>. The rule should clearly have a pass/fail conclusion. The verification rule should be written in English regardless of the source and target languages.</li>
-      <li><strong>Pass rate</strong>: At most three automatic translations can pass your set of verification rules.</li>
+      <li><strong>Pass rate</strong>: At most two automatic translations can pass your set of verification rules.</li>
       <li><strong>Atomicity of your rule</strong>: Each rule should only be checking for one conceptual issue. If you find yourself listing various separable conditions into a single rule, use multiple rules instead.</li>
       <li><strong>Granularity of your rule</strong>: Your verification rule should be specific enough to catch wrong translations but flexible enough to pass any reasonable correct phrasing.</li>
     </ul>
