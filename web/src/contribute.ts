@@ -537,7 +537,7 @@ function renderMySug(s: Submission): string {
 
     return `<div class="sug-mini">
         <div class="sug-mini-meta" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <span>#${s.id} &middot; ${s.source_lang}&rarr;${s.target_lang} &middot; ${fmtDate(s.created_at)} &middot; ${scoreBadge(s.status, (s.comments?.length ?? 0) > 0)}</span>
+            <span>#${s.id} &middot; ${escHtml(s.source_lang)}&rarr;${escHtml(s.target_lang)} &middot; ${fmtDate(s.created_at)} &middot; ${scoreBadge(s.status, (s.comments?.length ?? 0) > 0)}</span>
             ${s.status === 'accept' ? '' : `<button class="score-btn edit-btn" data-id="${s.id}">Edit submission</button>`}
         </div>
         

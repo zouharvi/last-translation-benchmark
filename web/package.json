@@ -2,6 +2,7 @@
   "name": "ltb-frontend",
   "scripts": {
     "build": "python3 ../server/languages.py && webpack --mode production",
+    "test": "node tests/language-escaping.test.js",
     "watch": "python3 ../server/languages.py && webpack --mode production --watch",
     "build-dev": "python3 ../server/languages.py && webpack --mode development",
     "watch-dev": "python3 ../server/languages.py && webpack --mode development --watch",
