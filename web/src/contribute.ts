@@ -6,7 +6,7 @@ import {
     User, Submission, Rule,
 } from './api';
 
-import { esc as escHtml, fmtDate, scoreBadge, accessDenied, renderCommentThread, renderHeaderStatus, renderSource, sortSubmissions } from './utils';
+import { esc as escHtml, fmtDate, scoreBadge, accessDenied, renderCommentThread, renderHeaderStatus, renderSource, renderVerificationPills, sortSubmissions } from './utils';
 import instructionsHtml from './assets/instructions.html';
 
 let currentUser: User | null = null;
@@ -221,7 +221,7 @@ $(async () => {
                 if (r.translation !== null) {
                     const verified: boolean[] = data.results[resultIdx++];
                     r.verified = verified;
-                    const badge = verified.map(v => v ? '<span class="vpill vpill-pass">✓</span>' : '<span class="vpill vpill-fail">✗</span>').join('');
+                    const badge = renderVerificationPills(verified, rules);
                     $(`[data-idx="${i}"]`).html(badge);
                     if (verified.every(v => v)) pass++;
                 } else {
@@ -232,7 +232,7 @@ $(async () => {
             if (ownTranslation) {
                 const verified: boolean[] = data.results[resultIdx++];
                 ownVerified = verified;
-                const badge = verified.map(v => v ? '<span class="vpill vpill-pass">✓</span>' : '<span class="vpill vpill-fail">✗</span>').join('');
+                const badge = renderVerificationPills(verified, rules);
                 $('#own-verify-badge').html(badge);
                 if (verified.every(v => v)) pass++;
             } else {
@@ -386,7 +386,7 @@ $(async () => {
             $('#own-translation').val(ownTr.translation);
             ownVerified = ownTr.verified;
             if (ownVerified !== null) {
-                const badge = ownVerified.map(v => v ? '<span class="vpill vpill-pass">✓</span>' : '<span class="vpill vpill-fail">✗</span>').join('');
+                const badge = renderVerificationPills(ownVerified, rules);
                 $('#own-verify-badge').html(badge);
             }
         }
@@ -404,7 +404,7 @@ $(async () => {
             // Show verification badges
             lastResults.forEach((r, i) => {
                 if (r.verified != null) {
-                    const badge = r.verified.map(v => v ? '<span class="vpill vpill-pass">✓</span>' : '<span class="vpill vpill-fail">✗</span>').join('');
+                    const badge = renderVerificationPills(r.verified, rules);
                     $(`[data-idx="${i}"]`).html(badge);
                 }
             });

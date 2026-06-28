@@ -277,6 +277,7 @@ textarea {
   padding: 8px 10px;
   margin-bottom: 6px;
   background: #fafafa;
+  overflow: visible;
 }
 
 .api-name {
@@ -302,21 +303,35 @@ textarea {
 }
 
 .vpill {
-  display: inline-block;
-  padding: 2px 4px;
-  border-radius: 50%;
-  font-size: 0.8em;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  font-size: 0.78em;
   font-weight: 700;
+  line-height: 1;
+  border: 1px solid transparent;
+  cursor: help;
 }
 
 .vpill-pass {
   background: #dcfce7;
   color: #166534;
+  border-color: #bbf7d0;
 }
 
 .vpill-fail {
   background: #fee2e2;
   color: #991b1b;
+  border-color: #fecaca;
+}
+
+.vpill:focus {
+  outline: 2px solid #334155;
+  outline-offset: 2px;
 }
 
 .count-pass {

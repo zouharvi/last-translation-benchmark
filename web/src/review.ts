@@ -6,7 +6,7 @@ import {
     Submission, deleteSubmission, addComment,
 } from './api';
 
-import { esc as escHtml, fmtDate, scoreBadge, accessDenied, renderCommentThread, renderHeaderStatus, renderSource, sortSubmissions } from './utils';
+import { esc as escHtml, fmtDate, scoreBadge, accessDenied, renderCommentThread, renderHeaderStatus, renderSource, renderVerificationPills, sortSubmissions } from './utils';
 import instructionsHtml from './assets/instructions.html';
 
 let allSugs: Submission[] = [];
@@ -268,7 +268,7 @@ function renderSug(s: Submission): string {
 
     const trRows = s.translations.map(t => {
         const badge = Array.isArray(t.verified)
-            ? t.verified.map(v => v ? '<span class="vpill vpill-pass">✓</span>' : '<span class="vpill vpill-fail">✗</span>').join('')
+            ? renderVerificationPills(t.verified, s.verification_rules)
             : '';
         return `<div class="translation-result-row">
           <span class="api-name">${escHtml(t.model)}</span>

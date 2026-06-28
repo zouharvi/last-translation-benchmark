@@ -1,7 +1,15 @@
 import $ from 'jquery';
-import { Comment, Submission, User, handleNotifications } from './api';
+import { Comment, Rule, Submission, User, handleNotifications } from './api';
 
 export const esc = (s: string) => $('<div>').text(s).html();
+function escAttr(s: string): string {
+    return s
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
 export const fmtDate = (d: string) => (d || '').replace('T', ' ').slice(0, 16);
 
 export function renderHeaderStatus(user: User): void {
@@ -71,6 +79,16 @@ export function scoreBadge(status: 'pending' | 'accept' | 'return', hasComments?
     if (status === 'pending') return '<span class="badge badge-pending">Pending</span>';
     if (status === 'accept') return '<span class="badge badge-score-3">✓ Accepted</span>';
     return '<span class="badge badge-score-0">✗ Returned</span>';
+}
+
+export function renderVerificationPills(verified: boolean[], rules: Rule[] = []): string {
+    return verified.map((passed, i) => {
+        const ruleText = rules[i]?.value || `Verification rule ${i + 1}`;
+        const status = passed ? 'pass' : 'fail';
+        const mark = passed ? '✓' : '✗';
+        const label = `${passed ? 'Passed' : 'Failed'}: ${ruleText}`;
+        return `<span class="vpill vpill-${status}" tabindex="0" role="note" title="${escAttr(ruleText)}" aria-label="${escAttr(label)}">${mark}</span>`;
+    }).join('');
 }
 
 function getUsernameColor(username: string): string {
