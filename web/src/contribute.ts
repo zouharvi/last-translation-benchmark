@@ -477,7 +477,7 @@ function renderRules() {
 function renderApiResults(): void {
     const $body = $('#api-results-body');
     $body.html(lastResults.map((r, i) => {
-        const trText = r.translation ?? `<em class="tr-error">${escHtml(r.error ?? 'Error')}</em>`;
+        const trText = r.translation !== null ? escHtml(r.translation) : `<em class="tr-error">${escHtml(r.error ?? 'Error')}</em>`;
         const verifyBadge = '';
         return `<div class="translation-result-row">
           <span class="api-name">${escHtml(r.model)}</span>
