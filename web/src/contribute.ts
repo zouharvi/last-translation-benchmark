@@ -21,6 +21,7 @@ let lastMediaData: string | null = null;
 let rules: Rule[] = [{ value: '' }];
 let inputCorrespondsToTranslations = true;
 let curSort = 'last_updated';
+let prunableRuleIndexes = new Set<number>();
 
 
 
@@ -178,6 +179,7 @@ $(async () => {
             lastResults.forEach(r => r.verified = null);
             ownVerified = null;
             inputCorrespondsToTranslations = true;
+            clearPruneHints();
             $('#pass-count').text('');
             $('#verify-result').text('');
             $('#tr-status').text('');
@@ -243,6 +245,8 @@ $(async () => {
             const cls = pass === 0 ? 'count-fail' : (pass === translations.length ? 'count-pass' : 'count-partial');
             $('#verify-result').html("");
             $('#pass-count').html(`<span class="${cls}">${pass}/${translations.length} pass verification</span>`);
+            prunableRuleIndexes = getPrunableRuleIndexes();
+            renderRules();
         } catch (err) {
             $('#verify-result').html(`<span class="msg-err">${escHtml(String(err))}</span>`);
         } finally {
@@ -459,10 +463,16 @@ function renderRules() {
     const disabled = rules.length == 1 ? 'disabled' : '';
     rules.forEach((rule, index) => {
         const placeholder = "Describe what the LLM should check (e.g. 'Should be sarcastic.').";
+        const pruneHint = prunableRuleIndexes.has(index)
+            ? '<div class="rule-prune-hint" style="margin-top: 2px; color: #b45309; font-size: 0.72em; line-height: 1.15;">all pass; remove?</div>'
+            : '';
 
         const $row = $(`
             <div class="rule-row" data-index="${index}" style="display: flex; gap: 12px; align-items: flex-start; margin-bottom: 8px;">
-                <button class="rule-remove btn-underlined" style="font-size: 0.85em; align-self: center;" ${disabled}>- Remove</button>
+                <div style="width: 72px; text-align: left; padding-top: 14px;">
+                    <button class="rule-remove btn-underlined" style="font-size: 0.85em;" ${disabled}>- Remove</button>
+                    ${pruneHint}
+                </div>
                 <textarea class="rule-value" placeholder="${escHtml(placeholder)}" style="flex: 1; height: 40px; padding: 7px 10px; border: none; min-height: 60px; font-size: 0.85em; resize: vertical;">${escHtml(rule.value)}</textarea>
             </div>
         `);
@@ -558,11 +568,31 @@ function renderMySug(s: Submission): string {
 
 function invalidateVerification(): void {
     ownVerified = null;
+    clearPruneHints();
     $('#own-verify-badge').empty();
     lastResults.forEach(r => r.verified = null);
     $('[data-idx]').html('');
     $('#pass-count').empty();
     $('#verify-result').empty();
+}
+
+function clearPruneHints(): void {
+    prunableRuleIndexes.clear();
+    $('.rule-prune-hint').remove();
+}
+
+function getPrunableRuleIndexes(): Set<number> {
+    const verified = lastResults
+        .filter(r => r.translation !== null && Array.isArray(r.verified))
+        .map(r => r.verified as boolean[]);
+    if (ownVerified !== null) verified.push(ownVerified);
+
+    const indexes = new Set<number>();
+    if (verified.length === 0) return indexes;
+    rules.forEach((_, i) => {
+        if (verified.every(v => v[i] === true)) indexes.add(i);
+    });
+    return indexes;
 }
 
 function updateButtonStates(): void {
