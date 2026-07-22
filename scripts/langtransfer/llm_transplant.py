@@ -37,6 +37,8 @@ def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("transplant_side", choices=["source", "target"])
     p.add_argument("transplant_lang")
+    p.add_argument("--data-in", type=Path, default=DATA_IN)
+    p.add_argument("--data-out", type=Path)
     p.add_argument("--prompt", type=int, default=1)
     p.add_argument("--limit", type=int)
     p.add_argument("--fill-api-translations", action="store_true")
@@ -398,7 +400,7 @@ def transplant(
         out = []
         for sub in tqdm(submissions):
             if sub.get("source_lang", "").lower().strip() == transplant_lang.lower().strip() or sub.get("target_lang", "").lower().strip() == transplant_lang.lower().strip():
-                out.append(sub)
+                print(f"Skipping submission with same language for id={sub.get('id')}")
                 continue
             if sub.get("source_media"):
                 print(f"Skipping submission with source media for id={sub.get('id')}")
@@ -445,12 +447,13 @@ def transplant(
 
 def main():
     args = parse_args()
-    path = output_path(args.transplant_side, args.transplant_lang, args.prompt)
+    path = args.data_out or output_path(args.transplant_side, args.transplant_lang, args.prompt)
     transplant(
         args.transplant_side,
         args.transplant_lang,
         prompt_key=args.prompt,
         limit=args.limit,
+        data_in=args.data_in,
         out_path=path,
         fill_api_translations=args.fill_api_translations,
         verification_model=args.verification_model,
