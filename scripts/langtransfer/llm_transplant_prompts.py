@@ -28,7 +28,7 @@ If `transplant_side` is "target":
 If `transplant_side` is "source":
 - Set `source_lang` to `transplant_lang`.
 - Rewrite `source_text` naturally in `transplant_lang`.
-- Keep input `target_lang` unchanged.
+- Keep output `target_lang` unchanged.
 - Maintain the original human translation.
 - Make minimal changes to each verification rule but ensure that it is applicable to the new language pair and testing the same aspect as the original verification rule.
 """
