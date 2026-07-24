@@ -5,7 +5,7 @@ import { getCookie, getMe, updateProfile, registerUser, recoverLink, renderRoleS
 import { renderHeaderStatus } from './utils';
 
 $(async () => {
-    
+
     const isRegistrationMode = !getCookie('ltb_token');
 
     if (!isRegistrationMode) {

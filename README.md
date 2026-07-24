@@ -37,6 +37,54 @@ python3 server
 
 The `server/` contains source code for the server.
 The `web/` is the frontend code (TypeScript) which, when built, goes to `server/static/` to be served by the server.
+The public dashboard map combines live accepted-submission data with the reviewed locations in `server/affiliation_locations.json`.
+
+To test the integrated dashboard against the live website's read-only public data,
+start the local server with:
+
+```bash
+python3 server --public-dashboard-source "https://last-translation-benchmark.vilda.net/api/public-dashboard"
+```
+
+Only `/api/public-dashboard` uses the remote data in this mode. Other pages and
+write operations continue to use the local database.
+
+### Affiliation map maintenance
+
+The website does not call ROR, geocode affiliations, or write location records
+while serving users. Signup and admin workflows are unchanged. Map points,
+aliases, and logo domains come only from
+`server/affiliation_locations.json`, which can be reviewed like any other code
+change.
+
+An optional maintenance command compares the current public dashboard with the
+static registry and queries [ROR](https://ror.org/) for affiliations that are
+not yet listed:
+
+```bash
+# Preview unambiguous ROR matches without changing files
+python3 scripts/update_affiliation_locations.py
+
+# Write reviewed matches to the static JSON file
+python3 scripts/update_affiliation_locations.py --write
+```
+
+Only a unique exact match against a ROR display name, alias, or acronym is
+written automatically. For combined values such as `PSL University, INRIA
+Paris`, the script also searches each comma- or semicolon-separated name in
+order and uses the first unique match. The script uses ROR's city coordinates.
+Anything it cannot resolve remains visible automatically under **Other
+affiliations**, so no manual JSON entry is required. Set `ROR_CLIENT_ID` in the
+environment, or pass `--client-id`, if the deployment has one. This maintenance
+command does not need database access and is not part of the live request path.
+
+The `Update affiliation locations` GitHub Actions workflow runs this command
+every six hours and can also be started manually from the repository's
+**Actions** page. When ROR produces new matches, the workflow commits the static
+JSON update directly to the repository's default branch. The repository must
+give GitHub Actions read/write workflow permissions, and its branch protection
+rules must allow this workflow to push. An optional `ROR_CLIENT_ID` repository
+secret identifies the updater to ROR.
 
 You can specify the `--host`, `--port` and `--host-public` arguments when starting the server. 
 The last is used to show the login URLs.

@@ -65,11 +65,47 @@ export interface PublicDashboardRow {
     accepted_submissions: number;
 }
 
+export interface AffiliationMapAuthor {
+    name: string;
+    accepted: number;
+}
+
+export interface AffiliationMapAffiliation {
+    name: string;
+    search_terms: string[];
+    logo_domain: string;
+    accepted: number;
+    authors: AffiliationMapAuthor[];
+}
+
+export interface AffiliationMapPlace {
+    lat: number;
+    lng: number;
+    city: string;
+    country: string;
+    precision: 'exact' | 'city' | 'country';
+    accepted: number;
+    affiliations: AffiliationMapAffiliation[];
+}
+
+export interface AffiliationMapMeta {
+    mapped_authors: number;
+    mapped_accepted: number;
+    omitted: Array<{
+        affiliation: string;
+        author: string;
+        accepted: number;
+    }>;
+}
+
 export interface PublicDashboardData {
     rows: PublicDashboardRow[];
     total_submissions: number;
     total_authors: number;
     languages: [string, number][];
+    affiliation_places: AffiliationMapPlace[];
+    affiliation_map_meta: AffiliationMapMeta;
+    data_source?: 'live_public_dashboard';
 }
 
 // ---------- Cookie helpers ----------

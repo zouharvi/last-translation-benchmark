@@ -8,10 +8,12 @@
     "dev": "python3 ../server/languages.py && webpack serve --mode development"
   },
   "dependencies": {
-    "jquery": "^3.7.1"
+    "jquery": "^3.7.1",
+    "leaflet": "^1.9.4"
   },
   "devDependencies": {
     "@types/jquery": "^3.5.33",
+    "@types/leaflet": "^1.9.21",
     "copy-webpack-plugin": "^14.0.0",
     "css-loader": "^7.1.2",
     "html-webpack-plugin": "^5.6.4",

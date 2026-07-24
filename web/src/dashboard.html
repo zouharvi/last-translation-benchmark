@@ -26,9 +26,63 @@
 
   <div class="container">
     <div class="card">
-      Public contributor dashboard showing number of accepted submissions and updated in real time.
-      <div id="dashboard-stats" style="margin-top: 30px; margin-bottom: 30px;"></div>
-      <table style="width:100%; border-collapse:collapse; margin-top: 30px;">
+      <p>Public contributor dashboard showing accepted submissions and affiliations, updated in real time.</p>
+      <div id="dashboard-stats" style="margin-top: 24px; margin-bottom: 24px;"></div>
+
+      <section class="affiliation-map-section" aria-labelledby="affiliation-map-heading">
+        <div class="affiliation-map-header">
+          <h2 id="affiliation-map-heading">Contributor affiliations</h2>
+          <span class="affiliation-map-legend">🔥 Top 5 affiliations</span>
+        </div>
+        <div class="affiliation-map-stage">
+          <div
+            id="affiliation-map"
+            role="application"
+            aria-label="Interactive detailed map of contributor affiliation locations, initially showing Europe"
+          ></div>
+
+          <details class="affiliation-map-toolbox" open>
+            <summary>
+              <span>Filters</span>
+              <span id="map-filter-status"></span>
+            </summary>
+            <div class="affiliation-map-toolbox-content">
+              <dl class="affiliation-map-stats" aria-label="Live dashboard totals">
+                <div>
+                  <dt>Total submissions</dt>
+                  <dd id="map-total-submissions">—</dd>
+                </div>
+                <div>
+                  <dt>Contributors</dt>
+                  <dd id="map-contributor-count">—</dd>
+                </div>
+              </dl>
+              <label for="map-affiliation-filter">
+                Affiliation
+                <input id="map-affiliation-filter" type="search" list="map-affiliation-options" placeholder="Search or select" autocomplete="off">
+                <datalist id="map-affiliation-options"></datalist>
+              </label>
+              <label for="map-country-filter">
+                Country
+                <select id="map-country-filter">
+                  <option value="">All countries</option>
+                </select>
+              </label>
+              <div class="affiliation-map-actions">
+                <button class="affiliation-map-reset" type="button" id="map-reset" aria-label="Reset filters and map view">↺</button>
+              </div>
+            </div>
+          </details>
+
+          <div class="affiliation-map-loading" id="affiliation-map-loading">Loading map…</div>
+        </div>
+        <div class="affiliation-map-detail" id="affiliation-map-detail" aria-live="polite">
+          Select an institution logo to inspect its contributors.
+        </div>
+      </section>
+
+      <h2>Accepted submissions by contributor</h2>
+      <table style="width:100%; border-collapse:collapse; margin-top: 20px;">
         <thead style="border-top: 4px solid black;">
           <tr>
             <th style="text-align:left; padding: 20px 5px 5px 5px;">Name</th>

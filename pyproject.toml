@@ -37,4 +37,7 @@ build-backend = "setuptools.build_meta"
 package-dir = { last_translation_benchmark = "server" }
 packages = ["last_translation_benchmark"]
 
+[tool.setuptools.package-data]
+last_translation_benchmark = ["affiliation_locations.json"]
+
 # pip install -e .

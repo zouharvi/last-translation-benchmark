@@ -1,0 +1,451 @@
+{
+  "aliases": {
+    "BAAI": "Beijing Academy of Artificial Intelligence",
+    "Beijing Academy of Artificial Intelligence (BAAI)": "Beijing Academy of Artificial Intelligence",
+    "BSC-CNS": "Barcelona Supercomputing Center",
+    "CIHAC AIP": "Centro de Investigaciones Históricas, Antropológicas y Culturales - AIP",
+    "CISPA, Helmholtz Center for Information Security": "CISPA Helmholtz Center for Information Security",
+    "Centro de Investigaciones Históricas, Antropológicas y Culturales (CIHAC -AIP)": "Centro de Investigaciones Históricas, Antropológicas y Culturales - AIP",
+    "DFKI GmbH and BSC-CNS": "Barcelona Supercomputing Center",
+    "ETH Zürich": "ETH Zurich",
+    "ETH Zurich; The University of Hong Kong": "ETH Zurich",
+    "ETH Zurich; University of Zurich": "ETH Zurich",
+    "FPTU": "FPT University",
+    "Inria, Paris": "Inria",
+    "Instituto de Telecomunicações, University of Zurich": "Instituto de Telecomunicações",
+    "JHU": "Johns Hopkins University",
+    "KIT": "Karlsruhe Institute of Technology",
+    "LMU": "Ludwig Maximilian University of Munich",
+    "LMU Munich": "Ludwig Maximilian University of Munich",
+    "MBZUAI": "Mohamed bin Zayed University of Artificial Intelligence",
+    "National Research Council, Canada": "National Research Council Canada",
+    "The Hebrew University": "Hebrew University of Jerusalem",
+    "TU Darmstadt; KU Leuven": "Technical University of Darmstadt",
+    "TU Darmstadt": "Technical University of Darmstadt",
+    "TU Munich": "Technical University of Munich",
+    "UIC": "University of Illinois Chicago",
+    "University of Illinois at Chicago": "University of Illinois Chicago",
+    "University of Munich": "Ludwig Maximilian University of Munich",
+    "UZH": "University of Zurich",
+    "UZH Zurich": "University of Zurich",
+    "Weizmann": "Weizmann Institute of Science",
+    "Samsung Electronics": "Samsung Electronics (South Korea)",
+    "INSA Lyon, CNRS, Lyon 1 Université, LIRIS, UMR5205": "Institut National des Sciences Appliquées de Lyon",
+    "Universidad del País Vasco": "University of the Basque Country"
+  },
+  "logo_domains": {
+    "AGH University of Krakow": "www.agh.edu.pl",
+    "Aleph Alpha Research GmbH": "www.aleph-alpha.com",
+    "Amazon": "www.amazon.com",
+    "AppTek": "www.apptek.ai",
+    "Barcelona Supercomputing Center": "www.bsc.es",
+    "Beijing Academy of Artificial Intelligence": "www.baai.ac.cn",
+    "Bielefeld University": "www.uni-bielefeld.de",
+    "CISPA Helmholtz Center for Information Security": "www.cispa.de",
+    "Centro de Investigaciones Históricas, Antropológicas y Culturales - AIP": "cihac.org.pa",
+    "Charles University": "www.cuni.cz",
+    "Council for Ligurian Linguistic Heritage": "conseggio-ligure.org",
+    "ETH Zurich": "www.ethz.ch",
+    "Fondazione Bruno Kessler": "www.fbk.eu",
+    "FPT University": "daihoc.fpt.edu.vn",
+    "Ghent University": "www.ugent.be",
+    "Hebrew University of Jerusalem": "www.huji.ac.il",
+    "Inria": "www.inria.fr",
+    "Instituto de Telecomunicações": "www.it.pt",
+    "Johns Hopkins University": "www.jhu.edu",
+    "Karlsruhe Institute of Technology": "www.kit.edu",
+    "Ludwig Maximilian University of Munich": "www.lmu.de",
+    "Massachusetts Institute of Technology": "www.mit.edu",
+    "Mila": "mila.quebec",
+    "Mohamed bin Zayed University of Artificial Intelligence": "mbzuai.ac.ae",
+    "National Research Council Canada": "nrc.canada.ca",
+    "National Technical University of Athens": "www.ntua.gr",
+    "Northeastern University": "www.northeastern.edu",
+    "NXAI": "www.nx-ai.com",
+    "Queen's University Belfast": "www.qub.ac.uk",
+    "Research Center for Linguistics at NOVA University Lisbon": "clunl.fcsh.unl.pt",
+    "Saarland University": "www.uni-saarland.de",
+    "Sharif University of Technology": "www.sharif.edu",
+    "Soongsil University": "www.ssu.ac.kr",
+    "Supertext AG": "www.supertext.com",
+    "Technical University of Darmstadt": "www.tu-darmstadt.de",
+    "Technical University of Munich": "www.tum.de",
+    "The Chinese University of Hong Kong": "www.cuhk.edu.hk",
+    "University of Amsterdam": "www.uva.nl",
+    "University of Edinburgh": "www.ed.ac.uk",
+    "University of Groningen": "www.rug.nl",
+    "University of Helsinki": "www.helsinki.fi",
+    "University of Illinois Chicago": "www.uic.edu",
+    "University of Innsbruck": "www.uibk.ac.at",
+    "University of Luxembourg": "www.uni.lu",
+    "University of Macerata": "www.unimc.it",
+    "University of New South Wales": "www.unsw.edu.au",
+    "University of Notre Dame": "www.nd.edu",
+    "University of Strasbourg": "www.unistra.fr",
+    "University of Zurich": "www.uzh.ch",
+    "Weizmann Institute of Science": "www.weizmann.ac.il",
+    "Wroclaw University of Science and Technology": "pwr.edu.pl",
+    "Samsung Electronics (South Korea)": "samsung.com",
+    "University of Washington": "washington.edu",
+    "King Saud University": "ksu.edu.sa",
+    "University of Bonn": "uni-bonn.de",
+    "University of Sheffield": "sheffield.ac.uk"
+  },
+  "location_policy": {
+    "point_definition": "Primary campus or main/rectorate building for universities; headquarters for companies and research institutes.",
+    "multi_campus_rule": "Use the primary campus unless the public affiliation text names a specific campus.",
+    "exception": "Council for Ligurian Linguistic Heritage publishes Genova but no public street address, so its point remains city-level. CIHAC-AIP publishes its street but no building number, so its point remains street-level and is marked as approximate."
+  },
+  "locations": {
+    "AGH University of Krakow": {
+      "lat": 50.0657583,
+      "lng": 19.9192221,
+      "city": "Kraków",
+      "country": "Poland"
+    },
+    "Aleph Alpha Research GmbH": {
+      "lat": 49.3980309,
+      "lng": 8.673011,
+      "city": "Heidelberg",
+      "country": "Germany"
+    },
+    "Amazon": {
+      "lat": 47.6149491,
+      "lng": -122.3383874,
+      "city": "Seattle",
+      "country": "United States"
+    },
+    "AppTek": {
+      "lat": 38.9366948,
+      "lng": -77.1782704,
+      "city": "McLean",
+      "country": "United States"
+    },
+    "Barcelona Supercomputing Center": {
+      "lat": 41.3897809,
+      "lng": 2.1163849,
+      "city": "Barcelona",
+      "country": "Spain"
+    },
+    "Beijing Academy of Artificial Intelligence": {
+      "lat": 39.9972211,
+      "lng": 116.3317984,
+      "city": "Beijing",
+      "country": "China"
+    },
+    "Bielefeld University": {
+      "lat": 52.0376828,
+      "lng": 8.4932878,
+      "city": "Bielefeld",
+      "country": "Germany"
+    },
+    "CISPA Helmholtz Center for Information Security": {
+      "lat": 49.2593473,
+      "lng": 7.0509733,
+      "city": "Saarbrücken",
+      "country": "Germany"
+    },
+    "Centro de Investigaciones Históricas, Antropológicas y Culturales - AIP": {
+      "lat": 8.9517879,
+      "lng": -79.5334825,
+      "city": "Panama City",
+      "country": "Panama",
+      "precision": "city"
+    },
+    "Charles University": {
+      "lat": 50.086992,
+      "lng": 14.4237142,
+      "city": "Prague",
+      "country": "Czechia"
+    },
+    "Council for Ligurian Linguistic Heritage": {
+      "lat": 44.40478,
+      "lng": 8.94439,
+      "city": "Genoa",
+      "country": "Italy",
+      "precision": "city"
+    },
+    "ETH Zurich": {
+      "lat": 47.3765035,
+      "lng": 8.5473208,
+      "city": "Zurich",
+      "country": "Switzerland"
+    },
+    "Fondazione Bruno Kessler": {
+      "lat": 46.0674435,
+      "lng": 11.1511782,
+      "city": "Trento",
+      "country": "Italy"
+    },
+    "FPT University": {
+      "lat": 21.0135277,
+      "lng": 105.5252615,
+      "city": "Hanoi",
+      "country": "Vietnam"
+    },
+    "Ghent University": {
+      "lat": 51.0471689,
+      "lng": 3.7282075,
+      "city": "Ghent",
+      "country": "Belgium"
+    },
+    "Hebrew University of Jerusalem": {
+      "lat": 31.7926862,
+      "lng": 35.2449854,
+      "city": "Jerusalem",
+      "country": "Israel"
+    },
+    "Inria": {
+      "lat": 48.8373312,
+      "lng": 2.1010037,
+      "city": "Le Chesnay-Rocquencourt",
+      "country": "France"
+    },
+    "Instituto de Telecomunicações": {
+      "lat": 38.7367455,
+      "lng": -9.1383914,
+      "city": "Lisbon",
+      "country": "Portugal"
+    },
+    "Johns Hopkins University": {
+      "lat": 39.3302023,
+      "lng": -76.6218536,
+      "city": "Baltimore",
+      "country": "United States"
+    },
+    "Karlsruhe Institute of Technology": {
+      "lat": 49.0094722,
+      "lng": 8.4115959,
+      "city": "Karlsruhe",
+      "country": "Germany"
+    },
+    "Ludwig Maximilian University of Munich": {
+      "lat": 48.1504758,
+      "lng": 11.5798356,
+      "city": "Munich",
+      "country": "Germany"
+    },
+    "Massachusetts Institute of Technology": {
+      "lat": 42.3592936,
+      "lng": -71.093079,
+      "city": "Cambridge",
+      "country": "United States"
+    },
+    "Mila": {
+      "lat": 45.5307074,
+      "lng": -73.6136312,
+      "city": "Montreal",
+      "country": "Canada"
+    },
+    "Mohamed bin Zayed University of Artificial Intelligence": {
+      "lat": 24.4324903,
+      "lng": 54.618379,
+      "city": "Abu Dhabi",
+      "country": "United Arab Emirates"
+    },
+    "National Research Council Canada": {
+      "lat": 45.445818,
+      "lng": -75.6168602,
+      "city": "Ottawa",
+      "country": "Canada"
+    },
+    "National Technical University of Athens": {
+      "lat": 37.9771844,
+      "lng": 23.7818336,
+      "city": "Athens",
+      "country": "Greece"
+    },
+    "Northeastern University": {
+      "lat": 42.3351065,
+      "lng": -71.0892575,
+      "city": "Boston",
+      "country": "United States"
+    },
+    "NXAI": {
+      "lat": 48.3126058,
+      "lng": 14.2983561,
+      "city": "Linz",
+      "country": "Austria"
+    },
+    "Queen's University Belfast": {
+      "lat": 54.5842881,
+      "lng": -5.9336562,
+      "city": "Belfast",
+      "country": "United Kingdom"
+    },
+    "Research Center for Linguistics at NOVA University Lisbon": {
+      "lat": 38.7325867,
+      "lng": -9.1608298,
+      "city": "Lisbon",
+      "country": "Portugal"
+    },
+    "Saarland University": {
+      "lat": 49.2542421,
+      "lng": 7.0415117,
+      "city": "Saarbrücken",
+      "country": "Germany"
+    },
+    "Sharif University of Technology": {
+      "lat": 35.7027174,
+      "lng": 51.35172,
+      "city": "Tehran",
+      "country": "Iran"
+    },
+    "Soongsil University": {
+      "lat": 37.4962989,
+      "lng": 126.9567202,
+      "city": "Seoul",
+      "country": "South Korea"
+    },
+    "Supertext AG": {
+      "lat": 47.3933453,
+      "lng": 8.508451,
+      "city": "Zurich",
+      "country": "Switzerland"
+    },
+    "Technical University of Darmstadt": {
+      "lat": 49.8748243,
+      "lng": 8.6563793,
+      "city": "Darmstadt",
+      "country": "Germany"
+    },
+    "Technical University of Munich": {
+      "lat": 48.1490716,
+      "lng": 11.5674463,
+      "city": "Munich",
+      "country": "Germany"
+    },
+    "The Chinese University of Hong Kong": {
+      "lat": 22.4201838,
+      "lng": 114.2079145,
+      "city": "Hong Kong",
+      "country": "Hong Kong"
+    },
+    "University of Amsterdam": {
+      "lat": 52.3685848,
+      "lng": 4.8902006,
+      "city": "Amsterdam",
+      "country": "The Netherlands"
+    },
+    "University of Edinburgh": {
+      "lat": 55.9474245,
+      "lng": -3.1865147,
+      "city": "Edinburgh",
+      "country": "United Kingdom"
+    },
+    "University of Groningen": {
+      "lat": 53.2196783,
+      "lng": 6.5625148,
+      "city": "Groningen",
+      "country": "The Netherlands"
+    },
+    "University of Helsinki": {
+      "lat": 60.1694378,
+      "lng": 24.9501243,
+      "city": "Helsinki",
+      "country": "Finland"
+    },
+    "University of Illinois Chicago": {
+      "lat": 41.8719445,
+      "lng": -87.6459032,
+      "city": "Chicago",
+      "country": "United States"
+    },
+    "University of Innsbruck": {
+      "lat": 47.263066,
+      "lng": 11.3841929,
+      "city": "Innsbruck",
+      "country": "Austria"
+    },
+    "University of Luxembourg": {
+      "lat": 49.504265,
+      "lng": 5.9493863,
+      "city": "Esch-sur-Alzette",
+      "country": "Luxembourg"
+    },
+    "University of Macerata": {
+      "lat": 43.3002128,
+      "lng": 13.4539988,
+      "city": "Macerata",
+      "country": "Italy"
+    },
+    "University of New South Wales": {
+      "lat": -33.9175994,
+      "lng": 151.2312369,
+      "city": "Sydney",
+      "country": "Australia"
+    },
+    "University of Notre Dame": {
+      "lat": 41.7029958,
+      "lng": -86.2389934,
+      "city": "Notre Dame",
+      "country": "United States"
+    },
+    "University of Strasbourg": {
+      "lat": 48.5807106,
+      "lng": 7.7666593,
+      "city": "Strasbourg",
+      "country": "France"
+    },
+    "University of Zurich": {
+      "lat": 47.3746371,
+      "lng": 8.5490938,
+      "city": "Zurich",
+      "country": "Switzerland"
+    },
+    "Weizmann Institute of Science": {
+      "lat": 31.9078499,
+      "lng": 34.8133409,
+      "city": "Rehovot",
+      "country": "Israel"
+    },
+    "Wroclaw University of Science and Technology": {
+      "lat": 51.1077384,
+      "lng": 17.0625425,
+      "city": "Wrocław",
+      "country": "Poland"
+    },
+    "Samsung Electronics (South Korea)": {
+      "lat": 37.566,
+      "lng": 126.9784,
+      "city": "Seoul",
+      "country": "South Korea",
+      "precision": "city"
+    },
+    "University of Washington": {
+      "lat": 47.60621,
+      "lng": -122.33207,
+      "city": "Seattle",
+      "country": "United States",
+      "precision": "city"
+    },
+    "King Saud University": {
+      "lat": 24.68773,
+      "lng": 46.72185,
+      "city": "Riyadh",
+      "country": "Saudi Arabia",
+      "precision": "city"
+    },
+    "University of Bonn": {
+      "lat": 50.73438,
+      "lng": 7.09549,
+      "city": "Bonn",
+      "country": "Germany",
+      "precision": "city"
+    },
+    "University of Cincinnati": {
+      "lat": 39.12711,
+      "lng": -84.51439,
+      "city": "Cincinnati",
+      "country": "United States",
+      "precision": "city"
+    },
+    "University of Sheffield": {
+      "lat": 53.38297,
+      "lng": -1.4659,
+      "city": "Sheffield",
+      "country": "United Kingdom",
+      "precision": "city"
+    }
+  }
+}

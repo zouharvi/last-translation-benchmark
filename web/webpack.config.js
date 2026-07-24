@@ -38,7 +38,7 @@ module.exports = (env, argv) => ({
   },
   resolve: { extensions: ['.ts', '.js'] },
   plugins: [
-    new MiniCssExtractPlugin({ filename: 'style.css' }),
+    new MiniCssExtractPlugin({ filename: '[name].css' }),
     new HtmlWebpackPlugin({
       template: './src/index.html',
       filename: 'index.html',
