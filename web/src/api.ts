@@ -195,6 +195,10 @@ export function getPublicDashboard() {
     return apiCall<PublicDashboardData>('GET', 'api/public-dashboard');
 }
 
+export function getLanguages() {
+    return apiCall<string[]>('GET', 'api/languages');
+}
+
 export function createSubmission(data: {
     source_text: string;
     source_media?: string;

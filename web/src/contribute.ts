@@ -2,7 +2,7 @@ import './assets/style.css';
 import $ from 'jquery';
 import {
     getMe, getCookie,
-    translate, verify, createSubmission, updateSubmission, getSubmissions, addComment, renderRoleSwitcher, deleteSubmission,
+    translate, verify, createSubmission, updateSubmission, getSubmissions, addComment, renderRoleSwitcher, deleteSubmission, getLanguages,
     User, Submission, Rule,
 } from './api';
 
@@ -32,9 +32,14 @@ $(async () => {
 
     let LANGUAGES: string[] = [];
     try {
-        LANGUAGES = await (await fetch('languages.json')).json();
+        LANGUAGES = await getLanguages();
     } catch (e) {
         console.error('Failed to load languages', e);
+        try {
+            LANGUAGES = await (await fetch('languages.json')).json();
+        } catch (e2) {
+            console.error('Failed to load fallback languages', e2);
+        }
     }
 
     const langOptions = LANGUAGES.map(name => `<option value="${escHtml(name)}">${escHtml(name)}</option>`).join('');

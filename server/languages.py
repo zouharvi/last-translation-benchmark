@@ -1,3 +1,6 @@
+import re
+import unicodedata
+
 LANGUAGES = [
     {"name": "Acehnese", "code_google": None, "code_lara": "ace-ID"},
     {"name": "Afrikaans", "code_google": "af", "code_lara": "af-ZA"},
@@ -152,8 +155,7 @@ LANGUAGES = [
     {"name": "Nuer", "code_google": None, "code_lara": "nus-SS"},
     {"name": "Nyanja", "code_google": None, "code_lara": "ny-MW"},
     {"name": "Occitan", "code_google": None, "code_lara": "oc-FR"},
-    {"name": "Odia", "code_google": None, "code_lara": "or-IN"},
-    {"name": "Odia (Oriya)", "code_google": "or", "code_lara": None},
+    {"name": "Odia", "code_google": "or", "code_lara": "or-IN"},
     {"name": "Oromo", "code_google": "om", "code_lara": None},
     {"name": "Pangasinan", "code_google": None, "code_lara": "pag-PH"},
     {"name": "Papiamento", "code_google": None, "code_lara": "pap-CW"},
@@ -235,6 +237,83 @@ LANGUAGES = [
     {"name": "Zulu", "code_google": "zu", "code_lara": "zu-ZA"},
     {"name": "American Sign Language", "code_google": None, "code_lara": None},
 ]
+
+# Contributors type languages freely, so the same language arrives under several
+# names. Keys are lowercased and cleaned by _clean_language(); values are the
+# spelling everything collapses to. Only names that already collide in the
+# database are listed here: a variety nobody spelled twice is left as submitted.
+LANGUAGE_ALIASES: dict[str, str] = {
+    # another name for a language that is already in LANGUAGES
+    "farsi": "Persian",
+    "bangla": "Bengali",
+    "français": "French",
+    "odia (oriya)": "Odia",
+    "czech (czech republic)": "Czech",
+    "english (us)": "English (United States)",
+    # one Arabic dialect, up to three spellings; all follow "Arabic (X)"
+    "arabic algerian": "Arabic (Algerian)",
+    "algerian arabic": "Arabic (Algerian)",
+    "algerian (arabic)": "Arabic (Algerian)",
+    "egyptian arabic": "Arabic (Egyptian)",
+    "lebanese arabic": "Arabic (Lebanese)",
+    "arabic tunisian": "Arabic (Tunisian)",
+    "gulf arabic": "Arabic (Gulf)",
+    "jordanian arabic": "Arabic (Jordanian)",
+    "qatari arabic": "Arabic (Qatari)",
+    "sudanese arabic": "Arabic (Sudanese)",
+    "yemeni arabic": "Arabic (Yemeni)",
+    "arabic (maroccan)": "Arabic (Moroccan)",
+    # one variety, two spellings
+    "italian (sicilia)": "Italian (Sicilian)",
+    "neapolitan": "Italian (Neapolitan)",
+    "german (bern)": "Swiss German (Bern)",
+    "german (thüringen)": "German (Thuringia)",
+    "german (austrian)": "German (Austria)",
+    "french (swiss)": "French (Switzerland)",
+    "french lyon": "French (Lyon)",
+    "konkani bardezi": "Konkani (Bardezi)",
+    # case-only twins, whose preferred spelling is not in LANGUAGES
+    "spanish (colombia)": "Spanish (Colombia)",
+    "chinese (guanzhong dialect)": "Chinese (Guanzhong dialect)",
+    "chinese (lanzhou dialect)": "Chinese (Lanzhou dialect)",
+}
+
+_CANONICAL_BY_LOWER = {x["name"].lower(): x["name"] for x in LANGUAGES}
+
+# Reaching a preferred spelling from its own lowercase form, so that typing
+# "arabic (algerian)" also snaps to "Arabic (Algerian)".
+LANGUAGE_ALIASES.update(
+    {
+        name.lower(): name
+        for name in LANGUAGE_ALIASES.values()
+        if name.lower() not in _CANONICAL_BY_LOWER
+    }
+)
+
+
+def _clean_language(name: str) -> str:
+    """Repair spacing, width and invisible characters without renaming."""
+    # NFKC folds fullwidth parentheses, as in "Chinese （Lanzhou Dialect）"
+    name = unicodedata.normalize("NFKC", name)
+    # drop invisible formatting characters, as in the "English‎" submission
+    name = "".join(c for c in name if unicodedata.category(c) != "Cf")
+    name = re.sub(r"\s+", " ", name).strip()
+    name = re.sub(r"\s*\(\s*", " (", name)
+    name = re.sub(r"\s*\)", ")", name)
+    return name.strip()
+
+
+def canonicalize_language(name: str) -> str:
+    """
+    Resolve a submitted language name to the one spelling used for that
+    language, leaving names we have no rule for untouched.
+    """
+    cleaned = _clean_language(name)
+    key = cleaned.lower()
+    if key in _CANONICAL_BY_LOWER:
+        return _CANONICAL_BY_LOWER[key]
+    return LANGUAGE_ALIASES.get(key, cleaned)
+
 
 if __name__ == "__main__":
     import json

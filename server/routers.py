@@ -34,6 +34,7 @@ from .db import (
 from .db import (
     get_submissions as db_get_submissions,
 )
+from .languages import LANGUAGES, canonicalize_language
 from .models import (
     APILLMReq,
     CommentReq,
@@ -383,6 +384,21 @@ async def admin_overview(user: CurrentUser):
         "submissions_total": submissions_total,
         "pending_languages": pending_languages,
     }
+
+
+@router.get("/api/languages")
+async def languages():
+    # The suggestion list holds the canonical languages plus every variety
+    # somebody already submitted, so a dialect is typed out once rather than
+    # re-invented by the next contributor.
+    submissions = await db_get_submissions()
+    names = {x["name"] for x in LANGUAGES}
+    for s in submissions:
+        for field in ("source_lang", "target_lang"):
+            name = s.get(field)
+            if name:
+                names.add(canonicalize_language(name))
+    return sorted(names)
 
 
 @router.get("/api/public-dashboard")
@@ -849,8 +865,8 @@ async def create_submission(req: SubmissionReq, user: CurrentUser):
         "username": user["username"],
         "source_text": req.source_text,
         "source_media": req.source_media,
-        "source_lang": req.source_lang.strip(),
-        "target_lang": req.target_lang.strip(),
+        "source_lang": canonicalize_language(req.source_lang),
+        "target_lang": canonicalize_language(req.target_lang),
         "verification_rules": [r.dict() for r in req.verification_rules],
         "translations": [t.dict() for t in req.translations],
         "verification_model": req.verification_model,
@@ -890,8 +906,8 @@ async def update_submission(
 
     update: dict = {
         "source_text": req.source_text,
-        "source_lang": req.source_lang,
-        "target_lang": req.target_lang,
+        "source_lang": canonicalize_language(req.source_lang),
+        "target_lang": canonicalize_language(req.target_lang),
         "verification_rules": [r.dict() for r in req.verification_rules],
         "translations": [t.dict() for t in req.translations],
         "verification_model": req.verification_model,
