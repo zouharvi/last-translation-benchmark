@@ -9,7 +9,7 @@ from last_translation_benchmark.db import (
     save_submission,
     save_user,
 )
-from last_translation_benchmark.languages import canonicalize_language
+from last_translation_benchmark.languages import LANGUAGES, canonicalize_language
 
 
 async def migrate(apply: bool):
@@ -59,6 +59,27 @@ async def migrate(apply: bool):
     print(f"{verb} {subs_updated} submission(s) and {users_updated} user(s).")
     if not apply:
         print("Dry run. Re-run with --apply to write.")
+
+    # Names no rule covers. A variety of a canonical language is listed under it,
+    # because that is where over-specification hides ("German (Germany)"), and the
+    # rest are either languages worth adding to LANGUAGES or one-off typos.
+    canonical = {x["name"] for x in LANGUAGES}
+    off_list: collections.Counter = collections.Counter()
+    for sub in submissions:
+        for field in ("source_lang", "target_lang"):
+            name = sub.get(field)
+            if name and name not in canonical:
+                off_list[name] += 1
+
+    def base_language(name: str) -> str:
+        base = name.split(" (")[0]
+        return base if base in canonical and base != name else ""
+
+    print(f"\n{len(off_list)} name(s) are not in LANGUAGES, for review:")
+    by_base_then_count = sorted(off_list.items(), key=lambda x: (base_language(x[0]), -x[1]))
+    for name, count in by_base_then_count:
+        base = base_language(name)
+        print(f"{count:5}  {name!r}" + (f"  [variety of {base}]" if base else ""))
 
 
 if __name__ == "__main__":
