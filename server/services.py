@@ -122,24 +122,24 @@ async def translate_lara(
         if "image" not in mime:
             return None
         # we dont support both image an text or instructions in Lara
-            if text or source_instructions:
-                return None
+        if text or source_instructions:
+            return None
 
-            with tempfile.NamedTemporaryFile(
-                suffix=mimetypes.guess_extension(mime) or ".png"
-            ) as f:
-                f.write(base64.b64decode(base64_data))
-                f.flush()
-                temp_path = f.name
+        with tempfile.NamedTemporaryFile(
+            suffix=mimetypes.guess_extension(mime) or ".png"
+        ) as f:
+            f.write(base64.b64decode(base64_data))
+            f.flush()
+            temp_path = f.name
 
-                resp = await asyncio.to_thread(
-                    lambda: LARA_CLIENT.images.translate_text(
-                        image_path=temp_path,
-                        source=source_code,
-                        target=target_code,
-                    )
+            resp = await asyncio.to_thread(
+                lambda: LARA_CLIENT.images.translate_text(
+                    image_path=temp_path,
+                    source=source_code,
+                    target=target_code,
                 )
-                return "\n".join(p.translation for p in resp.paragraphs)
+            )
+            return "\n".join(p.translation for p in resp.paragraphs)
 
     if not text:
         return None
