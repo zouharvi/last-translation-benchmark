@@ -670,6 +670,8 @@ def _filter_reviewer_submissions(
     min_rules: int = 0,
     min_pass_rate: float = 0.0,
     min_avg_pass_rate: float = 0.0,
+    min_rule_length: int = 0,
+    max_rule_length: int = 0,
 ) -> list[dict]:
     if status == "pending":
         rows = [s for s in rows if s["status"] == "pending"]
@@ -719,6 +721,11 @@ def _filter_reviewer_submissions(
             if avg_checks >= min_avg_pass_rate:
                 passed_rows.append(s)
         rows = passed_rows
+    if min_rule_length > 0:
+        rows = [s for s in rows if any(len(r.get("value", "")) >= min_rule_length for r in s.get("verification_rules", []))]
+
+    if max_rule_length > 0:
+        rows = [s for s in rows if any(len(r.get("value", "")) <= max_rule_length for r in s.get("verification_rules", []))]
 
     return rows
 
@@ -1043,6 +1050,8 @@ async def list_submissions(
     min_rules: int = 0,
     min_pass_rate: float = 0.0,
     min_avg_pass_rate: float = 0.0,
+    min_rule_length: int = 0,
+    max_rule_length: int = 0,
 ):
     source_langs = source_langs or []
     target_langs = target_langs or []
@@ -1063,6 +1072,8 @@ async def list_submissions(
             min_rules=min_rules,
             min_pass_rate=min_pass_rate,
             min_avg_pass_rate=min_avg_pass_rate,
+            min_rule_length=min_rule_length,
+            max_rule_length=max_rule_length,
         )
         
         # prevent non-admins from listing accepted submissions

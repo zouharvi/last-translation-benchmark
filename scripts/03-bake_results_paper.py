@@ -269,11 +269,74 @@ data_out["model_selfbias"] = {
     for model, results in data_models_selfbias.items()
 }
 
-# TODO: fake for now
-for model, results in data_models.items():
-    results["HUMAN: standalone"] = [70.0]
-    results["HUMAN: with rules"] = [50.0]
-   
+with open("data/annotations.json", "r") as f:
+    data_annotations_raw = json.load(f)
+data_annotations = [
+    (item["annotation"][0], item["item"][0])
+    for campaign_data in data_annotations_raw.values()
+    for item in campaign_data
+    if len(item["annotation"]) == 1
+]
+data_annotations_form = [
+    (item["annotation"][1:], item["item"][1:])
+    for campaign_data in data_annotations_raw.values()
+    for item in campaign_data
+    if len(item["annotation"]) > 1
+]
+for annotation, item in data_annotations:
+    for model, results in annotation.items():
+        if "considering these rules" in item.get("instructions", ""):
+            kind = "with rules"
+        else:
+            kind = "standalone"
+        data_models[model]["HUMAN: " + kind].append(results["score"])   
+
+data_out["rules_annotation"] = {
+    "recall": [],
+    "precision": [],
+}
+data_out["rules_annotation_users"] = len({
+    item["user_id"]
+    for campaign_data in data_annotations_raw.values()
+    for item in campaign_data
+})
+data_out["rules_annotation_languages"] = len({
+    item["user_id"].removesuffix("D0").removesuffix("D1")
+    for campaign_data in data_annotations_raw.values()
+    for item in campaign_data
+})
+data_out["rules_annotation_submissions"] = len([
+    item
+    for campaign_data in data_annotations_raw.values()
+    for item in campaign_data
+])
+for annotations, items in data_annotations_form:
+    for annotation, item in zip(annotations, items):
+        if "would it fail correct translations?" in item["text"]:
+            if annotation == "This rule is too strict":
+                data_out["rules_annotation"]["recall"].append(0)
+            elif annotation == "This rule is realistic and reasonable":
+                data_out["rules_annotation"]["recall"].append(1)
+            elif annotation == "Not sure":
+                pass
+            else:
+                raise ValueError("Unknown annotation item text: " + item["text"])
+        elif "translations that are incorrect but would pass all of these verifications at the same time" in item["text"]:
+            if annotation == "These rules are fine as they cover most cases":
+                data_out["rules_annotation"]["precision"].append(1)
+            elif annotation == "Some incorrect translations might pass through":
+                data_out["rules_annotation"]["precision"].append(0)
+            elif annotation == "Not sure":
+                pass
+            else:
+                raise ValueError("Unknown annotation item text: " + item["text"])
+        else:
+            raise ValueError("Unknown annotation item text: " + item["text"])
+
+data_out["rules_annotation"] = {
+    k: statistics.mean(v)
+    for k, v in data_out["rules_annotation"].items()
+}
 
 # average results across metrics
 all_metrics = {
@@ -305,12 +368,8 @@ for metric1, metric2 in itertools.product(all_metrics, all_metrics):
     kind2 = metric2.split(": ")[0]
     if kind1 == "HUMAN":
         kind1 = metric1
-        # TODO: temporary mask
-        tau = 0
     if kind2 == "HUMAN":
         kind2 = metric2
-        # TODO: temporary mask
-        tau = 0
     metrics_pairwise_tau[f"{kind1} ||| {kind2}"].append(tau)
 
 # do stability

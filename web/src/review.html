@@ -72,17 +72,20 @@
           <option value="most_comments">Most comments</option>
         </select>
         <div id="admin-filters-container" style="display:none; align-items:center; font-size: 14px; margin: -10px 0px 10px 5px;">
-          Admin-only:&nbsp;&nbsp;&nbsp;
           Show all languages: <input type="checkbox" id="admin-mode-checkbox" style="margin-bottom: 1px;">
           &nbsp;&nbsp;
-          Min rules count: 
-          <input type="number" id="filter-min-rules" min="0" value="0" class="tab">
+          Rules count: 
+          <input type="number" id="filter-min-rules" min="0" placeholder="min" class="tab">
           &nbsp;&nbsp;
-          Easy rules pass rate: 
-          <input type="number" id="filter-min-pass-rate" min="0" max="100" value="0" class="tab">
+          Any rule pass rate: 
+          <input type="number" id="filter-min-pass-rate" min="0" max="100" placeholder="min%" class="tab">
           &nbsp;&nbsp;
-          Avg pass rate:
-          <input type="number" id="filter-min-avg-pass-rate" min="0" max="100" value="0" class="tab">
+          Avg rule pass rate:
+          <input type="number" id="filter-min-avg-pass-rate" min="0" max="100" placeholder="min%" class="tab">
+          &nbsp;&nbsp;
+          Any rule length:
+          <input type="number" id="filter-min-rule-len" min="0" placeholder="min" class="tab">
+          <input type="number" id="filter-max-rule-len" min="0" placeholder="max" class="tab">
         </div>
       </div>
       <div id="sen-list">

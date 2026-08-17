@@ -4,14 +4,13 @@ import collections
 import json
 import os
 import copy
+import random
 os.chdir(os.path.dirname(os.path.abspath(__file__))+"/..")
 
 with open("data/submissions.json", "r") as f:
     submissions = json.load(f)
 
 submissions = [x for x in submissions if x["status"] == "accept"]
-
-campaigns_file = []
 
 MODELS = ["human", "Google Translate", "Gemini 3.5 Flash Lite", "GPT-5.4 Mini", "Gemma 4"]
 STYLE_FORM = "<style>.form-container { max-width: 1000px !important; }</style>"
@@ -31,25 +30,33 @@ submissions_perlangs = collections.defaultdict(list)
 for submission in submissions:
     if submission["source_media"] is not None or submission["source_instructions"] is not None:
         continue
+    if len(submission["verification_rules"]) > 3:
+        continue
+    if len(submission["source_text"]) > 500:
+        continue
+    if any(x["translation"] is None or len(x["translation"]) > 500 for x in submission["translations"]):
+        continue
+    submission["target_lang"] = submission["target_lang"].replace(" (United States)", "")
     submissions_perlangs[(submission["source_lang"], submission["target_lang"])].append(submission)
 
 submissions_perlangs = {
-    ls: submissions
+    ls: random.Random(0).sample(submissions, k=min(len(submissions), 30))
     for ls, submissions in submissions_perlangs.items()
     if len(submissions) >= 10
 }
 
+campaign_data = {
+    "campaign_id": f"Last Translation Benchmark v1",
+    "info": {
+        "assignment": "task-based",
+        "protocol": "cESA",
+        "shuffle": True,
+        "users": [],
+    },
+    "data": []
+}
 for (lang1, lang2), submissions in submissions_perlangs.items():
-    campaign_data = {
-        "campaign_id": f"{lang1} -> {lang2}",
-        "info": {
-            "assignment": "task-based",
-            "protocol": "cESA",
-            "shuffle": True,
-        },
-        "data": []
-    }
-
+    task_data = []
     for submission in submissions:
         doc_obj = {
             "src": submission["source_text"],
@@ -59,6 +66,7 @@ for (lang1, lang2), submissions in submissions_perlangs.items():
                 if any(x["model"] == model for x in submission["translations"])
             },
             "instructions": STYLE_CESA,
+            "item_id": submission["id"],
         }
         doc_obj_rules = copy.deepcopy(doc_obj)
         doc_obj_rules["instructions"] = (
@@ -90,14 +98,24 @@ for (lang1, lang2), submissions in submissions_perlangs.items():
         })
 
 
-        campaign_data["data"].append([doc_obj])
-        campaign_data["data"].append([doc_obj_rules])
-        campaign_data["data"].append(doc_obj_form)
+        task_data.append([doc_obj])
+        task_data.append([doc_obj_rules])
+        task_data.append(doc_obj_form)
 
-    campaign_data["data"] = [campaign_data["data"]]*2
-    print(f"Campaign {lang1} -> {lang2} has {len(campaign_data['data'][0])} items")
-    campaigns_file.append(campaign_data)
+    campaign_data["data"].append(task_data)
+    campaign_data["data"].append(task_data)
+    campaign_data["info"]["users"].append({"user_id": f"{lang1} -> {lang2} D0"})
+    campaign_data["info"]["users"].append({"user_id": f"{lang1} -> {lang2} D1"})
+    print(f"Campaign {lang1} -> {lang2} has {len(task_data)} items")
 
 os.makedirs("humeval", exist_ok=True)
 with open("humeval/campaigns.json", "w") as f:
-    json.dump(campaigns_file, f, ensure_ascii=False, indent=2)
+    json.dump(campaign_data, f, ensure_ascii=False, indent=2)
+
+
+"""
+cd humeval
+pearmut add campaigns.json
+pearmut run --port 8001 --url https://pearmut.ngrok.io
+ngrok http 8001 --url=pearmut.ngrok.io --traffic-policy-file=/home/vilda/pearmut/misc/policy.yml
+"""

@@ -179,6 +179,8 @@ export function getSubmissions(
         min_rules?: number;
         min_pass_rate?: number;
         min_avg_pass_rate?: number;
+        min_rule_length?: number;
+        max_rule_length?: number;
     },
     signal?: AbortSignal
 ) {
@@ -190,6 +192,8 @@ export function getSubmissions(
     const minRules = filters?.min_rules;
     const minPassRate = filters?.min_pass_rate;
     const minAvgPassRate = filters?.min_avg_pass_rate;
+    const minRuleLength = filters?.min_rule_length;
+    const maxRuleLength = filters?.max_rule_length;
 
     if (status && status.trim() !== '') query.set('status', status);
     if (sourceLangs && sourceLangs.length > 0) sourceLangs.forEach(l => query.append('source_langs', l));
@@ -198,6 +202,8 @@ export function getSubmissions(
     if (minRules !== undefined) query.set('min_rules', minRules.toString());
     if (minPassRate !== undefined) query.set('min_pass_rate', minPassRate.toString());
     if (minAvgPassRate !== undefined) query.set('min_avg_pass_rate', minAvgPassRate.toString());
+    if (minRuleLength !== undefined) query.set('min_rule_length', minRuleLength.toString());
+    if (maxRuleLength !== undefined) query.set('max_rule_length', maxRuleLength.toString());
     
     return apiCall<Submission[]>('GET', `api/submissions?${query.toString()}`, undefined, signal);
 }
