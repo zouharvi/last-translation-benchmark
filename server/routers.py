@@ -741,6 +741,7 @@ MODEL_LIBRARY = [
     {"name": "Gemini 2.5 Pro", "fn": functools.partial(translate_openrouter, model="google/gemini-2.5-pro"), "support_image": False, "support_audio": True, "support_video": True, "support_textonly": False},
     {"name": "Qwen 3.7 Plus", "fn": functools.partial(translate_openrouter, model="qwen/qwen3.7-plus"), "support_image": False, "support_audio": False, "support_video": True, "support_textonly": False},
     {"name": "Voxtral Small", "fn": functools.partial(translate_openrouter, model="mistralai/voxtral-small-24b-2507"), "support_image": False, "support_audio": True, "support_video": False, "support_textonly": False},
+    {"name": "GPT Audio", "fn": functools.partial(translate_openrouter, model="openai/gpt-audio"), "support_image": False, "support_audio": True, "support_video": False, "support_textonly": False},
     {"name": "Claude Haiku 4.5", "fn": functools.partial(translate_openrouter, model="anthropic/claude-haiku-4.5"), "support_image": True, "support_audio": False, "support_video": False, "support_textonly": True},
     # not used anymore
     # {"name": "Command A", "fn": functools.partial(translate_openrouter, model="cohere/command-a"), "support_image": True, "support_audio": False, "support_video": False, "support_textonly": True},
