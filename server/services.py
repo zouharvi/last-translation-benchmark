@@ -34,6 +34,26 @@ NAME_TO_CODE_LARA = {
     x["name"].lower(): x["code_lara"] for x in LANGUAGES if x["code_lara"] is not None
 }
 
+# browsers report .mp3 as audio/mpeg and .wav under any of the aliases below, but
+# OpenAI-served models (openai/gpt-audio) only accept "mp3" or "wav" as the format
+AUDIO_MIME_TO_FORMAT = {
+    "audio/mpeg": "mp3",
+    "audio/mpeg3": "mp3",
+    "audio/mp3": "mp3",
+    "audio/x-mp3": "mp3",
+    "audio/x-mpeg-3": "mp3",
+    "audio/wav": "wav",
+    "audio/wave": "wav",
+    "audio/x-wav": "wav",
+    "audio/x-pn-wav": "wav",
+    "audio/vnd.wave": "wav",
+}
+
+
+def audio_format_from_mime(mime: str) -> str:
+    mime = mime.strip().lower()
+    return AUDIO_MIME_TO_FORMAT.get(mime, mime.split("/")[-1])
+
 
 def translate_google(
     text: str,
@@ -195,6 +215,10 @@ async def call_llm(prompt: str | list[dict], model: str = "google/gemini-3.5-fla
         )
         content = response.choices[0].message.content
         if content is None:
+            # audio models (openai/gpt-audio) put the text in the audio transcript
+            audio = response.choices[0].message.audio
+            content = audio.transcript if audio else None
+        if content is None:
             log(f"None LLM response: {response.choices[0]}")
             return None
 
@@ -259,7 +283,7 @@ async def call_llm_multimodal(
                 "type": "input_audio",
                 "input_audio": {
                     "data": base64_data,
-                    "format": mime.split("/")[1],
+                    "format": audio_format_from_mime(mime),
                 },
             }
         )
