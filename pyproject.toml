@@ -21,7 +21,6 @@ dependencies = [
     "lara-sdk >= 1.8",
     "cohere >= 5.11",
     "openrouter >= 1.1",
-    "openai >= 2.0",
 ]
 
 [project.optional-dependencies]
@@ -30,6 +29,7 @@ dev = [
     "pre-commit >= 4.6",
     "ruff >= 0.16",
     "lingtypology >= 0.8",
+    "openai >= 2.0",
 ]
 
 [project.urls]
