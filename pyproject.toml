@@ -21,6 +21,7 @@ dependencies = [
     "lara-sdk >= 1.8",
     "cohere >= 5.11",
     "openrouter >= 1.1",
+    "openai >= 2.0",
 ]
 
 [project.optional-dependencies]
