@@ -8,6 +8,8 @@ import sys
 import tomllib
 import types
 from pathlib import Path
+import time
+
 
 from llm_transplant_prompts import PROMPTS
 from openai import OpenAI
@@ -16,8 +18,26 @@ from tqdm import tqdm
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
 
-DATA_IN = ROOT / "data" / "langtransfer" / "submissions_v2.json"
-MODEL = "gpt-5.4-mini"
+DATA_IN = "./submissions_v2.json"
+PROVIDER = "openai"
+
+CONFIGS = {
+    "openai": {
+        "base_url": None,
+        "key_env": "OPENAI_API_KEY",
+        "model": "gpt-5.6-terra",
+    },
+    "openrouter": {
+        "base_url": "https://openrouter.ai/api/v1",
+        "key_env": "OPENROUTER_API_KEY",
+        "model": "~deepseek/deepseek-v4-flash-latest",
+    },
+}
+
+CFG = CONFIGS[PROVIDER]
+MODEL = CFG["model"]
+
+
 KEYS_PATH = HERE / "keys.toml"
 NON_OPENROUTER_MODELS = {"Lara", "Google Translate"}
 LLM_FIELDS = (
@@ -38,7 +58,7 @@ def parse_args():
     p.add_argument("transplant_side", choices=["source", "target"])
     p.add_argument("transplant_lang")
     p.add_argument("--data-in", type=Path, default=DATA_IN)
-    p.add_argument("--data-out", type=Path)
+    p.add_argument("--data-out", type=Path, default=f"./{MODEL}.json")
     p.add_argument("--prompt", type=int, default=1)
     p.add_argument("--limit", type=int)
     p.add_argument("--fill-api-translations", action="store_true")
@@ -89,11 +109,13 @@ def llm_payload(submission: dict) -> dict:
 
 
 def call_transplant_llm(client: OpenAI, prompt: str) -> dict:
-    resp = client.responses.create(
-        model=MODEL,
-        input=prompt,
-    )
-    return parse_json(resp.output_text)
+    resp = client.chat.completions.create(
+      model=MODEL,
+      messages=[{"role": "user", "content": prompt}],
+      response_format={"type": "json_object"},
+      seed=0,
+  )
+    return parse_json(resp.choices[0].message.content)
 
 
 def parse_json(text: str) -> dict:
@@ -202,10 +224,10 @@ async def init_backend_db() -> None:
 def openai_client() -> OpenAI:
     global OPENAI_CLIENT
     if OPENAI_CLIENT is None:
-        api_key = os.environ.get("OPENAI_API_KEY")
+        api_key = os.environ.get(CFG["key_env"])
         if not api_key:
-            raise ValueError(f"OPENAI_API_KEY is missing from {KEYS_PATH}")
-        OPENAI_CLIENT = OpenAI(api_key=api_key)
+            raise ValueError(f"{CFG['key_env']} is missing")
+        OPENAI_CLIENT = OpenAI(api_key=api_key, base_url=CFG["base_url"])
     return OPENAI_CLIENT
 
 
@@ -391,9 +413,9 @@ def transplant(
 
     if prompt_key not in PROMPTS:
         raise ValueError(f"Unknown prompt key: {prompt_key}")
-    if not keys.get("OPENAI_API_KEY"):
-        raise ValueError(f"OPENAI_API_KEY is missing from {KEYS_PATH}")
-    client = OpenAI(api_key=keys["OPENAI_API_KEY"])
+    if not keys.get(CFG["key_env"]):
+        raise ValueError(f"{CFG['key_env']} is missing from {KEYS_PATH}")
+    client = openai_client()
     loop = asyncio.new_event_loop() if fill_api_translations else None
 
     try:
@@ -455,7 +477,7 @@ def main():
         limit=args.limit,
         data_in=args.data_in,
         out_path=path,
-        fill_api_translations=args.fill_api_translations,
+        fill_api_translations=False,
         verification_model=args.verification_model,
     )
     print(path)
