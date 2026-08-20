@@ -74,3 +74,4 @@ class APILLMReq(BaseModel):
     model: str = Field(max_length=50)
     prompt: str = Field(max_length=50000)
     source_media: str | None = field_source_media
+    cache: bool = True

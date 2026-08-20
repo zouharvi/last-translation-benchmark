@@ -1,6 +1,8 @@
 import asyncio
 import json
+
 from last_translation_benchmark.db import _open_db
+
 
 async def migrate():
     async with _open_db() as db:

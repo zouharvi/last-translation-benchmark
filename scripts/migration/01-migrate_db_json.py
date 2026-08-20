@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-import sqlite3
+import argparse
 import json
 import os
-import argparse
 import secrets
+import sqlite3
+import sys
 
 args = argparse.ArgumentParser(
     description="Migrate old submissions from db.json into sqlite database."
@@ -15,7 +16,7 @@ args = args.parse_args()
 try:
     if not os.path.exists(args.json):
         print(f"File {args.json} not found.")
-        exit(1)
+        sys.exit(1)
 
     with open(args.json, "r") as f:
         old_db = json.load(f)

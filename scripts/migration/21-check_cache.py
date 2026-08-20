@@ -1,5 +1,7 @@
 import asyncio
+
 from last_translation_benchmark.db import _open_cache_db
+
 
 async def check_cache():
     async with _open_cache_db() as db:

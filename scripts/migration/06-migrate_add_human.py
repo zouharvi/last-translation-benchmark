@@ -2,6 +2,7 @@ import asyncio
 
 from last_translation_benchmark.db import get_submissions, save_submission
 
+
 async def migrate_add_human():
     print("Fetching submissions...")
     submissions = await get_submissions()
@@ -46,7 +47,7 @@ async def migrate_add_human():
                     translations.append(new_human)
                     await save_submission(sub)
                     updated_count += 1
-                    print(f"Added human translation!")
+                    print("Added human translation!")
                     break
                 else:
                     print("Invalid index.")

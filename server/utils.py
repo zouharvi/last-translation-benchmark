@@ -58,8 +58,8 @@ def retry_async(times: int, delay: float = 1.0):
 
 
 CONTRIBUTOR_QUOTA_DEFAULT = get_config("CONTRIBUTOR_QUOTA_DEFAULT")
-DB_PATH = get_config("DB_PATH", "data/db.sqlite")
-DB_CACHE_PATH = get_config("DB_CACHE_PATH", "data/cache.sqlite")
+DB_PATH = get_config("DB_PATH")
+DB_CACHE_PATH = get_config("DB_CACHE_PATH")
 EMAIL_SENDER = get_config("EMAIL_SENDER", "")
 EMAIL_PASSWORD = get_config("EMAIL_PASSWORD", "")
 EMAIL_SMTP_SERVER_PORT = get_config("EMAIL_SMTP_SERVER_PORT", None)

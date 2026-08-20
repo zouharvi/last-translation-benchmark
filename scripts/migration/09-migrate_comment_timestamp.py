@@ -1,6 +1,7 @@
 import asyncio
 
-from last_translation_benchmark.db import get_submissions, save_submission, init_db
+from last_translation_benchmark.db import get_submissions, init_db, save_submission
+
 
 async def migrate():
     await init_db()

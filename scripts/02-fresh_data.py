@@ -1,9 +1,11 @@
 # %%
 
-import os
-import requests
-import urllib.parse
 import json
+import os
+import urllib.parse
+
+import requests
+
 os.chdir(os.path.dirname(os.path.abspath(__file__))+ "/../")
 
 from last_translation_benchmark.utils import get_config
@@ -30,9 +32,20 @@ submissions_fname = "data/submissions.json"
 submissions_old = json.load(open(submissions_fname)) if os.path.exists(submissions_fname) else []
 submissions_id_to_obj = {s["id"]: s for s in submissions_old}
 
+data_count_new = 0
+data_count_updated = 0
 for sub_obj in submissions_new:
-    if sub_obj["id"] not in submissions_id_to_obj or submissions_id_to_obj[sub_obj["id"]]["status"] != "accept":
+    if sub_obj["id"] not in submissions_id_to_obj:
+        if sub_obj["status"] == "accept":
+            data_count_new += 1
         submissions_id_to_obj[sub_obj["id"]] = sub_obj
+    elif submissions_id_to_obj[sub_obj["id"]]["status"] != "accept":
+        if sub_obj["status"] == "accept":
+            data_count_updated += 1
+        submissions_id_to_obj[sub_obj["id"]] = sub_obj
+
+print("Added", data_count_new)
+print("Updated", data_count_updated)
 
 merged = sorted(submissions_id_to_obj.values(), key=lambda x: x["id"])
 with open(submissions_fname, "w") as f:

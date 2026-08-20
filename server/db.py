@@ -229,28 +229,32 @@ def sqlite_cache(discard_none: bool = False):
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
+            cache = kwargs.get('cache', True)
+            # Exclude cache from hash calculation
+            hash_kwargs = {k: v for k, v in kwargs.items() if k != 'cache'}
             # Include function name in the payload
             payload_dict = {
                 "func": func.__name__,
                 "args": args,
-                "kwargs": kwargs
+                "kwargs": hash_kwargs
             }
             # json.dumps with sort_keys=True ensures deterministic hashing
             payload_str = json.dumps(payload_dict, sort_keys=True)
             query_hash = hashlib.sha256(payload_str.encode('utf-8')).hexdigest()
             
-            async with _open_cache_db() as db:
-                async with db.execute(
-                    "SELECT response_text FROM api_cache WHERE query_hash = ?", 
-                    (query_hash,)
-                ) as cur:
-                    cached_result = await cur.fetchone()
-                
-                if cached_result:
-                    # Cache hit
-                    return json.loads(cached_result[0])
+            if cache:
+                async with _open_cache_db() as db:
+                    async with db.execute(
+                        "SELECT response_text FROM api_cache WHERE query_hash = ?", 
+                        (query_hash,)
+                    ) as cur:
+                        cached_result = await cur.fetchone()
+                    
+                    if cached_result:
+                        # Cache hit
+                        return json.loads(cached_result[0])
             
-            # Cache miss: call the actual async function
+            # Cache miss or cache override: call the actual async function
             actual_response = await func(*args, **kwargs)
             
             if discard_none and actual_response is None:

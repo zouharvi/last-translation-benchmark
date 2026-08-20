@@ -1,5 +1,6 @@
-from cycler import cycler
 import matplotlib.pyplot as plt
+from cycler import cycler
+
 # plt.rcParams["font.family"] = "serif"
 plt.rcParams["font.serif"] = ["Inter"]
 

@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import sys
 
-from last_translation_benchmark.utils import get_config
 from openrouter import OpenRouter
+
+from last_translation_benchmark.utils import get_config
+
 
 def format_usd(val):
     if val is None:

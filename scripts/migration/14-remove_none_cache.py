@@ -2,6 +2,7 @@ import asyncio
 
 from last_translation_benchmark.db import _open_cache_db
 
+
 async def main():
     print("Connecting to the cache database...")
     async with _open_cache_db() as db:

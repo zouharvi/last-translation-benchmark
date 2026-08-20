@@ -1,13 +1,14 @@
 # %%
 
+import collections
+import contextlib
 import json
 import os
-import collections
-import sacrebleu
-from frozendict import frozendict
-import tqdm
-import contextlib
 import subprocess
+
+import sacrebleu
+import tqdm
+from frozendict import frozendict
 
 os.chdir(os.path.dirname(os.path.abspath(__file__))+"/..")
 
@@ -21,7 +22,7 @@ for submission in data_submissions:
         continue
     if submission["source_media"] is not None or submission["source_instructions"] is not None:
         continue
-    translation_reference = [x for x in submission["translations"] if x["model"] == "human"][0]
+    translation_reference = next(x for x in submission["translations"] if x["model"] == "human")
     for translation in submission["translations"]:
         if translation["model"].startswith("SKIP: "):
             continue
@@ -57,6 +58,7 @@ def filter_unscored(data_to_score, data_cache, metric):
 # COMET
 for model, name in [("Unbabel/wmt22-cometkiwi-da", "Comet QE 22"), ("Unbabel/wmt22-comet-da", "Comet 22")]:
     data_to_score_local = filter_unscored(data_to_score, data_cache, name)
+    print(len(data_to_score_local), "left to score by", name)
     if not data_to_score_local:
         continue
     import comet
@@ -78,7 +80,7 @@ if os.path.exists(os.path.expanduser("~/bin/metricx")):
     for model, name in [("google/metricx-24-hybrid-large-v2p6", "MetricX 24"), ("google/metricx-24-hybrid-large-v2p6", "MetricX QE 24")]:
         data_to_score_local = filter_unscored(data_to_score, data_cache, name)
         print(len(data_to_score_local), "left to score by", name)
-        data_to_score_local = data_to_score_local[:3_000]
+        data_to_score_local = data_to_score_local[:2_000]
         if not data_to_score_local:
             continue
         # temporarily change to bin/metricx

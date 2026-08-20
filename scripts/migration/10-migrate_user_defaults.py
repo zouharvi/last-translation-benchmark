@@ -2,6 +2,7 @@ import asyncio
 
 from last_translation_benchmark.db import get_users, save_user
 
+
 async def migrate():
     users = await get_users()
     print(f"Migrating {len(users)} users...")

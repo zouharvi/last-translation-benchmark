@@ -1,9 +1,10 @@
-import os
 import argparse
 import asyncio
+import os
 
-from last_translation_benchmark.db import get_users, get_submissions, save_user, init_db
+from last_translation_benchmark.db import get_submissions, get_users, init_db, save_user
 from last_translation_benchmark.utils import send_email
+
 
 async def migrate():
     await init_db()
@@ -101,7 +102,7 @@ async def send_notifications(users, target_users=None):
             email_body += "\n"
         
         email_body += f"View them here: {host_url}\n"
-        email_body += f"\nBest regards, the LTB Team"
+        email_body += "\nBest regards, the LTB Team"
         
         print(f"Sending email to {u.get('email', '')} ({u['username']})...")
         

@@ -1,7 +1,14 @@
 import argparse
 import asyncio
 
-from last_translation_benchmark.db import get_users, get_submissions, save_user, save_submission, init_db
+from last_translation_benchmark.db import (
+    get_submissions,
+    get_users,
+    init_db,
+    save_submission,
+    save_user,
+)
+
 
 async def migrate(old_username: str, new_username: str):
     await init_db()

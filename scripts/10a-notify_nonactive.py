@@ -1,9 +1,10 @@
-import os
 import asyncio
+import os
 import urllib.parse
 
-from last_translation_benchmark.db import get_users, get_submissions, _open_db
+from last_translation_benchmark.db import _open_db, get_submissions, get_users
 from last_translation_benchmark.utils import send_email
+
 os.environ["HOST_PUBLIC"] = "https://last-translation-benchmark.vilda.net"
 
 SUBJECT = "Last Translation Benchmark - Contribute"
@@ -23,12 +24,11 @@ Best, the LTB team
 
 
 async def has_sent_subject(email: str, subject: str) -> bool:
-    async with _open_db() as db:
-        async with db.execute(
-            "SELECT 1 FROM sent_emails WHERE to_email = ? AND subject = ?",
-            (email, subject)
-        ) as cur:
-            return await cur.fetchone() is not None
+    async with _open_db() as db, db.execute(
+        "SELECT 1 FROM sent_emails WHERE to_email = ? AND subject = ?",
+        (email, subject)
+    ) as cur:
+        return await cur.fetchone() is not None
 
 async def main():
     print("Fetching users and submissions...")

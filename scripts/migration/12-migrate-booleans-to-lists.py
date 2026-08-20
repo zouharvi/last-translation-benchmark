@@ -1,13 +1,14 @@
-import sqlite3
 import json
 import os
+import sqlite3
+import sys
 
 # Assuming script is in scripts/migration/, DB_PATH is ../../data/db.sqlite
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "data", "db.sqlite")
 
 if not os.path.exists(DB_PATH):
     print("No database found at", DB_PATH)
-    exit(0)
+    sys.exit(0)
 
 conn = sqlite3.connect(DB_PATH)
 cursor = conn.cursor()
@@ -17,7 +18,7 @@ try:
     rows = cursor.fetchall()
 except Exception as e:
     print("No submissions table:", e)
-    exit(0)
+    sys.exit(0)
 
 updated_count = 0
 for row_id, data_str in rows:

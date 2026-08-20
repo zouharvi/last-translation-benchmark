@@ -423,7 +423,7 @@ $(async () => {
             error: null,
             verified: t.verified
         }));
-        inputCorrespondsToTranslations = true;
+        inputCorrespondsToTranslations = false;
         if (lastResults.length > 0) {
             renderApiResults();
             // Show verification badges
@@ -434,6 +434,8 @@ $(async () => {
                 }
             });
         }
+
+
 
         $('#submit-btn').text('Update Submission');
         $('#cancel-edit-btn').show();
@@ -484,7 +486,7 @@ function renderRules() {
     $container.empty();
     const disabled = rules.length == 1 ? 'disabled' : '';
     rules.forEach((rule, index) => {
-        const placeholder = "Describe what the LLM should check (e.g. 'Should be sarcastic.').";
+        const placeholder = "Describe what the AI should check (e.g. 'Should be sarcastic.').";
 
         const $row = $(`
             <div class="rule-row" data-index="${index}" style="display: flex; gap: 12px; align-items: flex-start; margin-bottom: 8px;">

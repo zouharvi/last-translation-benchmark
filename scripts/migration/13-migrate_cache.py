@@ -1,8 +1,10 @@
-import os
 import asyncio
+import os
+
 import aiosqlite
 
-from last_translation_benchmark.utils import DB_PATH, DB_CACHE_PATH
+from last_translation_benchmark.utils import DB_CACHE_PATH, DB_PATH
+
 
 async def migrate():
     print(f"Migrating from DB_PATH: {DB_PATH} to DB_CACHE_PATH: {DB_CACHE_PATH}")

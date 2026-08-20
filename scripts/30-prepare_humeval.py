@@ -1,10 +1,11 @@
 # %%
 
 import collections
+import copy
 import json
 import os
-import copy
 import random
+
 os.chdir(os.path.dirname(os.path.abspath(__file__))+"/..")
 
 with open("data/submissions.json", "r") as f:
@@ -46,7 +47,7 @@ submissions_perlangs = {
 }
 
 campaign_data = {
-    "campaign_id": f"Last Translation Benchmark v1",
+    "campaign_id": "Last Translation Benchmark v1",
     "info": {
         "assignment": "task-based",
         "protocol": "cESA",
@@ -64,7 +65,7 @@ for (lang1, lang2), submissions in submissions_perlangs.items():
         doc_obj = {
             "src": submission["source_text"],
             "tgt": {
-                model: [x["translation"] for x in submission["translations"] if x["model"] == model][0]
+                model: next(x["translation"] for x in submission["translations"] if x["model"] == model)
                 for model in MODELS
                 if any(x["model"] == model for x in submission["translations"])
             },

@@ -1,5 +1,6 @@
 import random
 
+
 def estimate_tokens(text: str) -> int:
     import tiktoken
     encoder = tiktoken.get_encoding("cl100k_base")
@@ -7,6 +8,7 @@ def estimate_tokens(text: str) -> int:
 
 async def request_post_with_backoff(**kwargs):
     import asyncio
+
     import requests
     delay = 2
     for _ in range(8):
@@ -29,7 +31,7 @@ async def request_post_with_backoff(**kwargs):
             raise Exception(f"Request failed with status {response.status_code}: {response.text}")
         delay *= 2
 
-    raise Exception(f"Request failed after 6 retries")
+    raise Exception("Request failed after 6 retries")
 
 
 def model_price_per_token(model_name: str) -> tuple[float, float]:

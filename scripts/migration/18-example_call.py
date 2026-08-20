@@ -1,7 +1,8 @@
 # %%
 
-import requests
 import urllib.parse
+
+import requests
 
 cookies = {
     "ltb_user": urllib.parse.quote(""),

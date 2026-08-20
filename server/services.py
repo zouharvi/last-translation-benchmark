@@ -83,6 +83,7 @@ async def translate_google_with_api(
     tgt_lang: str,
     source_media: str | None = None,
     source_instructions: str | None = None,
+    cache: bool = True,
 ) -> str | None:
     source_code = NAME_TO_CODE_GOOGLE.get(src_lang.lower(), None)
     target_code = NAME_TO_CODE_GOOGLE.get(tgt_lang.lower(), None)
@@ -133,6 +134,7 @@ async def translate_lara(
     tgt_lang: str,
     source_media: str | None = None,
     source_instructions: str | None = None,
+    cache: bool = True,
 ) -> str | None:
     source_code = NAME_TO_CODE_LARA.get(src_lang.lower(), None)
     target_code = NAME_TO_CODE_LARA.get(tgt_lang.lower(), None)
@@ -184,7 +186,7 @@ async def translate_lara(
 
 
 @sqlite_cache(discard_none=True)
-async def call_llm(prompt: str | list[dict], model: str = "google/gemini-3.5-flash-lite") -> str | None:
+async def call_llm(prompt: str | list[dict], model: str = "google/gemini-3.5-flash-lite", cache: bool = True) -> str | None:
     if isinstance(prompt, str):
         prompt = [{"role": "user", "content": prompt}]
 
@@ -252,16 +254,20 @@ async def verify_llm(
         return True
     elif "fail" in text_clean:
         return False
+    elif "pass" in text:
+        return True
+    elif "fail" in text:
+        return False
     else:
         raise ValueError(f"Invalid LLM response: {text}")
 
 
 @sqlite_cache(discard_none=True)
 async def call_llm_multimodal(
-    prompt: str, model: str, source_media: str | None = None
+    prompt: str, model: str, source_media: str | None = None, cache: bool = True
 ) -> str | None:
     if not source_media:
-        return await call_llm(prompt, model=model)
+        return await call_llm(prompt, model=model, cache=cache)
 
     base64_data = None
     if source_media.startswith("data:") and "," in source_media:
@@ -271,7 +277,7 @@ async def call_llm_multimodal(
         has_image = "image" in mime
         has_video = "video" in mime
     else:
-        return await call_llm(prompt, model=model)
+        return await call_llm(prompt, model=model, cache=cache)
 
     if len(base64_data) > 2 * 1024 * 1024:
         raise ValueError("Media data too large (max 2MB)")
@@ -292,9 +298,9 @@ async def call_llm_multimodal(
     elif has_image:
         content.append({"type": "image_url", "image_url": {"url": source_media}})
     else:
-        return await call_llm(prompt, model=model)
+        return await call_llm(prompt, model=model, cache=cache)
     
-    return await call_llm([{"role": "user", "content": content}], model=model)
+    return await call_llm([{"role": "user", "content": content}], model=model, cache=cache)
 
 async def translate_openrouter(
     text: str,

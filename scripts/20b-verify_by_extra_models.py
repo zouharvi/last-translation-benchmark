@@ -1,16 +1,17 @@
+import asyncio
 import collections
 import json
 import os
-import urllib.parse
 import random
-import asyncio
+import re
+import urllib.parse
+
 import tqdm
 import utils
 
 os.chdir(os.path.dirname(os.path.abspath(__file__))+"/..")
 
 from last_translation_benchmark.utils import get_config
-
 
 MODELS_VERIFIERS = [
     {"name": "Qwen 3.7 Flash", "model": "qwen/qwen3.7-flash"},
@@ -20,14 +21,14 @@ MODELS_VERIFIERS = [
     {"name": "Gemini 3.5 Flash Lite", "model": "google/gemini-3.5-flash-lite"},
     {"name": "GPT-5.4 Mini", "model": "openai/gpt-5.4-mini"},
 ]
-# use direct API access to avoid Forpsi throttling
-API_URL = "https://quest.ms.mff.cuni.cz/ltb/api/llm"
 DATA_FILE = "data/submissions.json"
 
 COOKIES = {
     "ltb_user": urllib.parse.quote(get_config("LTB_API_USER")),
     "ltb_token": urllib.parse.quote(get_config("LTB_API_TOKEN"))
 }
+
+CACHE = True
 
 def get_prompt_verify(source_text: str, translation: str, rule: str, source_media: str | None) -> str:
     prompt = f"Your goal is to verify whether a translation fulfills a criterion.\n\nCriterion: {rule}\n\nInput: {source_text}\n\nTranslation to verify: {translation}\n\nOutput only pass or fail and nothing else."
@@ -136,7 +137,11 @@ async def main():
 
             async def _process_model_verifier(model) -> bool:
                 # skip if this model has already verified this translation
-                if model["name"] in mt_obj["verified_extra"] and len(mt_obj["verified_extra"][model["name"]]) == len(sub["verification_rules"]):
+                if (
+                    model["name"] in mt_obj["verified_extra"]
+                    and len(mt_obj["verified_extra"][model["name"]]) == len(sub["verification_rules"])
+                    and all(r is not None for r in mt_obj["verified_extra"][model["name"]])
+                ):
                     return False
 
                 results = []
@@ -146,6 +151,7 @@ async def main():
                     payload = {
                         "model": model["model"],
                         "prompt": prompt,
+                        "cache": CACHE,
                     }
                     if sub["source_media"]:
                         payload["source_media"] = sub["source_media"]
@@ -154,7 +160,7 @@ async def main():
                     try:
                         pbar_tasks.add(progress_id)
                         update_pbar()
-                        response = await utils.request_post_with_backoff(url=API_URL, json=payload, cookies=COOKIES)
+                        response = await utils.request_post_with_backoff(url=get_config("LTB_API_URL"), json=payload, cookies=COOKIES)
                         if response.status_code == 200:
                             res_text = response.json()
                             if res_text is None:
@@ -166,6 +172,10 @@ async def main():
                             if "pass" in text_clean:
                                 results.append(True)
                             elif "fail" in text_clean:
+                                results.append(False)
+                            elif "pass" in res_text:
+                                results.append(True)
+                            elif "fail" in res_text:
                                 results.append(False)
                             else:
                                 print(f"  Invalid LLM response: {res_text}")
@@ -194,7 +204,7 @@ async def main():
 
             async def _process_model_judge(model):
                 # skip if this model has already verified this translation
-                if model["name"] in mt_obj["judge_extra"]:
+                if model["name"] in mt_obj["judge_extra"] and mt_obj["judge_extra"][model["name"]] is not None:
                     return False
 
                 prompt = get_prompt_judge(source_text_display, mt_obj["translation"], sub["source_media"])
@@ -202,6 +212,7 @@ async def main():
                 payload = {
                     "model": model["model"],
                     "prompt": prompt,
+                    "cache": CACHE,
                 }
                 if sub["source_media"]:
                     payload["source_media"] = sub["source_media"]
@@ -211,22 +222,31 @@ async def main():
                 try:
                     pbar_tasks.add(progress_id)
                     update_pbar()
-                    response = await utils.request_post_with_backoff(url=API_URL, json=payload, cookies=COOKIES)
+                    response = await utils.request_post_with_backoff(url=get_config("LTB_API_URL"), json=payload, cookies=COOKIES)
                     if response.status_code == 200:
                         res_text = response.json()
                         if res_text is None:
                             print(f"  Empty LLM response for #{sub['id']}")
+                            result = None
                         else:
                             try:
                                 # take only the last word, in case the model outputs extra text
                                 text_clean = res_text.strip().lower().replace("*", "").strip(" \t\n\r.,!?\"'%").split()[-1]
                                 result = int(float(text_clean))
                                 if not (0 <= result <= 100):
+                                    raise ValueError(f"  Result {result} out of range")
+                            except ValueError:
+                                result = re.search(r"\*\*\d+\%?\*\*", res_text)
+                                if result:
+                                    result = result[0].replace("*", "").replace("%", "")
+                                    if all(c.isdigit() for c in result):
+                                        result = int(result)
+                                    else:
+                                        print(f"  Invalid LLM response: {res_text}")
+                                        result = None
+                                else:
                                     print(f"  Invalid LLM response: {res_text}")
                                     result = None
-                            except ValueError:
-                                print(f"  Invalid LLM response: {res_text}")
-                                result = None
                     else:
                         print(f"  Error {response.status_code}: {response.text}")
                         result = None

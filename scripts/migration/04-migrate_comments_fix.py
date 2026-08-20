@@ -2,6 +2,7 @@ import asyncio
 
 from last_translation_benchmark.db import get_submissions, save_submission
 
+
 async def migrate_comments_fix():
     print("Fetching submissions...")
     submissions = await get_submissions()
