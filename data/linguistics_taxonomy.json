@@ -37,5 +37,8 @@
   "semantic or lexical": "parallel_tags_1/semantic or lexical",
   "pragmatic": "parallel_tags_1/pragmatic",
   "orthography": "parallel_tags_1/orthographic",
-  "orthographic": "parallel_tags_1/orthographic"
+  "orthographic": "parallel_tags_1/orthographic",
+  "rare word": "main_tags/linguistic knowledge/atypical/rare word",
+  "onomatopoeia": "main_tags/linguistic knowledge/non-compositional/onomatopoeia",
+  "instruction injection": "parallel_tags_2/instruction injection",
 }
