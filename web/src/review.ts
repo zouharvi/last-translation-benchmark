@@ -10,6 +10,7 @@ import { esc as escHtml, fmtDate, scoreBadge, accessDenied, renderCommentThread,
 import instructionsHtml from './assets/instructions.html';
 
 let allSugs: Submission[] = [];
+let filterPool: Submission[] = [];
 let curFilter = 'pending';
 let curSort = 'last_updated';
 let currentUser: User | null = null;
@@ -229,24 +230,29 @@ function populateFilters(): void {
     const targetLangVal = String($('#filter-target-lang').val() ?? '');
     const userVal = String($('#filter-user').val() ?? '');
 
-    const sourceLangs = [...new Set([...(sourceLangVal ? [sourceLangVal] : []), ...allSugs.map(s => s.source_lang)])].sort();
-    const targetLangs = [...new Set([...(targetLangVal ? [targetLangVal] : []), ...allSugs.map(s => s.target_lang)])].sort();
-    const users = [...new Set([...(userVal ? [userVal] : []), ...allSugs.map(s => s.username)])].sort();
+    // Keep a full snapshot, refreshed only when nothing is filtered. Each
+    // dropdown lists the values available under the OTHER active filters, so
+    // its own selection never collapses it (#210) but irrelevant options hide.
+    if (!sourceLangVal && !targetLangVal && !userVal) {
+        filterPool = allSugs;
+    }
+
+    const matches = (s: Submission, self: string) =>
+        (self === 'source' || !sourceLangVal || s.source_lang === sourceLangVal) &&
+        (self === 'target' || !targetLangVal || s.target_lang === targetLangVal) &&
+        (self === 'user' || !userVal || s.username === userVal);
+
+    const sourceLangs = [...new Set([...(sourceLangVal ? [sourceLangVal] : []), ...filterPool.filter(s => matches(s, 'source')).map(s => s.source_lang)])].sort();
+    const targetLangs = [...new Set([...(targetLangVal ? [targetLangVal] : []), ...filterPool.filter(s => matches(s, 'target')).map(s => s.target_lang)])].sort();
+    const users = [...new Set([...(userVal ? [userVal] : []), ...filterPool.filter(s => matches(s, 'user')).map(s => s.username)])].sort();
+    const nameOf = (u: string) => filterPool.find(s => s.username === u)?.name || u;
 
     $('#filter-source-lang').html('<option value="">All Source Languages</option>' +
         sourceLangs.map(l => `<option value="${escHtml(l)}"${l === sourceLangVal ? ' selected' : ''}>${escHtml(l)}</option>`).join(''));
     $('#filter-target-lang').html('<option value="">All Target Languages</option>' +
         targetLangs.map(l => `<option value="${escHtml(l)}"${l === targetLangVal ? ' selected' : ''}>${escHtml(l)}</option>`).join(''));
-    const userDisplay = (u: string) => {
-        const existingOption = $(`#filter-user option[value="${u}"]`);
-        if (existingOption.length && existingOption.text()) {
-            return existingOption.text();
-        }
-        const sub = allSugs.find(s => s.username === u);
-        return sub?.name || u;
-    };
     $('#filter-user').html('<option value="">All Users</option>' +
-        users.map(u => `<option value="${escHtml(u)}"${u === userVal ? ' selected' : ''}>${escHtml(userDisplay(u))}</option>`).join(''));
+        users.map(u => `<option value="${escHtml(u)}"${u === userVal ? ' selected' : ''}>${escHtml(nameOf(u))}</option>`).join(''));
 }
 
 function renderList(): void {
