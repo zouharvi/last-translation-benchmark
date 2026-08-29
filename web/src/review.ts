@@ -12,7 +12,7 @@ import instructionsHtml from './assets/instructions.html';
 let allSugs: Submission[] = [];
 let filterPool: Submission[] = [];
 let curFilter = 'pending';
-let curSort = 'last_updated';
+let curSort = 'random';
 let currentUser: User | null = null;
 let abortController: AbortController | null = null;
 
@@ -21,7 +21,7 @@ $(async () => {
     if (!getCookie('ltb_token')) { window.location.href = 'index.html'; return; }
 
     curFilter = String($('#filter-status').val() || 'pending');
-    curSort = String($('#filter-sort').val() || 'last_updated');
+    curSort = String($('#filter-sort').val() || 'random');
 
     try {
         currentUser = await getMe();

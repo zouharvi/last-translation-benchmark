@@ -169,7 +169,11 @@ export function sortSubmissions(submissions: Submission[], sortOption: string, m
             return orderA - orderB;
         }
 
-        if (sortOption === 'last_updated' || sortOption === 'oldest_updated') {
+        if (sortOption === 'random') {
+            if ((a as any)._rand === undefined) (a as any)._rand = Math.random();
+            if ((b as any)._rand === undefined) (b as any)._rand = Math.random();
+            return (a as any)._rand - (b as any)._rand;
+        } else if (sortOption === 'last_updated' || sortOption === 'oldest_updated') {
             const valA = a.created_at;
             const valB = b.created_at;
             if (valA === valB) return 0;
