@@ -101,7 +101,7 @@ async def translate_google_with_api(
 
     response = await HTTP_CLIENT.post(
         "https://translation.googleapis.com/language/translate/v2",
-        params={"key": api_key},
+        headers={"X-goog-api-key": api_key},
         data={
             "q": text,
             "source": source_code,
