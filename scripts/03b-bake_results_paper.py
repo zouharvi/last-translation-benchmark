@@ -42,9 +42,7 @@ print("Processing language data")
 language_count = collections.Counter()
 language_count_simple = collections.Counter()
 language_count_pairs = collections.Counter()
-for submission in data_submissions:
-    if submission["status"] != "accept":
-        continue
+for submission in data_v1:
     lang1, lang2 = submission["source_lang"].strip(), submission["target_lang"].strip()
     lang1_simple, lang2_simple = lang1.split("(")[0].strip(), lang2.split("(")[0].strip()
     language_count_pairs[lang1_simple + " - " + lang2_simple] += 1
