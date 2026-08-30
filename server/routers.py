@@ -1335,13 +1335,8 @@ async def get_leaderboard_results(
 
     # extract language pairs from all subsets (or maybe just the filtered subset? The prompt said "The language pairs should also already be simplified...")
     # Usually dropdowns show all available pairs for the current dataset.
-    pairs = set()
-    for s in v1_subs:
-        sl = simple_lang(s.get("source_lang", ""))
-        tl = simple_lang(s.get("target_lang", ""))
-        if sl and tl:
-            pairs.add(f"{sl} → {tl}")
-    language_pairs = sorted(list(pairs))
+    lang1s = sorted(list({simple_lang(s["source_lang"]) for s in v1_subs}))
+    lang2s = sorted(list({simple_lang(s["target_lang"]) for s in v1_subs}))
 
     if lang1 is not None:
         v1_subs = [
@@ -1382,6 +1377,8 @@ async def get_leaderboard_results(
         models.append({
             "model_name": participant["info"].get("model_name"),
             "model_size": participant["info"].get("model_size"),
+            "model_release": participant["info"].get("model_release"),
+            "model_description": participant["info"].get("model_description"),
             "institution": participant["info"].get("institution"),
             "score": statistics.mean(scores) if scores else 0.0,
         })
@@ -1389,7 +1386,8 @@ async def get_leaderboard_results(
     models.sort(key=lambda x: x["score"], reverse=True)
     return {
         "models": models,
-        "language_pairs": language_pairs
+        "lang1s": lang1s,
+        "lang2s": lang2s
     }
 
 @router.post("/api/admin/leaderboard/{uid}")

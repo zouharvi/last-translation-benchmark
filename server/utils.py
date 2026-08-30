@@ -231,7 +231,7 @@ async def schedule_daily_notifications() -> None:
 def simple_lang(x: str) -> str:
     if not x:
         return ""
-    return x.split(" (")[0].split(", ")[0].strip()
+    return x.split("(")[0].split(",")[0].strip()
 
 def join_english(v) -> str:
     """Joins a list of strings into a human-readable English list."""

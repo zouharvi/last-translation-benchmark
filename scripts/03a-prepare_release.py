@@ -77,7 +77,12 @@ ltb_v1_micro_ids = {
 }
 
 def get_language_iso(lang_name: str) -> str | None:
-    return lang2iso.get(lang_name) or lang2iso.get(lang_name.split(" (")[0]) or lang2iso.get(lang_name.split(", ")[0]) or lang2iso.get(lang_name.split(" (")[0].split(", ")[0])
+    return (
+        lang2iso.get(lang_name)
+        or lang2iso.get(lang_name.split("(")[0].strip())
+        or lang2iso.get(lang_name.split(",")[0].strip())
+        or lang2iso.get(lang_name.split("(")[0].split(",")[0])
+    )
 
 submissions_new: list[dict] = []
 subset_sizes = collections.Counter()
