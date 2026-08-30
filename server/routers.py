@@ -1292,6 +1292,7 @@ async def leaderboard_submit(req: LeaderboardSubmitReq):
     info = {
         "model_name": req.model_name,
         "model_size": req.model_size,
+        "model_type": req.model_type,
         "model_release": req.model_release,
         "model_description": req.model_description,
         "institution": req.institution,
@@ -1371,6 +1372,7 @@ async def get_leaderboard_results(
         models.append({
             "model_name": participant["info"].get("model_name"),
             "model_size": participant["info"].get("model_size"),
+            "model_type": participant["info"].get("model_type"),
             "model_release": participant["info"].get("model_release"),
             "model_description": participant["info"].get("model_description"),
             "institution": participant["info"].get("institution"),

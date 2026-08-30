@@ -69,11 +69,21 @@ def translation_similarity(translations: list[dict]) -> float:
     translations = [t for t in translations if t is not None]
     return np.average(fastchrf.pairwise_chrf([translations], [translations])) # type: ignore
 
+def translation_easiness(translations: list[dict]) -> float:
+    verified = [all(t.get("verified_extra", {}).get("Gemini 3.1 Pro", [True])) for t in translations]
+    return statistics.mean(verified) if verified else 1.0
+
 ltb_v1_micro_ids = {
     submission["id"]
     for examples in langs_to_examples.values()
     if len(examples) >= 20
-    for submission in sorted(examples, key=lambda s: translation_similarity(s["translations"]), reverse=False)[:5]
+    for submission in sorted(
+        examples,
+        # prioritize difficult-enough examples
+        # then later select by diversity https://aclanthology.org/2025.tacl-1.80/
+        key=lambda s: (translation_easiness(s["translations"]) >= 0.15, translation_similarity(s["translations"])),
+        reverse=False
+    )[:5]
 }
 
 def get_language_iso(lang_name: str) -> str | None:
@@ -119,6 +129,17 @@ for submission in submissions:
 
 print("Subset sizes:", subset_sizes)
 save_compact_json(submissions_new, "data/v1.json")
+
+gemini_passrate = []
+for sub_obj in submissions:
+    if sub_obj["id"] not in ltb_v1_micro_ids:
+        continue
+    for mt_obj in sub_obj["translations"]:
+        if mt_obj["model"] == "Gemini 3.1 Pro":
+            verified = mt_obj.get("verified_extra", {}).get("Gemini 3.1 Pro")
+            if verified is not None:
+                gemini_passrate.append(all(verified))
+print(f"Gemini 3.1 Pro pass rate: {statistics.mean(gemini_passrate):.2%}")
 
 """
 scp data/v1.json ltb:/home/zouhar/last-translation-benchmark/data/

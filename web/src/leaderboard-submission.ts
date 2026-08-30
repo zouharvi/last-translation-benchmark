@@ -35,6 +35,7 @@ $(async () => {
                     submission: jsonData,
                     model_name: $('#model-name').val(),
                     model_size: $('#model-size').val(),
+                    model_type: $('#model-type').val(),
                     model_release: `${releaseYear}-${releaseMonth}`,
                     model_description: $('#model-description').val(),
                     institution: $('#institution').val(),

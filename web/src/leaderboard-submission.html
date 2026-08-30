@@ -60,6 +60,16 @@
         </div>
 
         <div style="margin-bottom: 15px;">
+          <label for="model-type">Model type</label>
+          <p style="font-size: 0.85em; color: #64748b; margin: 3px 0 5px 0;">Is the model open source (weights available) or closed (API only)?</p>
+          <select id="model-type" required style="display: block; margin-top: 5px; width: 100%; padding: 8px;">
+            <option value="" disabled selected>Select model type</option>
+            <option value="open">Open</option>
+            <option value="closed">Closed</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 15px;">
           <label>Model release year and month</label>
           <p style="font-size: 0.85em; color: #64748b; margin: 3px 0 5px 0;">When was this model publicly released or API made available?</p>
           <div style="display: flex; gap: 10px; margin-top: 5px;">

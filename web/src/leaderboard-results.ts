@@ -45,11 +45,13 @@ async function loadLeaderboard() {
 
         let rows = '';
         for (const model of models) {
+            const typeStr = model.model_type ? (model.model_type === 'open' ? 'Open' : (model.model_type === 'closed' ? 'Closed' : model.model_type)) : '—';
             rows += `<tr>
                 <td class="col-name">${model.model_name || '—'}</td>
                 <td class="col-inst">${model.institution || '—'}</td>
                 <td class="col-date">${model.model_release || '—'}</td>
                 <td class="col-size">${model.model_size || '—'}</td>
+                <td class="col-type">${typeStr}</td>
                 <td class="col-desc" title="${(model.model_description || '').replace(/"/g, '&quot;')}">${model.model_description || '—'}</td>
                 <td class="col-score">${(model.score * 100).toFixed(2)}%</td>
             </tr>`;
@@ -63,6 +65,7 @@ async function loadLeaderboard() {
                         <th class="col-inst">Institution</th>
                         <th class="col-date">Released</th>
                         <th class="col-size">Size</th>
+                        <th class="col-type">Type</th>
                         <th class="col-desc">Description</th>
                         <th class="col-score">Score</th>
                     </tr>
@@ -175,6 +178,7 @@ function renderChart(models: any[]) {
         const m = validModels[idx];
         const desc = m.model_description || 'No description provided.';
         const size = m.model_size || 'Unknown size';
+        const typeStr = m.model_type ? (m.model_type === 'open' ? 'Open' : (m.model_type === 'closed' ? 'Closed' : m.model_type)) : 'Unknown type';
         const date = m.model_release || 'Unknown date';
         
         tooltip.html(`
@@ -182,6 +186,7 @@ function renderChart(models: any[]) {
             <div style="margin-top: 5px; margin-bottom: 5px;">${desc}</div>
             <hr style="margin: 5px 0; border-color: #444;">
             Size: ${size}<br>
+            Type: ${typeStr}<br>
             Released: ${date}<br>
             Score: ${(m.score * 100).toFixed(2)}%
         `);

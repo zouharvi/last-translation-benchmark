@@ -79,6 +79,7 @@ class LeaderboardSubmitReq(BaseModel):
     submission: list[Any]
     model_name: str
     model_size: str
+    model_type: str
     model_release: str
     model_description: str
     institution: str
