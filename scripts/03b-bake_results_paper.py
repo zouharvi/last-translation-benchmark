@@ -273,7 +273,7 @@ with open("computed/autometrics_cache.json", "r") as f:
 
 data_submissions_v1 = [
     sub for sub in data_submissions
-    if "LTBv1-textonly" in id_to_v1tags.get(sub["id"], [])
+    if "LTBv1-text" in id_to_v1tags.get(sub["id"], [])
 ]
 
 for submission in data_submissions_v1:

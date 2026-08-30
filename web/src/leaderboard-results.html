@@ -53,7 +53,7 @@
       color: #334155;
     }
     tr:hover td {
-      background: #f8fafc;
+      background: #ddd;
     }
   </style>
 </head>
@@ -81,29 +81,22 @@
         <div class="filter-group">
           <label for="filter-mode">Mode</label>
           <select id="filter-mode">
-            <option value="Real">Real</option>
-            <option value="Other">Other</option>
+            <option value="blind">Blind</option>
+            <option value="oracle">Oracle</option>
           </select>
         </div>
         
         <div class="filter-group">
           <label for="filter-tag">Subset</label>
           <select id="filter-tag">
-            <option value="LTBv1">LTBv1</option>
             <option value="LTBv1-micro">LTBv1-micro</option>
+            <option value="LTBv1-text">LTBv1-text</option>
+            <option value="LTBv1">LTBv1</option>
           </select>
         </div>
         
         <div class="filter-group">
-          <label for="filter-media">Media Type</label>
-          <select id="filter-media">
-            <option value="text">Text Only</option>
-            <option value="all">All</option>
-          </select>
-        </div>
-        
-        <div class="filter-group">
-          <label for="filter-lang">Language</label>
+          <label for="filter-lang">Languages</label>
           <select id="filter-lang">
             <option value="all">All Languages</option>
             <!-- Populated dynamically -->

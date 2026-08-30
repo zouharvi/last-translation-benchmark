@@ -27,7 +27,6 @@ from .db import (
     get_leaderboard_entries,
     get_leaderboard_entry,
     get_submission_by_id,
-    get_submissions,
     get_user_by_id,
     get_user_by_username,
     get_users,
@@ -69,7 +68,7 @@ from .services import (
     translate_openrouter,
     verify_llm,
 )
-from .utils import CONTRIBUTOR_QUOTA_DEFAULT, join_english, send_email
+from .utils import CONTRIBUTOR_QUOTA_DEFAULT, join_english, send_email, simple_lang
 
 router = APIRouter()
 CurrentUser = Annotated[dict, Depends(get_current_user)]
@@ -423,10 +422,10 @@ async def get_contributors():
 
     language_counts = {}
     for s in submissions:
-        lang_src = s["source_lang"].split("(")[0].strip()
+        lang_src = simple_lang(s["source_lang"])
         if lang_src:
             language_counts[lang_src] = language_counts.get(lang_src, 0) + 1
-        lang_tgt = s["target_lang"].split("(")[0].strip()
+        lang_tgt = simple_lang(s["target_lang"])
         if lang_tgt:
             language_counts[lang_tgt] = language_counts.get(lang_tgt, 0) + 1
 
@@ -606,8 +605,8 @@ async def admin_prepare_review_reminder(uid: int, user: CurrentUser):
         user_langs = set()
         for sub in submissions:
             if sub["username"] == target["username"]:
-                user_langs.add(sub["source_lang"].split("(")[0].strip())
-                user_langs.add(sub["target_lang"].split("(")[0].strip())
+                user_langs.add(simple_lang(sub["source_lang"]))
+                user_langs.add(simple_lang(sub["target_lang"]))
         
         user_langs.discard("English")
                 
@@ -1278,7 +1277,7 @@ async def leaderboard_submit(req: LeaderboardSubmitReq):
         leaderboard_data = json.load(f)
 
     id_to_mt = {sub["id"]: sub for sub in req.submission}
-    for subset in ["LTBv1", "LTBv1-textonly", "LTBv1-micro"]:
+    for subset in ["LTBv1", "LTBv1-text", "LTBv1-micro"]:
         required = {
             sub["id"]
             for sub in leaderboard_data
@@ -1293,7 +1292,7 @@ async def leaderboard_submit(req: LeaderboardSubmitReq):
     else:
         raise HTTPException(
             status_code=400,
-            detail="The submission does not have translations for any of the subsets (LTBv1, LTBv1-textonly, or LTBv1-micro). Please check the submission and try again."
+            detail="The submission does not have translations for any of the subsets (LTBv1, LTBv1-text, or LTBv1-micro). Please check the submission and try again."
         )
     
     info = {
@@ -1322,53 +1321,75 @@ async def get_leaderboard(user: CurrentUser, status: str | None = Query(None)):
 
 
 @router.get("/api/leaderboard/results")
-async def get_leaderboard_results():
-    all_subs = await get_submissions(None)
-    accepted_subs = [s for s in all_subs if s.get("status") == "accept"]
-    
-    submissions = []
-    for s in accepted_subs:
-        non_text = None
-        source_media = s.get("source_media")
-        if source_media:
-            mime = source_media.split(",")[0].lower()
-            if "audio" in mime:
-                non_text = "audio"
-            elif "video" in mime:
-                non_text = "video"
-            elif "image" in mime:
-                non_text = "image"
-            else:
-                non_text = "other"
-        
-        submissions.append({
-            "id": s["id"],
-            "source_lang": s.get("source_lang"),
-            "target_lang": s.get("target_lang"),
-            "non_text": non_text,
-            "tags": ["LTBv1"]
-        })
-        
-    entries = await get_leaderboard_entries(status="scored", visibility="visible")
+async def get_leaderboard_results(
+    mode: str,
+    subset: str,
+    lang1: str | None = None,
+    lang2: str | None = None
+):
+    v1_path = os.path.dirname(__file__) + "/../data/v1.json"
+    if not os.path.exists(v1_path):
+        raise HTTPException(status_code=500, detail="Leaderboard data not found")
+    with open(v1_path, "r") as f:
+        v1_subs = json.load(f)
+
+    # extract language pairs from all subsets (or maybe just the filtered subset? The prompt said "The language pairs should also already be simplified...")
+    # Usually dropdowns show all available pairs for the current dataset.
+    pairs = set()
+    for s in v1_subs:
+        sl = simple_lang(s.get("source_lang", ""))
+        tl = simple_lang(s.get("target_lang", ""))
+        if sl and tl:
+            pairs.add(f"{sl} → {tl}")
+    language_pairs = sorted(list(pairs))
+
+    if lang1 is not None:
+        v1_subs = [
+            s for s in v1_subs
+            if simple_lang(s.get("source_lang", "")) == lang1
+        ]
+    if lang2 is not None:
+        v1_subs = [
+            s for s in v1_subs
+            if simple_lang(s.get("target_lang", "")) == lang2
+        ]
+
+    # filter by subset
+    v1_subs = [
+        s for s in v1_subs
+        if subset == "all" or subset in s.get("tags", [])
+    ]
+
+    participants = await get_leaderboard_entries(status="scored", visibility="visible")
+
     models = []
-    for e in entries:
-        results = {}
-        for sub in e["submissions"]:
-            sid = sub["id"]
-            veri = sub.get("verification")
-            if veri is None:
-                continue
-            results[sid] = 1 if all(veri) else 0
+    for participant in participants:
+        # model has not been submitted in the right mode
+        if participant["info"].get("mode") != mode:
+            continue
+
+        id_to_submission = {sub["id"]: sub for sub in participant.get("submissions", [])}
+        
+        # don't include models that don't have all translations
+        if not all(sub["id"] in id_to_submission for sub in v1_subs):
+            continue
+
+        scores = [
+            1 if id_to_submission[sub["id"]].get("verification") and all(id_to_submission[sub["id"]]["verification"]) else 0
+            for sub in v1_subs
+        ]
         
         models.append({
-            "id": e["id"],
-            "info": e["info"],
-            "results": results
+            "model_name": participant["info"].get("model_name"),
+            "model_size": participant["info"].get("model_size"),
+            "institution": participant["info"].get("institution"),
+            "score": statistics.mean(scores) if scores else 0.0,
         })
         
+    models.sort(key=lambda x: x["score"], reverse=True)
     return {
-        "submissions": submissions,
-        "models": models
+        "models": models,
+        "language_pairs": language_pairs
     }
 
 @router.post("/api/admin/leaderboard/{uid}")

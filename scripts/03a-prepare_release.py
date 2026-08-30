@@ -10,7 +10,7 @@ import numpy as np
 
 os.chdir(os.path.dirname(__file__)+"/..")
 
-from last_translation_benchmark.utils import save_compact_json
+from last_translation_benchmark.utils import save_compact_json, simple_lang
 
 with open("data/submissions.json", "r") as f:
     submissions = json.load(f)
@@ -60,7 +60,9 @@ for submission in submissions:
 
 langs_to_examples = collections.defaultdict(list)
 for submission in submissions:
-    langs_to_examples[(submission["source_lang"], submission["target_lang"])].append(submission)
+    lang1_simple = simple_lang(submission["source_lang"])
+    lang2_simple = simple_lang(submission["target_lang"])
+    langs_to_examples[(lang1_simple, lang2_simple)].append(submission)
 
 def translation_similarity(translations: list[dict]) -> float:
     translations = [t["translation"] for t in translations]
@@ -75,7 +77,7 @@ ltb_v1_micro_ids = {
 }
 
 def get_language_iso(lang_name: str) -> str | None:
-    return lang2iso.get(lang_name) or lang2iso.get(lang_name.split(" (")[0]) or lang2iso.get(lang_name.split(", ")[0])
+    return lang2iso.get(lang_name) or lang2iso.get(lang_name.split(" (")[0]) or lang2iso.get(lang_name.split(", ")[0]) or lang2iso.get(lang_name.split(" (")[0].split(", ")[0])
 
 submissions_new: list[dict] = []
 subset_sizes = collections.Counter()
@@ -102,7 +104,7 @@ for submission in submissions:
         "linguistics": submission.get("linguistics", {}),
         "tags": (
             ["LTBv1"]
-            + (["LTBv1-textonly"] if submission["source_media"] is None and submission["source_instructions"] is None else [])
+            + (["LTBv1-text"] if submission["source_media"] is None and submission["source_instructions"] is None else [])
             + (["LTBv1-micro"] if submission["id"] in ltb_v1_micro_ids else [])
         ),
     }
@@ -113,4 +115,6 @@ for submission in submissions:
 print("Subset sizes:", subset_sizes)
 save_compact_json(submissions_new, "data/v1.json")
 
-# TODO: send to the server
+"""
+scp data/v1.json ltb:/home/zouhar/last-translation-benchmark/data/
+"""

@@ -220,6 +220,7 @@ export interface LeaderboardEntry {
         institution: string;
         submitter_email: string;
         mode: string;
+        score?: number;
     };
     status: string;
     visibility: string;
@@ -234,8 +235,11 @@ export function getLeaderboard(status?: string, visibility?: string): Promise<Le
     return apiCall<LeaderboardEntry[]>('GET', url);
 }
 
-export function fetchLeaderboardResults(): Promise<any> {
-    return apiCall<any>('GET', 'api/leaderboard/results');
+export function fetchLeaderboardResults(mode: string, subset: string, lang1: string, lang2: string): Promise<any> {
+    const params = new URLSearchParams({ mode, subset });
+    if (lang1) params.append('lang1', lang1);
+    if (lang2) params.append('lang2', lang2);
+    return apiCall<any>('GET', `api/leaderboard/results?${params.toString()}`);
 }
 
 export function updateLeaderboard(id: number, status: string, visibility: string): Promise<void> {

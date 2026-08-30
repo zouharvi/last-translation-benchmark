@@ -311,21 +311,39 @@ function renderLeaderboardTable(entries: LeaderboardEntry[]): void {
             editBtn = '';
         }
 
+        let scoreStr = 'N/A';
+        if (e.status === 'scored' && typeof info.score === 'number') {
+            scoreStr = Math.round(info.score * 100).toString();
+        }
+        const statusDisplay = `${esc(e.visibility)}, ${esc(e.status)}, ${scoreStr}%`;
+
+        let instDisplay = esc(info.institution || '—');
+        if (info.submitter_email) {
+            instDisplay = `<a style="color: black;" href="mailto:${esc(info.submitter_email)}">${instDisplay}</a>`;
+        }
+
         return `<tr>
             <td>#${e.id}</td>
-            <td title="${esc(info.institution)}">${esc(info.institution || '—')}</td>
-            <td class="email-cell" title="${esc(info.submitter_email)}">${info.submitter_email ? `<a href="mailto:${esc(info.submitter_email)}">${esc(info.submitter_email)}</a>` : '—'}</td>
+            <td title="${esc(info.submitter_email || info.institution)}">${instDisplay}</td>
             <td title="${esc(info.model_name)}">${esc(info.model_name || '—')}</td>
-            <td>${esc(info.model_size || '—')}</td>
             <td>${esc(info.mode || '—')}</td>
             <td>${e.submissions?.length || 0} items</td>
-            <td>${esc(e.status)}</td>
+            <td>${statusDisplay}</td>
             <td style='display: inline-flex; gap: 10px;'>${actions}${editBtn}${delBtn}</td>
         </tr>`;
     }).join('');
 
-    $('#leaderboard-table').html(`<table>
-        <thead><tr><th>ID</th><th>Institution</th><th class="email-cell">Email</th><th>Model Name</th><th>Size</th><th>Mode</th><th>Items</th><th>Status</th><th>Actions</th></tr></thead>
+    $('#leaderboard-table').html(`<table style="table-layout: fixed; width: 100%;">
+        <colgroup>
+            <col style="width: 30px;">
+            <col style="width: 120px;">
+            <col style="width: 200px;">
+            <col style="width: 50px;">
+            <col style="width: 80px;">
+            <col style="width: 120px;">
+            <col style="width: 130px;">
+        </colgroup>
+        <thead><tr><th>ID</th><th>Institution</th><th>Model Name</th><th>Mode</th><th>Items</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody>${rows}</tbody>
     </table>`);
 

@@ -21,8 +21,7 @@ if not lb_entry:
     raise ValueError(f"Leaderboard entry with ID {args.uid} not found.")
 
 lb_subs, lb_info = json.loads(lb_entry[0]), json.loads(lb_entry[1])
-# TODO: replace this with some more static copy, like huggingface?
-with open("data/submissions.json") as f:
+with open("data/v1.json") as f:
     id_to_submission = {x["id"]: x for x in json.load(f)}
 
 COOKIES = {
@@ -41,14 +40,19 @@ def get_prompt_verify(source_text: str, translation: str, rule: str, source_medi
 async def main():
     for sub_obj_lb in tqdm.tqdm(lb_subs):
         sub_obj = id_to_submission.get(sub_obj_lb["id"])
-        if not sub_obj or not sub_obj_lb["translation"]:
+        if not sub_obj or sub_obj_lb["translation"] is None:
             sub_obj_lb["verification"] = None
+            continue
+
+        # empty translations count as "attempts"
+        if sub_obj_lb["translation"] == "":
+            sub_obj["verification_rules"] = [False]*len(sub_obj["verification_rules"])
             continue
 
         rule_results = []
         for rule in sub_obj["verification_rules"]:
             prompt = get_prompt_verify(sub_obj["source_text"] or "(attached)", sub_obj_lb["translation"], rule, sub_obj["source_media"])
-            payload = {"model": "google/gemma-4-31b-it", "prompt": prompt}
+            payload = {"model": "google/gemma-4-31b-it", "prompt": prompt, "cache": True}
             if sub_obj["source_media"]:
                 payload["source_media"] = sub_obj["source_media"]
                 

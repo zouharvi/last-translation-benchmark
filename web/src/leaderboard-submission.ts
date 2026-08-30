@@ -55,14 +55,21 @@ $(async () => {
                 });
 
                 if (!response.ok) {
-                    throw new Error('Server returned ' + response.status);
+                    let errorMessage = 'Server returned ' + response.status;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData && errorData.detail) {
+                            errorMessage = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail);
+                        }
+                    } catch (e) {}
+                    throw new Error(errorMessage);
                 }
 
-                statusEl.text('Submission successful!').css('color', 'green');
+                statusEl.text('Submission successful! Waiting on manual confirmation by the administrators.').css('color', 'green');
                 ($('#submission-form')[0] as HTMLFormElement).reset();
-            } catch (err) {
+            } catch (err: any) {
                 console.error(err);
-                $('#submit-status').text('Error submitting or parsing JSON.').css('color', 'red');
+                $('#submit-status').text(err.message || 'Error submitting or parsing JSON.').css('color', 'red');
             } finally {
                 $('#submit-btn').prop('disabled', false);
             }
