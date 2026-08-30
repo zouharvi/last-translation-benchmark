@@ -68,16 +68,17 @@ async def delete_user(uid: int) -> None:
 async def create_user(user: dict) -> int:
     async with _open_db() as db:
         await db.execute("BEGIN EXCLUSIVE")
-        async with db.execute("SELECT MAX(id) FROM users") as cur:
-            row = await cur.fetchone()
-            if row is None:
-                raise RuntimeError("Failed to fetch max user ID.")
-            new_id = (row[0] or 0) + 1
-            
+        async with db.execute(
+            "INSERT INTO users (data) VALUES ('{}')"
+        ) as cur:
+            new_id = cur.lastrowid
+        if new_id is None:
+            raise RuntimeError("Failed to create user.")
+
         user["id"] = new_id
         await db.execute(
-            "INSERT INTO users (id, data) VALUES (?, ?)",
-            (new_id, json.dumps(user)),
+            "UPDATE users SET data = ? WHERE id = ?",
+            (json.dumps(user), new_id),
         )
         await db.commit()
         return new_id
@@ -125,16 +126,17 @@ async def delete_submission(sid: int) -> None:
 async def create_submission(submission: dict) -> int:
     async with _open_db() as db:
         await db.execute("BEGIN EXCLUSIVE")
-        async with db.execute("SELECT MAX(id) FROM submissions") as cur:
-            row = await cur.fetchone()
-            if row is None:
-                raise RuntimeError("Failed to fetch max submission ID.")
-            new_id = (row[0] or 0) + 1
-            
+        async with db.execute(
+            "INSERT INTO submissions (data) VALUES ('{}')"
+        ) as cur:
+            new_id = cur.lastrowid
+        if new_id is None:
+            raise RuntimeError("Failed to create submission.")
+
         submission["id"] = new_id
         await db.execute(
-            "INSERT INTO submissions (id, data) VALUES (?, ?)",
-            (new_id, json.dumps(submission)),
+            "UPDATE submissions SET data = ? WHERE id = ?",
+            (json.dumps(submission), new_id),
         )
         await db.commit()
         return new_id
@@ -233,7 +235,6 @@ async def update_leaderboard_info(uid: int, info: dict) -> None:
 
 # --- Init ---
 
-
 async def init_db() -> None:
     async with _open_cache_db() as cache_db:
         await cache_db.execute("PRAGMA journal_mode=WAL;")
@@ -247,10 +248,12 @@ async def init_db() -> None:
         await db.execute("PRAGMA journal_mode=WAL;")
         await db.execute("PRAGMA busy_timeout=15000;")
         await db.execute(
-            "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, data TEXT NOT NULL)"
+            "CREATE TABLE IF NOT EXISTS users "
+            "(id INTEGER PRIMARY KEY AUTOINCREMENT, data TEXT NOT NULL)"
         )
         await db.execute(
-            "CREATE TABLE IF NOT EXISTS submissions (id INTEGER PRIMARY KEY, data TEXT NOT NULL)"
+            "CREATE TABLE IF NOT EXISTS submissions "
+            "(id INTEGER PRIMARY KEY AUTOINCREMENT, data TEXT NOT NULL)"
         )
         await db.execute(
             "CREATE TABLE IF NOT EXISTS sent_emails (to_email TEXT NOT NULL, subject TEXT NOT NULL, body TEXT NOT NULL, date TEXT NOT NULL)"
