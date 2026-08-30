@@ -7,7 +7,6 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 module.exports = (env, argv) => ({
   entry: {
     'index': './src/index.ts',
-    'contributors': './src/contributors.ts',
     'contributor': './src/contribute.ts',
     'reviewer': './src/review.ts',
     'profile': './src/profile.ts',
@@ -45,12 +44,6 @@ module.exports = (env, argv) => ({
       template: './src/index.html',
       filename: 'index.html',
       chunks: ['index'],
-      hash: true,
-    }),
-    new HtmlWebpackPlugin({
-      template: './src/contributors.html',
-      filename: 'contributors.html',
-      chunks: ['contributors'],
       hash: true,
     }),
     new HtmlWebpackPlugin({

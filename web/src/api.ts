@@ -66,7 +66,6 @@ export interface ContributorsData {
     rows: ContributorsRow[];
     total_submissions: number;
     total_authors: number;
-    total_authors_accepted: number;
     languages: [string, number][];
 }
 
@@ -424,12 +423,6 @@ export function renderRoleSwitcher(roles: string[]): void {
     profileBtn.href = 'profile';
     container.appendChild(profileBtn);
 
-    const contributorsBtn = document.createElement('a');
-    contributorsBtn.textContent = 'Contributors';
-    contributorsBtn.className = 'btn-underlined';
-    contributorsBtn.style.fontSize = '0.85em';
-    contributorsBtn.href = 'contributors';
-    container.appendChild(contributorsBtn);
 
     const logoutBtn = document.createElement('button');
     logoutBtn.textContent = 'Logout';

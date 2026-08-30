@@ -119,12 +119,6 @@ async def serve_review():
 async def serve_profile():
     return FileResponse(_STATIC_DIR + "/profile.html")
 
-
-@app.get("/contributors")
-async def serve_contributors():
-    return FileResponse(_STATIC_DIR + "/contributors.html")
-
-
 @app.get("/leaderboard-submission")
 async def serve_leaderboard_submission():
     return FileResponse(_STATIC_DIR + "/leaderboard-submission.html")

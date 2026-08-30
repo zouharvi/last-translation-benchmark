@@ -416,6 +416,7 @@ async def admin_overview(user: CurrentUser):
 async def get_contributors():
     users = await get_users()
     submissions = await db_get_submissions()
+    submissions = [s for s in submissions if s.get("status") == "accept"]
 
     total_submissions = len(submissions)
     total_authors = len({s["user_id"] for s in submissions})
@@ -434,12 +435,7 @@ async def get_contributors():
 
     user_to_accepted: dict[int, int] = collections.defaultdict(int)
     for submission in submissions:
-        user_id = submission["user_id"]
-        # init to 0 at least
-        user_to_accepted[user_id]
-        if submission["status"] != "accept":
-            continue
-        user_to_accepted[user_id] += 1
+        user_to_accepted[submission["user_id"]] += 1
 
     users_by_id = {u["id"]: u for u in users if isinstance(u["id"], int)}
     rows: list[dict] = []
@@ -447,8 +443,7 @@ async def get_contributors():
     anonymous_users = set()
     anonymous_affiliations = set()
 
-    total_authors = len(set(user_to_accepted.keys()))
-    total_authors_accepted = len([u for u, v in user_to_accepted.items() if v >= 10])
+    total_authors = len(user_to_accepted.keys())
 
     for user_id, accepted in user_to_accepted.items():
         user = users_by_id.get(user_id)
@@ -456,7 +451,7 @@ async def get_contributors():
         # In that case, default to anonymous (credit_consent=False).
         credit_consent = user["credit_consent"] if user else False
 
-        if accepted == 0:
+        if accepted < 10:
             continue
 
         if credit_consent and user:
@@ -497,7 +492,6 @@ async def get_contributors():
         "rows": rows,
         "total_submissions": total_submissions,
         "total_authors": total_authors,
-        "total_authors_accepted": total_authors_accepted,
         "languages": formatted_languages,
     }
 
