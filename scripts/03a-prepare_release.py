@@ -10,7 +10,7 @@ import numpy as np
 
 os.chdir(os.path.dirname(__file__)+"/..")
 
-from last_translation_benchmark.utils import save_compact_json, simple_lang
+from last_translation_benchmark.utils import save_compact_json, simple_lang, permissive_strptime
 
 with open("data/submissions.json", "r") as f:
     submissions = json.load(f)
@@ -47,7 +47,7 @@ submissions = [
     s for s in submissions
     # take accepted examples before September 1, 2026
     if s["status"] == "accept"
-    and datetime.datetime.strptime(s["created_at"].split(" ")[0], "%Y-%m-%d").astimezone(datetime.UTC) < datetime.datetime(2026, 9, 1, tzinfo=datetime.UTC)
+    and permissive_strptime(s["created_at"]) < datetime.datetime(2026, 9, 1, tzinfo=datetime.UTC)
     and _models_are_bad(s) and _human_is_ok(s)
 ]
 

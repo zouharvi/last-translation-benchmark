@@ -252,3 +252,12 @@ def save_compact_json(data: Any, path: str) -> None:
     )
     with open(path, "w", encoding="utf-8") as f:
         f.write(formatter.serialize(data)) # type: ignore
+
+
+def permissive_strptime(date_str: str) -> datetime.datetime:
+    for f in ["%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"]:
+        try:
+            return datetime.datetime.strptime(date_str, f).astimezone(datetime.UTC)
+        except ValueError:
+            continue
+    raise ValueError(f"Unable to parse date string: {date_str}")

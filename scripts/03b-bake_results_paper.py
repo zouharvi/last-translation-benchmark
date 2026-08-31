@@ -16,7 +16,7 @@ from lingtypology import glottolog
 
 os.chdir(os.path.dirname(os.path.abspath(__file__))+ "/../")
 
-from last_translation_benchmark.utils import save_compact_json
+from last_translation_benchmark.utils import save_compact_json, permissive_strptime
 
 os.makedirs("computed/", exist_ok=True)
 
@@ -131,7 +131,7 @@ def date_to_delta(date_str):
     # remove micros?
     if date_str.count(":") == 2:
         date_str = date_str.rsplit(":", 1)[0]
-    date_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d %H:%M").astimezone(datetime.UTC)
+    date_obj = permissive_strptime(date_str)
     delta = date_obj - datetime.datetime(2026, 5, 1, tzinfo=datetime.UTC)
     return delta.days
 
