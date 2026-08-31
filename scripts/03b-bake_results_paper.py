@@ -374,7 +374,7 @@ for annotation, item in data_annotations:
         if "considering these rules" in item.get("instructions", ""):
             kind = "with rules"
         else:
-            kind = "standalone"
+            kind = "without rules"
         if results["score"] is not None:
             data_models[model]["HUMAN: " + kind].append(results["score"])   
 
