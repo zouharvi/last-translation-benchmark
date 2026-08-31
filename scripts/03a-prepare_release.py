@@ -42,12 +42,18 @@ def _human_is_ok(sub):
         return False
     return statistics.mean(verified) >= 0.75
 
+def _is_before_2026_09_01(sub):
+    for comment in sub["comments"]:
+        if comment["text"] == "ACCEPT":
+            return permissive_strptime(comment["created_at"]) < datetime.datetime(2026, 9, 1, tzinfo=datetime.UTC)
+    
+    raise ValueError(f"No accept comment found for submission {sub['id']}")
 
 submissions = [
     s for s in submissions
     # take accepted examples before September 1, 2026
     if s["status"] == "accept"
-    and permissive_strptime(s["created_at"]) < datetime.datetime(2026, 9, 1, tzinfo=datetime.UTC)
+    and _is_before_2026_09_01(s)
     and _models_are_bad(s) and _human_is_ok(s)
 ]
 
@@ -110,13 +116,14 @@ for submission in submissions:
             {
                 "model": mt_obj["model"],
                 "translation": mt_obj["translation"],
-                "eval_verifier": mt_obj.get("verified_extra", {}).get("Gemini 3.1 Pro"),
+                "verified": mt_obj.get("verified_extra", {}).get("Gemini 3.1 Pro"),
             }
             for mt_obj in submission["translations"]
         ],
         "verification_rules": submission["verification_rules"],
-        "created_at": submission["created_at"],
-        "linguistics": submission.get("linguistics", {}),
+        "linguistics": [
+            tag for k, subl in submission.get("linguistics", {}).items() if k != "observations" for tag in subl
+        ],
         "tags": (
             ["LTBv1"]
             + (["LTBv1-text"] if submission["source_media"] is None and submission["source_instructions"] is None else [])
@@ -124,7 +131,6 @@ for submission in submissions:
         ),
     }
     subset_sizes.update(submission_new["tags"])
-    submission_new["linguistics"].pop("observations", None)
     submissions_new.append(submission_new)
 
 print("Subset sizes:", subset_sizes)
@@ -143,4 +149,5 @@ print(f"Gemini 3.1 Pro pass rate: {statistics.mean(gemini_passrate):.2%}")
 
 """
 scp data/v1.json ltb:/home/zouhar/last-translation-benchmark/data/
+hf upload zouhar/last-translation-benchmark data/v1.json data/v1.json --repo-type dataset
 """
