@@ -157,7 +157,8 @@ async def main():
                                 results.append(None)
                                 continue
 
-                            text_clean = res_text.strip().lower().strip(" \t\n\r.,!?\"'*").split()[-1]
+                            tokens = res_text.strip().lower().strip(" \t\n\r.,!?\"'*").split()
+                            text_clean = tokens[-1] if tokens else ""
                             if "pass" in text_clean:
                                 results.append(True)
                             elif "fail" in text_clean:
@@ -224,7 +225,8 @@ async def main():
                         else:
                             try:
                                 # take only the last word, in case the model outputs extra text
-                                text_clean = res_text.strip().lower().replace("*", "").strip(" \t\n\r.,!?\"'%").split()[-1]
+                                tokens = res_text.strip().lower().replace("*", "").strip(" \t\n\r.,!?\"'%").split()
+                                text_clean = tokens[-1] if tokens else ""
                                 result = int(float(text_clean))
                                 if not (0 <= result <= 100):
                                     raise ValueError(f"  Result {result} out of range")

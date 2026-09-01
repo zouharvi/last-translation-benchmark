@@ -65,7 +65,8 @@ async def main():
                     continue
 
                 try:
-                    text_clean = res_text.strip().lower().strip(" \t\n\r.,!?\"'*").split()[-1]
+                    tokens = res_text.strip().lower().strip(" \t\n\r.,!?\"'*").split()
+                    text_clean = tokens[-1] if tokens else ""
                     if "pass" in text_clean:
                         rule_results.append(True)
                     elif "fail" in text_clean:
