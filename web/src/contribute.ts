@@ -423,7 +423,8 @@ $(async () => {
             error: null,
             verified: t.verified
         }));
-        inputCorrespondsToTranslations = false;
+        // the loaded translations match the loaded input; real edits flip this off
+        inputCorrespondsToTranslations = true;
         if (lastResults.length > 0) {
             renderApiResults();
             // Show verification badges
