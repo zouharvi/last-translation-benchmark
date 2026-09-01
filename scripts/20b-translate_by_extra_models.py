@@ -10,7 +10,7 @@ import utils
 
 os.chdir(os.path.dirname(os.path.abspath(__file__))+"/..")
 
-from last_translation_benchmark.utils import get_config
+from last_translation_benchmark.utils import get_config, save_compact_json
 
 MODELS = [
     {"name": "Gemma 4", "model": "google/gemma-4-31b-it", "support_image": True, "support_audio": False, "support_video": True},
@@ -195,14 +195,12 @@ async def main():
         sub_changed = any(await asyncio.gather(*[process_sub(sub) for sub in sub_chunk]))
         if sub_changed:
             # save on each finalized changed submission
-            with open(DATA_FILE, "w") as f:
-                json.dump(submissions, f, indent=2, ensure_ascii=False)
+            save_compact_json(submissions, DATA_FILE)
 
         pbar.update(CHUNK_SIZE)
 
     # save finally
-    with open(DATA_FILE, "w") as f:
-        json.dump(submissions, f, indent=2, ensure_ascii=False)
+    save_compact_json(submissions, DATA_FILE)
 
 
 if __name__ == "__main__":

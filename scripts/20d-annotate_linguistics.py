@@ -13,7 +13,7 @@ import utils
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/..")
 
-from last_translation_benchmark.utils import get_config, is_doomlooped_entropy
+from last_translation_benchmark.utils import get_config, is_doomlooped_entropy, save_compact_json
 
 MODEL = "google/gemini-3.1-pro-preview"
 PROMPT_FILE = "data/linguistics_prompt.txt"
@@ -140,15 +140,15 @@ async def main():
 
         sub_changed = any(await asyncio.gather(*[annotate(MODEL, prompt, sub) for sub in sub_chunk]))
 
-        # re-save *everything* after each chunk
         if sub_changed:
-            with open(DATA_FILE, "w") as f:
-                json.dump(submissions, f, indent=2, ensure_ascii=False)
+            # re-save *everything* after each chunk
+            save_compact_json(submissions, DATA_FILE)
         
         pbar.update(CHUNK_SIZE)
 
-    with open(DATA_FILE, "w") as f:
-        json.dump(submissions, f, indent=2, ensure_ascii=False)
+
+    # save finally
+    save_compact_json(submissions, DATA_FILE)
 
 if __name__ == "__main__":
     asyncio.run(main())

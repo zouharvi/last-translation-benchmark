@@ -6,6 +6,8 @@ import os
 
 os.chdir(os.path.dirname(os.path.abspath(__file__))+"/..")
 
+from last_translation_benchmark.utils import save_compact_json
+
 with open("data/submissions.json", "r") as f:
     data_submissions = json.load(f)
 
@@ -35,5 +37,4 @@ for submission in data_submissions:
                 "translation": translation,
             })
 
-with open("data/submissions.json", "w") as f:
-    json.dump(data_submissions, f, indent=2, ensure_ascii=False)
+save_compact_json(data_submissions, "data/submissions.json")

@@ -538,8 +538,12 @@ for s in data_submissions:
         user_points[contributor] = user_points.get(contributor, 0) + 1
 
 for s in data_submissions:
-    # consider pending submissions fine
+    # consider pending submissions made before v1 as fine
     if s["status"] != "pending":
+        continue
+
+    # check if created before september 1st 2026
+    if permissive_strptime(s["created_at"]) >= datetime.datetime(2026, 9, 1, tzinfo=datetime.UTC):
         continue
 
     contributor = username_to_name_affiliation.get(s.get("username"), None)

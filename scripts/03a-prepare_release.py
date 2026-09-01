@@ -13,7 +13,7 @@ os.chdir(os.path.dirname(__file__)+"/..")
 from last_translation_benchmark.utils import save_compact_json, simple_lang, permissive_strptime
 
 with open("data/submissions.json", "r") as f:
-    submissions = json.load(f)
+    submissions_all = json.load(f)
 
 
 with open("data/lang2iso.json", "r") as f:
@@ -21,13 +21,13 @@ with open("data/lang2iso.json", "r") as f:
 
 
 def _models_are_bad(sub):
-    # passing at most half of the models
-    # pass if at least one verifier is satisfied
     subs = [x for x in sub["translations"] if x["model"] != "human"]
     verified = [
+        # pass if at least one verifier is satisfied
         any(all(vl) for vl in mt_obj.get("verified_extra", {}).values() if all(v is not None for v in vl))
         for mt_obj in subs
     ]
+    # passing at most half of the models
     return statistics.mean(verified) <= 0.5
 
 def _human_is_ok(sub):
@@ -50,7 +50,7 @@ def _is_before_2026_09_01(sub):
     raise ValueError(f"No accept comment found for submission {sub['id']}")
 
 submissions = [
-    s for s in submissions
+    s for s in submissions_all
     # take accepted examples before September 1, 2026
     if s["status"] == "accept"
     and _is_before_2026_09_01(s)
@@ -102,7 +102,17 @@ def get_language_iso(lang_name: str) -> str | None:
 
 submissions_new: list[dict] = []
 subset_sizes = collections.Counter()
+
+# reset all tags
+for submission in submissions_all:
+    submission["tags"] = []
+
 for submission in submissions:
+    tags = (
+        ["LTBv1"]
+        + (["LTBv1-text"] if submission["source_media"] is None and submission["source_instructions"] is None else [])
+        + (["LTBv1-micro"] if submission["id"] in ltb_v1_micro_ids else [])
+    )
     submission_new = {
         "id": submission["id"],
         "source_text": submission["source_text"],
@@ -124,17 +134,14 @@ for submission in submissions:
         "linguistics": [
             tag for k, subl in submission.get("linguistics", {}).items() if k != "observations" for tag in subl
         ],
-        "tags": (
-            ["LTBv1"]
-            + (["LTBv1-text"] if submission["source_media"] is None and submission["source_instructions"] is None else [])
-            + (["LTBv1-micro"] if submission["id"] in ltb_v1_micro_ids else [])
-        ),
+        "tags": tags,
     }
     subset_sizes.update(submission_new["tags"])
     submissions_new.append(submission_new)
 
 print("Subset sizes:", subset_sizes)
 save_compact_json(submissions_new, "data/v1.json")
+# save_compact_json(submissions_all, "data/submissions.json")
 
 gemini_passrate = []
 for sub_obj in submissions:
