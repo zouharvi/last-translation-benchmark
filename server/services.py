@@ -248,7 +248,8 @@ async def verify_llm(
     )
     if text is None:
         raise ValueError("No response from LLM. Try simplifying your input and verification rules.")
-    text_clean = text.strip().lower().strip(" \t\n\r.,!?\"'*").split()[-1]
+    tokens = text.strip().lower().strip(" \t\n\r.,!?\"'*").split()
+    text_clean = tokens[-1] if tokens else ""
     if "pass" in text_clean:
         return True
     elif "fail" in text_clean:
