@@ -4,7 +4,7 @@ import os
 import urllib.parse
 
 from last_translation_benchmark.db import _open_db, get_submissions, get_users
-from last_translation_benchmark.utils import send_email, permissive_strptime
+from last_translation_benchmark.utils import permissive_strptime, send_email
 
 os.environ["HOST_PUBLIC"] = "https://last-translation-benchmark.vilda.net"
 

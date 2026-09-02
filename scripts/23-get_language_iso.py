@@ -1,11 +1,11 @@
 import json
 import os
 import urllib.parse
+
 import requests
 
 os.chdir(os.path.dirname(__file__)+"/..")
 from last_translation_benchmark.utils import get_config
-
 
 COOKIES = {
     "ltb_user": urllib.parse.quote(get_config("LTB_API_USER")),

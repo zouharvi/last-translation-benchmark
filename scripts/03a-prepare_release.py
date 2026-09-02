@@ -1,16 +1,21 @@
 # %%
 
+import collections
 import datetime
 import json
 import os
-import collections
-import fastchrf
 import statistics
+
+import fastchrf
 import numpy as np
 
 os.chdir(os.path.dirname(__file__)+"/..")
 
-from last_translation_benchmark.utils import save_compact_json, simple_lang, permissive_strptime
+from last_translation_benchmark.utils import (
+    permissive_strptime,
+    save_compact_json,
+    simple_lang,
+)
 
 with open("data/submissions.json", "r") as f:
     submissions_all = json.load(f)
@@ -89,7 +94,7 @@ ltb_v1_micro_ids = {
         # then later select by diversity https://aclanthology.org/2025.tacl-1.80/
         key=lambda s: (translation_easiness(s["translations"]) >= 0.15, translation_similarity(s["translations"])),
         reverse=False
-    )[:5]
+    )[:10]
 }
 
 def get_language_iso(lang_name: str) -> str | None:

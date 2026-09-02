@@ -16,7 +16,7 @@ from lingtypology import glottolog
 
 os.chdir(os.path.dirname(os.path.abspath(__file__))+ "/../")
 
-from last_translation_benchmark.utils import save_compact_json, permissive_strptime
+from last_translation_benchmark.utils import permissive_strptime, save_compact_json
 
 os.makedirs("computed/", exist_ok=True)
 
@@ -480,7 +480,7 @@ for metric in all_metrics:
             for scores in scores1_all
         ]
         tau, p_value = scipy.stats.kendalltau(scores1, scores2)
-        metrics_pairwise_tau[f"STABILITY ||| {metric.split(': ')[0]}"].append(tau)
+        metrics_pairwise_tau[f"SUBSAMPLE 0.1% ||| {metric.split(': ')[0]}"].append(tau)
 data_out["metrics_pairwise_tau"] = {k: statistics.mean(v) for k, v in metrics_pairwise_tau.items()}
 
 # average scroes

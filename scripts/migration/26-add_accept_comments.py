@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 from last_translation_benchmark.db import get_submissions, init_db, save_submission
 

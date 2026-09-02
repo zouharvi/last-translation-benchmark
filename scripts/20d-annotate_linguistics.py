@@ -13,7 +13,11 @@ import utils
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/..")
 
-from last_translation_benchmark.utils import get_config, is_doomlooped_entropy, save_compact_json
+from last_translation_benchmark.utils import (
+    get_config,
+    is_doomlooped_entropy,
+    save_compact_json,
+)
 
 MODEL = "google/gemini-3.1-pro-preview"
 PROMPT_FILE = "data/linguistics_prompt.txt"

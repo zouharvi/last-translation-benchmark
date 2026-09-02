@@ -1,6 +1,5 @@
 import asyncio
 import os
-import time
 
 from last_translation_benchmark.db import _open_db, get_users
 from last_translation_benchmark.utils import send_email
@@ -65,7 +64,7 @@ async def main():
             print("Skipped.")
 
         # Sleep for 5 seconds between emails to avoid overwhelming the email server
-        time.sleep(5)
+        await asyncio.sleep(5)
 
 if __name__ == "__main__":
     asyncio.run(main())

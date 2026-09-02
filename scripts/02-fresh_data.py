@@ -9,7 +9,7 @@ import requests
 
 os.chdir(os.path.dirname(os.path.abspath(__file__))+ "/../")
 
-from last_translation_benchmark.utils import get_config
+from last_translation_benchmark.utils import get_config, save_compact_json
 
 os.makedirs("data/", exist_ok=True)
 
@@ -60,6 +60,7 @@ count_old_accept_other = 0
 count_old_accept_accept = 0
 count_noop_accept_accept = 0
 count_noop_other_other = 0
+count_drop = 0
 for sub_obj_new in submissions_new:
     if sub_obj_new["id"] not in submissions_id_to_obj:
         # we are adding previously unseen example, proceed
@@ -96,12 +97,21 @@ for sub_obj_new in submissions_new:
                 count_old_other_other += 1
                 submissions_id_to_obj[sub_obj_new["id"]] = sub_obj_new
 
+# look at which ones aren't in submissions_new
+submissions_new_ids = {s["id"] for s in submissions_new}
+for sub_obj in list(submissions_id_to_obj.values()):
+    if sub_obj["id"] not in submissions_new_ids:
+        # this submission is no longer present in the new data, drop it
+        count_drop += 1
+        del submissions_id_to_obj[sub_obj["id"]]
+
 print("Added new with accepted", count_new_accepted)
 print("Added new with other   ", count_new_other)
 print("Updated old from accept to other", count_old_accept_other)
 print("Updated old from accept to accept", count_old_accept_accept)
 print("Updated old from other to accepted", count_old_other_accept)
 print("Updated old from other to other", count_old_other_other)
+print("Dropped", count_drop)
 print("Nothing changed accept-accept", count_noop_accept_accept)
 print("Nothing changed other-other", count_noop_other_other)
 
@@ -109,5 +119,4 @@ print("\nBefore:", collections.Counter([s["status"] for s in submissions_old]))
 print("After:", collections.Counter([s["status"] for s in submissions_id_to_obj.values()]))
 
 merged = sorted(submissions_id_to_obj.values(), key=lambda x: x["id"])
-with open(submissions_fname, "w") as f:
-    json.dump(merged, f, indent=2, ensure_ascii=False)
+save_compact_json(merged, submissions_fname)

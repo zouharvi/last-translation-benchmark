@@ -20,7 +20,7 @@ MODELS = [
     {"name": "Claude Sonnet 4.5", "model": "anthropic/claude-sonnet-4.5", "support_image": True, "support_audio": False, "support_video": False},
     {"name": "Command A", "model": "cohere/command-a", "support_image": False, "support_audio": False, "support_video": False},
     # hit monthly quota?
-    # {"name": "Command A+", "model": "cohere/command-a-plus-05-2026", "support_image": True, "support_audio": False, "support_video": False},
+    {"name": "Command A+", "model": "cohere/command-a-plus-05-2026", "support_image": True, "support_audio": False, "support_video": False},
     {"name": "TinyAya Global", "model": "cohere/tiny-aya-global", "support_image": False, "support_audio": False, "support_video": False},
     {"name": "GPT-5.6 Terra", "model": "openai/gpt-5.6-terra", "support_image": True, "support_audio": False, "support_video": False},
     {"name": "GPT-5.6 Luna", "model": "openai/gpt-5.6-luna", "support_image": True, "support_audio": False, "support_video": False},
