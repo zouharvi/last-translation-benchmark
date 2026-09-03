@@ -11,7 +11,7 @@
 > The Last Translation Benchmark is a live dataset that accepts contributions.
 > The latest version is `LTBv1`, containing accepted contributions prior to September 1st 2026, with future releases planned with subsequent contributions.
 
-This repository contains the technical backend for the online platform as well as analysis scripts for the [Last Translation Benchmark paper](TODO TODO) and [data hosted at HuggingFace](TODO TODO) and [data hosted as a simple JSON](TODO TODO).
+This repository contains the technical backend for the online platform as well as analysis scripts for the [Last Translation Benchmark paper](TODO TODO) and [data hosted at HuggingFace](https://hf.co/datasets/zouhar/last-translation-benchmark) and [data hosted as a simple JSON](TODO TODO).
 If you're interested in contributing, register at [last-translation-benchmark.vilda.net](https://last-translation-benchmark.vilda.net) (co-authorship offered after 10 approved submissions).
 Alternatively you may also submit to the [model leaderboard](https://last-translation-benchmark.vilda.net/leaderboard-results).
 
