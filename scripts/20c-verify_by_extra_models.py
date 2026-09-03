@@ -19,7 +19,7 @@ from last_translation_benchmark.utils import (
 )
 
 MODELS_VERIFIERS = [
-    # {"name": "Qwen 3.7 Flash", "model": "qwen/qwen3.7-flash", "support_privilege": False, "support_audio": False, "support_video": False},
+    {"name": "Qwen 3.7 Flash", "model": "qwen/qwen3.7-flash", "support_privilege": False, "support_audio": False, "support_video": False},
     {"name": "Qwen 3.7 Plus", "model": "qwen/qwen3.7-plus", "support_privilege": False, "support_audio": False, "support_video": False},
     {"name": "Gemma 4", "model": "google/gemma-4-31b-it", "support_privilege": False, "support_audio": False, "support_video": True},
     {"name": "Gemini 3.1 Pro", "model": "google/gemini-3.1-pro-preview", "support_privilege": True, "support_audio": True, "support_video": True},
@@ -48,7 +48,7 @@ async def main():
     # Estimate tokens
     prompts_verifier = []
     prompts_judge = []
-    submissions_accepted = [sub for sub in submissions if sub["status"] == "accept"]
+    submissions_accepted = [sub for sub in submissions if sub["status"] == "accept" and utils.submission_is_before_2026_09_01(sub)]
     for sub in submissions_accepted:
         for mt_obj in sub["translations"]:
             for rule in sub["verification_rules"]:
@@ -87,14 +87,6 @@ async def main():
         pbar.set_description(f"{pbar_desc} with {', '.join(f'{model} ({len(tasks)})' for model, tasks in model_agg)}")
 
     async def process_sub(sub) -> bool:
-        # skip items that have source media for now
-        #if sub["source_media"]:
-        #    return False
-
-        # skip examples not before 2026-09-01
-        if not utils.submission_is_before_2026_09_01(sub):
-            return False
-
         if not sub["source_text"] and sub["source_media"]:
             source_text_display = "(attached)"
         else:
@@ -128,7 +120,7 @@ async def main():
                         return False
 
                 # verify privileged translations only with one verifier
-                if mt_obj["model"].startswith("PRIVILEGE-") and not model["support_privilege"]:
+                if mt_obj["model"].startswith("PRIVILEGE-") and (not model["support_privilege"] or sub["source_media"] is not None or sub["source_instructions"] is not None):
                     return False
 
                 results = []
@@ -278,6 +270,9 @@ async def main():
             for mt_obj_i, mt_obj in enumerate(sub["translations"])
             if mt_obj_i in translations_to_mt_i.values()
         ])
+
+        # TODO: don't rerun for now
+        return any(tasks_unique)
 
         # even if we have cache turned off, we want to enforce it because in the second round
         # we should reuse previous results in all scenarios

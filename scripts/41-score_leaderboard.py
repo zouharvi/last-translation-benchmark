@@ -14,7 +14,7 @@ from last_translation_benchmark.utils import get_config, get_prompt_verify
 
 args = argparse.ArgumentParser()
 args.add_argument("uid", type=int, help="Leaderboard entry ID to score")
-args.add_argument("--chunks", type=int, default=5, help="Number of concurrent submissions to process")
+args.add_argument("--chunks", type=int, default=20, help="Number of concurrent submissions to process")
 args = args.parse_args()
 CHUNK_SIZE = args.chunks
 
@@ -35,8 +35,13 @@ COOKIES = {
 async def main():
     async def process_sub(sub_obj_lb):
         sub_obj = id_to_submission.get(sub_obj_lb["id"])
+
         if not sub_obj or sub_obj_lb["translation"] is None:
             sub_obj_lb["verification"] = None
+            return
+
+        # process only LTBv1-eval
+        if "LTBv1-eval" not in sub_obj["tags"]:
             return
 
         # empty translations count as "attempts"
@@ -87,10 +92,14 @@ async def main():
         pbar.update(len(sub_chunk))
     pbar.close()
 
-    lb_info["score"] = statistics.mean([
-        all(sub_obj_lb["verification"])
-        for sub_obj_lb in lb_subs if sub_obj_lb.get("verification") is not None
-    ])
+    sub_lb_scored = [sub_obj_lb for sub_obj_lb in lb_subs if sub_obj_lb.get("verification") is not None]
+    if sub_lb_scored:
+        lb_info["score"] = statistics.mean([
+            all(sub_obj_lb["verification"])
+            for sub_obj_lb in sub_lb_scored
+        ])
+    else:
+        lb_info["score"] = 0.0
     db.execute("UPDATE leaderboard SET status = 'scored', info = ?, submissions = ? WHERE id = ?", (json.dumps(lb_info), json.dumps(lb_subs), args.uid)) # type: ignore
     db.commit()
 

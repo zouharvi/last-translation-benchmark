@@ -34,7 +34,7 @@
       <form id="submission-form">
         <div style="margin-bottom: 15px;">
           <label for="submission-file">Upload JSON file with the submission</label>
-          <p style="font-size: 0.85em; color: #64748b; margin: 3px 0 5px 0;">Upload the JSON file containing your model's predictions. The file must follow <a href="/leaderboard_submission.schema.json" target="_blank" style="color: #64748b; text-decoration: underline;">this JSON schema</a>. It's a JSON array with mandatory "id" and "translation" keys. The "translation" can be null if the model can't process the particular example.</p>
+          <p style="font-size: 0.85em; color: #64748b; margin: 3px 0 5px 0;">Upload the JSON file containing your model's predictions. The file must follow <a href="/leaderboard_submission.schema.json" target="_blank" style="color: #64748b; text-decoration: underline;">this JSON schema</a>. It's a JSON array with mandatory "id" and "translation" keys. The "translation" can be null if the model can't process the particular example. We automatically evaluate only the LTBv1-eval subset, so make sure that you provide translations for all IDs here.</p>
           <input type="file" id="submission-file" accept=".json" required style="display: block; margin-top: 5px;">
         </div>
 

@@ -124,7 +124,7 @@ async def main():
     with open(DATA_FILE, "r") as f:
         submissions = json.load(f)
 
-    submissions_accepted = [sub for sub in submissions if sub["status"] == "accept"]
+    submissions_accepted = [sub for sub in submissions if sub["status"] == "accept" and utils.submission_is_before_2026_09_01(sub)]
 
     print(f"Loaded {len(submissions)} submissions\n")
 

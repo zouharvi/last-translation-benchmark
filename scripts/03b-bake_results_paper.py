@@ -115,7 +115,7 @@ data_out["language_family"] = {
     for family, count in language_family.most_common()
 }
 data_out["language_resourcedness"] = {
-    resourcedness: count/language_count_simple.total()
+    resourcedness: count/language_resourcedness.total()
     for resourcedness, count in language_resourcedness.items()
 }
 data_out["language_count"] = dict(language_count.most_common())
@@ -271,12 +271,12 @@ data_models_selfbias = collections.defaultdict(lambda: {"llm": [], "verifier": [
 with open("computed/autometrics_cache.json", "r") as f:
     data_autometrics_cache = json.load(f)
 
-data_submissions_v1 = [
+data_submissions_v1eval = [
     sub for sub in data_submissions
-    if "LTBv1-text" in id_to_v1tags.get(sub["id"], [])
+    if "LTBv1-eval" in id_to_v1tags.get(sub["id"], [])
 ]
 
-for submission in data_submissions_v1:
+for submission in data_submissions_v1eval:
     human_translation = next(x for x in submission["translations"] if x["model"] == "human")["translation"]
 
     model_ranking_verifier = collections.defaultdict(dict)

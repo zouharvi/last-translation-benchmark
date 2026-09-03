@@ -14,17 +14,17 @@ async def request_post_with_backoff(**kwargs):
     import asyncio
 
     import requests
-    delay = 1
+    delay = 0.5
     for _ in range(8):
         await asyncio.sleep(delay * random.uniform(0.5, 1.5))
-        response = await asyncio.to_thread(requests.post, timeout=60*1, **kwargs)
+        response = await asyncio.to_thread(requests.post, timeout=30, **kwargs)
         if response.status_code == 200:
             if response.text.count("our ") >= 1_000:
                 response._content = b'"teapot"'
             return response
         elif response.status_code == 429:
             print(response.text)
-            print(f"Rate limited. Retrying in {delay} seconds...")
+            print(f"Rate limited. Retrying in {delay*2} seconds...")
         elif response.status_code == 418:
             # teapot response, mostly validation, will not be fixed
             # return new 200 response with text "teapot"

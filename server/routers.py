@@ -1271,7 +1271,7 @@ async def leaderboard_submit(req: LeaderboardSubmitReq):
         leaderboard_data = json.load(f)
 
     id_to_mt = {sub["id"]: sub for sub in req.submission}
-    for subset in ["LTBv1", "LTBv1-text", "LTBv1-micro"]:
+    for subset in ["LTBv1-eval"]:
         required = {
             sub["id"]
             for sub in leaderboard_data
@@ -1286,7 +1286,7 @@ async def leaderboard_submit(req: LeaderboardSubmitReq):
     else:
         raise HTTPException(
             status_code=400,
-            detail="The submission does not have translations for any of the subsets (LTBv1, LTBv1-text, or LTBv1-micro). Please check the submission and try again."
+            detail="The submission does not have translations for any of the subsets (currently only LTBv1-eval). Please check the submission and try again."
         )
     
     info = {

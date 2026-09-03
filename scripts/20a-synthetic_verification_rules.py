@@ -83,7 +83,7 @@ async def main():
     with open(DATA_FILE, "r") as f:
         submissions = json.load(f)
 
-    submissions_accepted = [sub for sub in submissions if sub["status"] == "accept"]
+    submissions_accepted = [sub for sub in submissions if sub["status"] == "accept" and utils.submission_is_before_2026_09_01(sub)]
     prompts = [get_prompt(sub) for sub in submissions_accepted]
     text_count = utils.estimate_tokens(" ".join(prompts))
     for model in MODELS:
@@ -107,6 +107,9 @@ async def main():
         pbar.set_description(f"{pbar_desc} with {', '.join(f'{model} ({len(tasks)})' for model, tasks in model_agg)}")
 
     async def process_sub(sub) -> bool:
+        if sub["source_media"] is not None or sub["source_instructions"] is not None:
+            return False
+
         if "verification_rules_synthetic" not in sub:
             sub["verification_rules_synthetic"] = {}
 

@@ -90,7 +90,7 @@ async def main():
     with open(DATA_FILE, "r") as f:
         submissions = json.load(f)
 
-    submissions_accepted = [sub for sub in submissions if sub["status"] == "accept"]
+    submissions_accepted = [sub for sub in submissions if sub["status"] == "accept" and utils.submission_is_before_2026_09_01(sub)]
     prompts = [get_prompt(sub) for sub in submissions_accepted]
     text_count = utils.estimate_tokens(" ".join(prompts))
     print(f"Avg tokens for translation: {text_count/len(prompts):.1f}")
@@ -143,6 +143,8 @@ async def main():
 
             prompt = get_prompt(sub)
             if "privilege" in model:
+                if sub["source_media"] is not None or sub["source_instructions"] is not None:
+                    return False
                 verification_rules = []
                 if model["privilege"] == "SYNTHETIC":
                     if "verification_rules_synthetic" not in sub or model["name"].removeprefix("PRIVILEGE-SYNTHETIC: ") not in sub["verification_rules_synthetic"]:

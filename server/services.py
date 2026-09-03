@@ -61,13 +61,13 @@ def audio_format_from_mime(mime: str) -> str:
     return AUDIO_MIME_TO_FORMAT.get(mime, mime.split("/")[-1])
 
 @sqlite_cache()
-def translate_google_simple(
+async def translate_google_simple(
     text: str,
     src_lang: str,
     tgt_lang: str,
     source_media: str | None = None,
     source_instructions: str | None = None,
-) -> str| None:
+) -> str | None:
     source_code = NAME_TO_CODE_GOOGLE.get(src_lang.lower(), None)
     target_code = NAME_TO_CODE_GOOGLE.get(tgt_lang.lower(), None)
     if (
@@ -79,7 +79,9 @@ def translate_google_simple(
     ):
         return None
 
-    return GoogleTranslator(source=source_code, target=target_code).translate(text)
+    return await asyncio.to_thread(
+        lambda: GoogleTranslator(source=source_code, target=target_code).translate(text)
+    )
 
 
 @sqlite_cache()

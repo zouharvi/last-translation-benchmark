@@ -18,7 +18,7 @@ for model in [
 
     out = []
     for s in data:
-        if "LTBv1-micro" not in s["tags"]:
+        if "LTBv1-eval" not in s["tags"]:
             continue
         for t in s["translations"]:
             if t["model"] == model:
