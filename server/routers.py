@@ -1369,7 +1369,7 @@ async def get_leaderboard_results(
             for sub in v1_subs
         ]
         
-        models.append({
+        model_out = {
             "model_name": participant["info"].get("model_name"),
             "model_size": participant["info"].get("model_size"),
             "model_type": participant["info"].get("model_type"),
@@ -1377,7 +1377,12 @@ async def get_leaderboard_results(
             "model_description": participant["info"].get("model_description"),
             "institution": participant["info"].get("institution"),
             "score": statistics.mean(scores) if scores else 0.0,
-        })
+        }
+        if "display_dx" in participant["info"]:
+            model_out["display_dx"] = participant["info"]["display_dx"]
+        if "display_dy" in participant["info"]:
+            model_out["display_dy"] = participant["info"]["display_dy"]
+        models.append(model_out)
         
     models.sort(key=lambda x: x["score"], reverse=True)
     return {

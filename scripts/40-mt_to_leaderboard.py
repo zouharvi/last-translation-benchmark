@@ -51,7 +51,7 @@ for model in WHITELIST_MT:
         else:
             # default to empty string if no translation found for this model
             t_val = ""
-        out.append({"id": s["id"], "translation": t_val})
+        out.append({"id": s["id"], "translation": t_val or ""})
 
     os.makedirs("computed/submissions/", exist_ok=True)
     with open(f"computed/submissions/{model}.json", "w") as f:

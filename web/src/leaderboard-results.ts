@@ -170,7 +170,10 @@ function renderChart(models: any[]) {
             color = '#2a2';
         }
         svg += `<circle class="chart-point" data-idx="${i}" cx="${cx}" cy="${cy}" r="5" fill="${color}" style="cursor: pointer;" />`;
-        svg += `<text x="${cx}" y="${cy - 10}" text-anchor="middle" font-size="10" fill="black" pointer-events="none">${m.model_name || '?'}</text>`;
+        
+        const labelX = cx + (m.display_dx || 0);
+        const labelY = cy + (m.display_dy !== undefined ? m.display_dy : -10);
+        svg += `<text x="${labelX}" y="${labelY}" text-anchor="middle" font-size="10" fill="black" pointer-events="none">${m.model_name || '?'}</text>`;
     });
 
     svg += `</svg>`;
