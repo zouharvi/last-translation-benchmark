@@ -14,7 +14,9 @@ from last_translation_benchmark.utils import get_config, get_prompt_verify
 
 args = argparse.ArgumentParser()
 args.add_argument("uid", type=int, help="Leaderboard entry ID to score")
+args.add_argument("--chunks", type=int, default=5, help="Number of concurrent submissions to process")
 args = args.parse_args()
+CHUNK_SIZE = args.chunks
 
 db = sqlite3.connect(get_config("DB_PATH"))
 lb_entry = db.execute("SELECT submissions, info FROM leaderboard WHERE id = ?", (args.uid,)).fetchone()
@@ -31,16 +33,16 @@ COOKIES = {
 }
 
 async def main():
-    for sub_obj_lb in tqdm.tqdm(lb_subs):
+    async def process_sub(sub_obj_lb):
         sub_obj = id_to_submission.get(sub_obj_lb["id"])
         if not sub_obj or sub_obj_lb["translation"] is None:
             sub_obj_lb["verification"] = None
-            continue
+            return
 
         # empty translations count as "attempts"
         if sub_obj_lb["translation"] == "":
-            sub_obj["verification_rules"] = [False]*len(sub_obj["verification_rules"])
-            continue
+            sub_obj_lb["verification"] = [False]*len(sub_obj["verification_rules"])
+            return
 
         rule_results = []
         for rule in sub_obj["verification_rules"]:
@@ -77,6 +79,13 @@ async def main():
                 rule_results.append(False)
 
         sub_obj_lb["verification"] = rule_results
+
+    pbar = tqdm.tqdm(total=len(lb_subs))
+    for chunk_i in range(0, len(lb_subs), CHUNK_SIZE):
+        sub_chunk = lb_subs[chunk_i:chunk_i+CHUNK_SIZE]
+        await asyncio.gather(*[process_sub(sub) for sub in sub_chunk])
+        pbar.update(len(sub_chunk))
+    pbar.close()
 
     lb_info["score"] = statistics.mean([
         all(sub_obj_lb["verification"])

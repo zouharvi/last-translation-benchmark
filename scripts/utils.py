@@ -1,6 +1,9 @@
 import json
 import random
 import json
+import datetime
+
+from last_translation_benchmark.utils import permissive_strptime
 
 def estimate_tokens(text: str) -> int:
     import tiktoken
@@ -11,7 +14,7 @@ async def request_post_with_backoff(**kwargs):
     import asyncio
 
     import requests
-    delay = 2
+    delay = 1
     for _ in range(8):
         await asyncio.sleep(delay * random.uniform(0.5, 1.5))
         response = await asyncio.to_thread(requests.post, timeout=60*1, **kwargs)
@@ -50,3 +53,11 @@ def model_price_per_token(model_name: str) -> tuple[float, float]:
     price_per_token_output = float(model["pricing"]["completion"])
 
     return (price_per_token_input, price_per_token_output)
+
+
+def submission_is_before_2026_09_01(sub):
+    for comment in sub["comments"]:
+        if comment["text"] == "ACCEPT":
+            return permissive_strptime(comment["created_at"]) < datetime.datetime(2026, 9, 1, tzinfo=datetime.UTC)
+    
+    raise ValueError(f"No accept comment found for submission {sub['id']}")

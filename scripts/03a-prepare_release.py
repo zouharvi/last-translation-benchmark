@@ -1,7 +1,6 @@
 # %%
 
 import collections
-import datetime
 import json
 import os
 import statistics
@@ -9,10 +8,11 @@ import statistics
 import fastchrf
 import numpy as np
 
+from utils import submission_is_before_2026_09_01
+
 os.chdir(os.path.dirname(__file__)+"/..")
 
 from last_translation_benchmark.utils import (
-    permissive_strptime,
     save_compact_json,
     simple_lang,
 )
@@ -47,18 +47,11 @@ def _human_is_ok(sub):
         return False
     return statistics.mean(verified) >= 0.75
 
-def _is_before_2026_09_01(sub):
-    for comment in sub["comments"]:
-        if comment["text"] == "ACCEPT":
-            return permissive_strptime(comment["created_at"]) < datetime.datetime(2026, 9, 1, tzinfo=datetime.UTC)
-    
-    raise ValueError(f"No accept comment found for submission {sub['id']}")
-
 submissions = [
     s for s in submissions_all
     # take accepted examples before September 1, 2026
     if s["status"] == "accept"
-    and _is_before_2026_09_01(s)
+    and submission_is_before_2026_09_01(s)
     and _models_are_bad(s) and _human_is_ok(s)
 ]
 

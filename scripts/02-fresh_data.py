@@ -74,6 +74,8 @@ for sub_obj_new in submissions_new:
         sub_obj_old = submissions_id_to_obj[sub_obj_new["id"]]
         # our example already exists, depends on the status
         if sub_obj_old["status"] == "accept" and sub_obj_new["status"] == "accept":
+            # always update comments
+            submissions_id_to_obj[sub_obj_new["id"]]["comments"] = sub_obj_new["comments"]
             # both are accepted, check if sources match
             if is_same(sub_obj_old, sub_obj_new):
                 count_noop_accept_accept += 1

@@ -19,12 +19,12 @@ from last_translation_benchmark.utils import (
 )
 
 MODELS_VERIFIERS = [
-    # {"name": "Qwen 3.7 Flash", "model": "qwen/qwen3.7-flash", "support_privilege": False},
-    {"name": "Qwen 3.7 Plus", "model": "qwen/qwen3.7-plus", "support_privilege": False},
-    {"name": "Gemma 4", "model": "google/gemma-4-31b-it", "support_privilege": False},
-    {"name": "Gemini 3.1 Pro", "model": "google/gemini-3.1-pro-preview", "support_privilege": True},
-    {"name": "Gemini 3.5 Flash Lite", "model": "google/gemini-3.5-flash-lite", "support_privilege": False},
-    {"name": "GPT-5.4 Mini", "model": "openai/gpt-5.4-mini", "support_privilege": False},
+    # {"name": "Qwen 3.7 Flash", "model": "qwen/qwen3.7-flash", "support_privilege": False, "support_audio": False, "support_video": False},
+    {"name": "Qwen 3.7 Plus", "model": "qwen/qwen3.7-plus", "support_privilege": False, "support_audio": False, "support_video": False},
+    {"name": "Gemma 4", "model": "google/gemma-4-31b-it", "support_privilege": False, "support_audio": False, "support_video": True},
+    {"name": "Gemini 3.1 Pro", "model": "google/gemini-3.1-pro-preview", "support_privilege": True, "support_audio": True, "support_video": True},
+    {"name": "Gemini 3.5 Flash Lite", "model": "google/gemini-3.5-flash-lite", "support_privilege": False, "support_audio": True, "support_video": True},
+    {"name": "GPT-5.4 Mini", "model": "openai/gpt-5.4-mini", "support_privilege": False, "support_audio": False, "support_video": False},
 ]
 DATA_FILE = "data/submissions.json"
 
@@ -91,6 +91,10 @@ async def main():
         #if sub["source_media"]:
         #    return False
 
+        # skip examples not before 2026-09-01
+        if not utils.submission_is_before_2026_09_01(sub):
+            return False
+
         if not sub["source_text"] and sub["source_media"]:
             source_text_display = "(attached)"
         else:
@@ -114,6 +118,14 @@ async def main():
                     and all(r is not None for r in mt_obj["verified_extra"][model["name"]])
                 ):
                     return False
+
+                # check support_audio and support_video
+                if sub["source_media"]:
+                    mime = sub["source_media"].split(",")[0]
+                    if "audio" in mime and not model["support_audio"]:
+                        return False
+                    if "video" in mime and not model["support_video"]:
+                        return False
 
                 # verify privileged translations only with one verifier
                 if mt_obj["model"].startswith("PRIVILEGE-") and not model["support_privilege"]:
@@ -186,6 +198,14 @@ async def main():
                 # judge privileged translations only with one judge
                 if mt_obj["model"].startswith("PRIVILEGE-") and not model["support_privilege"]:
                     return False
+
+                # check support_audio and support_video
+                if sub["source_media"]:
+                    mime = sub["source_media"].split(",")[0]
+                    if "audio" in mime and not model["support_audio"]:
+                        return False
+                    if "video" in mime and not model["support_video"]:
+                        return False
 
                 prompt = get_prompt_judge(source_text_display, mt_obj["translation"], sub["source_media"])
 
