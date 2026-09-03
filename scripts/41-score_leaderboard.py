@@ -10,7 +10,7 @@ import tqdm
 import utils
 
 os.chdir(os.path.dirname(os.path.abspath(__file__))+"/..")
-from last_translation_benchmark.utils import get_config
+from last_translation_benchmark.utils import get_config, get_prompt_verify
 
 args = argparse.ArgumentParser()
 args.add_argument("uid", type=int, help="Leaderboard entry ID to score")
@@ -30,14 +30,6 @@ COOKIES = {
     "ltb_token": urllib.parse.quote(get_config("LTB_SCORER_TOKEN")),
 }
 
-def get_prompt_verify(source_text: str, translation: str, rule: str, source_media: str | None) -> str:
-    prompt = f"Your goal is to verify whether a translation fulfills a criterion.\n\nCriterion: {rule}\n\nInput: {source_text}\n\nTranslation to verify: {translation}\n\nOutput only pass or fail and nothing else."
-    if source_media:
-        mime = source_media.split(",")[0]
-        context_type = "audio" if "audio" in mime else ("video" if "video" in mime else "image")
-        prompt += f"\n\nUse the provided {context_type} as additional context."
-    return prompt
-
 async def main():
     for sub_obj_lb in tqdm.tqdm(lb_subs):
         sub_obj = id_to_submission.get(sub_obj_lb["id"])
@@ -52,7 +44,7 @@ async def main():
 
         rule_results = []
         for rule in sub_obj["verification_rules"]:
-            prompt = get_prompt_verify(sub_obj["source_text"] or "(attached)", sub_obj_lb["translation"], rule, sub_obj["source_media"])
+            prompt = get_prompt_verify(sub_obj["source_text"], sub_obj_lb["translation"], rule, sub_obj["source_media"])
             payload = {"model": "google/gemma-4-31b-it", "prompt": prompt, "cache": True}
             if sub_obj["source_media"]:
                 payload["source_media"] = sub_obj["source_media"]

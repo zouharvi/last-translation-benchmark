@@ -11,7 +11,13 @@ from openrouter import OpenRouter
 
 from .db import sqlite_cache
 from .languages import LANGUAGES
-from .utils import get_config, is_doomlooped_entropy, log, retry_async
+from .utils import (
+    get_config,
+    get_prompt_verify,
+    is_doomlooped_entropy,
+    log,
+    retry_async,
+)
 
 OPENROUTER_CLIENT = OpenRouter(api_key=get_config("OPENROUTER_API_KEY", ""))
 OPENROUTER_BYOK_CLIENT = OpenRouter(api_key=get_config("OPENROUTER_API_KEY_BYOK", ""))
@@ -235,13 +241,14 @@ async def call_llm(prompt: str | list[dict], model: str = "google/gemini-3.5-fla
 async def verify_llm(
     source_text: str, translation: str, rule: str, model: str, source_media: str | None = None
 ) -> bool:
-    if not source_text and source_media:
-        source_text = "(attached)"
-    prompt = f"Your goal is to verify whether a translation fulfills a criterion.\n\nCriterion: {rule}\n\nInput: {source_text}\n\nTranslation to verify: {translation}\n\nOutput only pass or fail and nothing else."
-    if source_media:
-        mime = source_media.split(",")[0]
-        context_type = "audio" if "audio" in mime else ("video" if "video" in mime else "image")
-        prompt += f"\n\nUse the provided {context_type} as additional context."
+    # if not source_text and source_media:
+    #     source_text = "(attached)"
+    # prompt = f"Your goal is to verify whether a translation fulfills a criterion.\n\nCriterion: {rule}\n\nInput: {source_text}\n\nTranslation to verify: {translation}\n\nOutput only pass or fail and nothing else."
+    # if source_media:
+    #     mime = source_media.split(",")[0]
+    #     context_type = "audio" if "audio" in mime else ("video" if "video" in mime else "image")
+    #     prompt += f"\n\nUse the provided {context_type} as additional context."
+    prompt = get_prompt_verify(source_text, translation, rule, source_media)
 
     text = await call_llm_multimodal(
         prompt, model=model, source_media=source_media

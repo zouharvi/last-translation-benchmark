@@ -261,3 +261,29 @@ def permissive_strptime(date_str: str) -> datetime.datetime:
         except ValueError:
             continue
     raise ValueError(f"Unable to parse date string: {date_str}")
+
+
+def get_prompt_verify(source_text: str, translation: str, rule: str, source_media: str | None) -> str:
+    if not source_text and source_media:
+        source_text = "(attached)"
+    prompt = f"Your goal is to verify whether a translation fulfills a criterion.\n\nCriterion: {rule}\n\nInput: {source_text}\n\nTranslation to verify: {translation}\n\nOutput only pass or fail and nothing else."
+    
+    if source_media:
+        mime = source_media.split(",")[0]
+        context_type = "audio" if "audio" in mime else ("video" if "video" in mime else "image")
+        prompt += f"\n\nUse the provided {context_type} as additional context."
+        
+    return prompt
+
+
+def get_prompt_judge(source_text: str, translation: str, source_media: str | None) -> str:
+    if not source_text and source_media:
+        source_text = "(attached)"
+    prompt = f"Your goal is to evaluate the quality of a translation. Translation quality is evaluated as follows:\n\n85-100% (Very Good): Complete meaning transfer; perfectly natural; no or minimal proofreading.\n65-80% (Good): Near complete transfer, minor inaccuracies; mostly natural, minor awkwardness; needs light proofreading.\n45-60% (Acceptable): Main ideas conveyed, noticeable inaccuracies or omissions; uneven naturalness, awkward phrasing; usable only after substantial revision.\n25-40% (Borderline): Partial transfer; frequent misinterpretation or omission confusing the message; often unnatural; requires major rewrite.\n0-20% (Not acceptable): Violation of meaning; large portions mistranslated, missing, or incoherent; unusable without complete retranslation.\n\nInput: {source_text}\n\nTranslation to evaluate: {translation}\n\nOutput a single number between 0 and 100, representing the quality of the translation, and nothing else."
+
+    if source_media:
+        mime = source_media.split(",")[0]
+        context_type = "audio" if "audio" in mime else ("video" if "video" in mime else "image")
+        prompt += f"\n\nUse the provided {context_type} as additional context."
+
+    return prompt
