@@ -184,11 +184,14 @@ async def main():
 
             async def _process_model_judge(model):
                 # skip if this model has already verified this translation
-                if model["name"] in mt_obj["judge_extra"] and mt_obj["judge_extra"][model["name"]] is not None:
+                if (
+                    model["name"] in mt_obj["judge_extra"]
+                    and mt_obj["judge_extra"][model["name"]] is not None
+                ):
                     return False
 
                 # judge privileged translations only with one judge
-                if mt_obj["model"].startswith("PRIVILEGE-") and not model["support_privilege"]:
+                if mt_obj["model"].startswith("PRIVILEGE-") and (not model["support_privilege"] or sub["source_media"] is not None or sub["source_instructions"] is not None):
                     return False
 
                 # check support_audio and support_video
@@ -270,9 +273,6 @@ async def main():
             for mt_obj_i, mt_obj in enumerate(sub["translations"])
             if mt_obj_i in translations_to_mt_i.values()
         ])
-
-        # TODO: don't rerun for now
-        return any(tasks_unique)
 
         # even if we have cache turned off, we want to enforce it because in the second round
         # we should reuse previous results in all scenarios

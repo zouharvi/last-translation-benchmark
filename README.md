@@ -29,7 +29,7 @@ Each example contains the following:
 - `verification_rules`: a list rules that a translation needs to fulfill (one or more)
 - `translations`: a list of translations by human and existing models also with information if they passed the verification rules
 - `linguistics`: linguistic annotation of what causes the translation difficulty
-- `tags`: which subsets this example belongs to (`LTBv1-all` is all, and `LTBv1-eval` is text-only and intended for evaluation)
+- `tags`: which subsets this example belongs to (`LTBv1` is all, and `LTBv1-eval` is text-only and intended for evaluation)
 
 For example:
 ```json
@@ -52,7 +52,7 @@ For example:
   ], 
   "verification_rules": ["Nurse must be translated to its male version (Krankenpfleger), not Krankenschwester."],  
   "linguistics": ["Target Gap: Morph to Words", "Morphological"],
-  "tags": ["LTBv1-all", "LTBv1-eval"]
+  "tags": ["LTBv1", "LTBv1-eval"]
 }
 ```
 

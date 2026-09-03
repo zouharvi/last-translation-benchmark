@@ -133,7 +133,7 @@ for submission in submissions_all:
 
 for submission in submissions_accepted:
     tags = (
-        ["LTBv1-all"]
+        ["LTBv1"]
         + (["LTBv1-eval"] if submission["id"] in ltbv1eval_ids else [])
     )
     submission_new = {

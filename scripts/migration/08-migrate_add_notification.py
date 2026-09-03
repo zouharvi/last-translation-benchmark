@@ -67,7 +67,7 @@ async def migrate():
     return users_by_id.values()
 
 async def send_notifications(users, target_users=None):
-    # TODO: HOST_PUBLIC is not set in this script
+    # note: HOST_PUBLIC is not set in this script
     host_url = (os.getenv("HOST_PUBLIC") or "").rstrip('/')
     
     count = 0
