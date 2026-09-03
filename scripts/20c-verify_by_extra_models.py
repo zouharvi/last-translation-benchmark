@@ -19,7 +19,7 @@ from last_translation_benchmark.utils import (
 )
 
 MODELS_VERIFIERS = [
-    {"name": "Qwen 3.7 Flash", "model": "qwen/qwen3.7-flash", "support_privilege": False},
+    # {"name": "Qwen 3.7 Flash", "model": "qwen/qwen3.7-flash", "support_privilege": False},
     {"name": "Qwen 3.7 Plus", "model": "qwen/qwen3.7-plus", "support_privilege": False},
     {"name": "Gemma 4", "model": "google/gemma-4-31b-it", "support_privilege": False},
     {"name": "Gemini 3.1 Pro", "model": "google/gemini-3.1-pro-preview", "support_privilege": True},

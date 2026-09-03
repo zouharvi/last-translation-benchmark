@@ -11,6 +11,7 @@ for model in [
     "Gemma 4",
     "GPT-5.4 Mini",
     "GPT-5.6 Sol",
+    "human",
 ]:
     with open("data/v1.json", "r") as f:
         data = json.load(f)
