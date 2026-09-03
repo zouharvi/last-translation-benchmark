@@ -1330,8 +1330,8 @@ async def get_leaderboard_results(
 
     # extract language pairs from all subsets (or maybe just the filtered subset? The prompt said "The language pairs should also already be simplified...")
     # Usually dropdowns show all available pairs for the current dataset.
-    lang1s = sorted({simple_lang(s["source_lang"]) for s in v1_subs})
-    lang2s = sorted({simple_lang(s["target_lang"]) for s in v1_subs})
+    lang1s = sorted({simple_lang(s["source_lang"]) for s in v1_subs if subset in s["tags"]})
+    lang2s = sorted({simple_lang(s["target_lang"]) for s in v1_subs if subset in s["tags"]})
 
     if lang1 is not None:
         v1_subs = [

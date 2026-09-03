@@ -61,13 +61,13 @@ async function loadLeaderboard() {
             <table>
                 <thead>
                     <tr>
-                        <th class="col-name">Model Name</th>
-                        <th class="col-inst">Institution</th>
-                        <th class="col-date">Released</th>
-                        <th class="col-size">Size</th>
-                        <th class="col-type">Type</th>
-                        <th class="col-desc">Description</th>
-                        <th class="col-score">Score</th>
+                        <th class="col-name"></th>
+                        <th class="col-inst"></th>
+                        <th class="col-date"></th>
+                        <th class="col-size"></th>
+                        <th class="col-type"></th>
+                        <th class="col-desc"></th>
+                        <th class="col-score"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -103,7 +103,7 @@ function renderChart(models: any[]) {
     container.show();
 
     const w = container.width() || 800;
-    const h = container.height() || 350;
+    const h = container.height() || 400;
     const padding = { top: 40, right: 40, bottom: 60, left: 80 };
 
     const innerW = w - padding.left - padding.right;
@@ -163,7 +163,13 @@ function renderChart(models: any[]) {
     validModels.forEach((m, i) => {
         const cx = scaleX(new Date(m.model_release).getTime());
         const cy = scaleY(m.score);
-        svg += `<circle class="chart-point" data-idx="${i}" cx="${cx}" cy="${cy}" r="5" fill="black" style="cursor: pointer;" />`;
+        let color = 'black';
+        if (m.model_type === 'closed') {
+            color = '#a22';
+        } else if (m.model_type === 'open') {
+            color = '#2a2';
+        }
+        svg += `<circle class="chart-point" data-idx="${i}" cx="${cx}" cy="${cy}" r="5" fill="${color}" style="cursor: pointer;" />`;
         svg += `<text x="${cx}" y="${cy - 10}" text-anchor="middle" font-size="10" fill="black" pointer-events="none">${m.model_name || '?'}</text>`;
     });
 
