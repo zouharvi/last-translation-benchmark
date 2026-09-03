@@ -84,7 +84,7 @@ ltb_v1_micro_ids = {
     for examples in langs_to_examples.values()
     if len(examples) >= 20
     for submission in sorted(
-        examples,
+        [sub for sub in examples if sub["source_media"] is None and sub["source_instructions"] is None],
         # prioritize difficult-enough examples
         # then later select by diversity https://aclanthology.org/2025.tacl-1.80/
         key=lambda s: (translation_easiness(s["translations"]) >= 0.15, translation_similarity(s["translations"])),

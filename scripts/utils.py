@@ -1,5 +1,5 @@
 import random
-
+import json
 
 def estimate_tokens(text: str) -> int:
     import tiktoken
@@ -28,7 +28,7 @@ async def request_post_with_backoff(**kwargs):
             response._content = b'"teapot"'
             return response
         else:
-            raise Exception(f"Request failed with status {response.status_code}: {response.text}")
+            raise Exception(f"Request {json.dumps(kwargs)} failed with status {response.status_code}: {response.text}")
         delay *= 2
 
     raise Exception("Request failed after 6 retries")
