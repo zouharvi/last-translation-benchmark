@@ -133,6 +133,10 @@ async def serve_leaderboard_results():
 async def serve_favicon():
     return FileResponse(_STATIC_DIR + "/assets/favicon.svg")
 
+@app.get("/LTBv1.json")
+async def serve_ltbv1_json():
+    return FileResponse("data/v1.json", filename="LTBv1.json")
+
 
 # ---------------------------------------------------------------------------
 # Static frontend — must be mounted last

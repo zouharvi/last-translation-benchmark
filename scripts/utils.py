@@ -14,7 +14,7 @@ async def request_post_with_backoff(**kwargs):
     import asyncio
 
     import requests
-    delay = 0.5
+    delay = 0.1
     for _ in range(8):
         await asyncio.sleep(delay * random.uniform(0.5, 1.5))
         response = await asyncio.to_thread(requests.post, timeout=30, **kwargs)

@@ -55,9 +55,14 @@ async def main():
             payload = {"model": "google/gemini-3.1-pro-preview", "prompt": prompt, "cache": True}
             if sub_obj["source_media"]:
                 payload["source_media"] = sub_obj["source_media"]
+            
+            try:    
+                r = await utils.request_post_with_backoff(url=get_config("LTB_API_URL"), json=payload, cookies=COOKIES)
+                await asyncio.sleep(1)
+            except Exception as e:
+                rule_results.append(None)
+                continue
                 
-            r = await utils.request_post_with_backoff(url=get_config("LTB_API_URL"), json=payload, cookies=COOKIES)
-            await asyncio.sleep(1)
             if r.status_code == 200:
                 res_text = r.json()
                 if res_text is None:
