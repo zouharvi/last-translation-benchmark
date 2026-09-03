@@ -3,6 +3,7 @@
 import collections
 import json
 import os
+import re
 import statistics
 
 import fastchrf
@@ -98,6 +99,22 @@ def get_language_iso(lang_name: str) -> str | None:
         or lang2iso.get(lang_name.split("(")[0].split(",")[0])
     )
 
+ATTRIBUTION_COMMENT_RE = re.compile(
+    r"(?i)"  # Ignore casing
+    r"^(?:https?://\S+$|"  # Case 1: If whole comment is a URL
+    r"(?:attribute|attribution|credit|(?:text )?source)\b[^:/\n]*[:/]"  # Case 2: Attribute/Credit/Source…
+    r"|found from|from the book|quoted in|(?:image|sentence)(?: is)? taken from"  # Case 3: Other phrases
+    r")"
+)
+
+def get_attribution_from_comments(comments: list[dict]) -> str | None:
+    attribution_texts = []
+    for comment in comments:
+        text = comment.get("text", "").strip()
+        if ATTRIBUTION_COMMENT_RE.match(text):
+            attribution_texts.append(text)
+    return "\n".join(attribution_texts) if attribution_texts else None
+
 submissions_new: list[dict] = []
 subset_sizes = collections.Counter()
 
@@ -111,6 +128,7 @@ for submission in submissions:
         + (["LTBv1-text"] if submission["source_media"] is None and submission["source_instructions"] is None else [])
         + (["LTBv1-micro"] if submission["id"] in ltb_v1_micro_ids else [])
     )
+    attribution = get_attribution_from_comments(submission["comments"])
     submission_new = {
         "id": submission["id"],
         "source_text": submission["source_text"],
@@ -120,6 +138,7 @@ for submission in submissions:
         "target_lang_iso": get_language_iso(submission["target_lang"]),
         "source_instructions": submission["source_instructions"],
         "source_media": submission["source_media"],
+        **({"attribution": attribution} if attribution else {}),
         "translations": [
             {
                 "model": mt_obj["model"],
