@@ -9,10 +9,11 @@ os.environ["HOST_PUBLIC"] = "https://last-translation-benchmark.vilda.net"
 SUBJECT = "Last Translation Benchmark - Paper and Data Release!"
 BODY_TEMPLATE = """Dear {name},
 
-We are thrilled to announce that the Last Translation Benchmark (LTB) paper and dataset have now been officially released!
-We couldn't have built this benchmark without our amazing contributors. You can read the paper here: {paper_link}
+We are thrilled to announce that the Last Translation Benchmark (LTB) paper and dataset have now been released!
+We couldn't have built this benchmark without our amazing contributors. You can read the paper here: https://arxiv.org/abs/2609.04173
 
-If you did not make it to the author list, don't worry. We'll continue accepting submisions for future re-releases.
+If you did not make it to the author list, don't worry. We'll continue accepting submissions for future re-releases.
+We'll also let you know once we submit the paper to a peer-reviewed venue.
 
 Thank you for your support and contributions,
 The LTB Team
@@ -53,7 +54,7 @@ async def main():
                 break
             
         if ans in ('y', 'a'):
-            body = BODY_TEMPLATE.format(name=name, paper_link="TODO TODO")
+            body = BODY_TEMPLATE.format(name=name)
             # send_email automatically adds to the sent_emails database
             success = await send_email(email, SUBJECT, body, user_obj=user)
             if success:
