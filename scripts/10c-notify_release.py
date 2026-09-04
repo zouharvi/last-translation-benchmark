@@ -6,14 +6,12 @@ from last_translation_benchmark.utils import send_email
 
 os.environ["HOST_PUBLIC"] = "https://last-translation-benchmark.vilda.net"
 
-SUBJECT = "Last Translation Benchmark - Paper and Data Release!"
+SUBJECT = "Last Translation Benchmark - Paper and Data Release"
 BODY_TEMPLATE = """Dear {name},
 
-We are thrilled to announce that the Last Translation Benchmark (LTB) paper and dataset have now been released!
-We couldn't have built this benchmark without our amazing contributors. You can read the paper here: https://arxiv.org/abs/2609.04173
+We are thrilled to announce that the Last Translation Benchmark (LTB) paper and dataset have now been released! We couldn't have built this benchmark without our amazing contributors. You can read the paper here: https://arxiv.org/pdf/2609.04173
 
-If you did not make it to the author list, don't worry. We'll continue accepting submissions for future re-releases.
-We'll also let you know once we submit the paper to a peer-reviewed venue.
+If you did not make it to the author list, don't worry. We'll continue accepting submissions and updating the paper. We'll also let you know once we submit the paper to a peer-reviewed venue.
 
 Thank you for your support and contributions,
 The LTB Team
@@ -29,7 +27,8 @@ async def has_sent_subject(email: str, subject: str) -> bool:
 async def main():
     print("Fetching users...")
     users = await get_users()
-        
+
+    ans = None
     for user in users:
         email = user.get("email")
         name = user.get("name")
@@ -48,8 +47,8 @@ async def main():
             print(f"Email already sent to {email}. Skipping.")
             continue
 
-        while True:
-            ans = input(f"\nSend to {name} <{email}>? (y/n/a for all): ").strip().lower()
+        while True and ans != 'a':
+            ans = input(f"\nSend to {name} <{email}>? (y/n/a for all):  ").strip().lower()
             if ans in ('y', 'n', 'a'):
                 break
             
@@ -63,6 +62,7 @@ async def main():
                 print(f"Failed to send email to {email}.")
         else:
             print("Skipped.")
+
 
         # Sleep for 5 seconds between emails to avoid overwhelming the email server
         await asyncio.sleep(5)
