@@ -112,8 +112,8 @@ function renderChart(models: any[]) {
     const actualMinX = Math.min(...validModels.map(m => new Date(m.model_release).getTime()));
     const maxX = Math.max(...validModels.map(m => new Date(m.model_release).getTime()));
     
-    // Add 6 months gap on the left (approx 182.5 days)
-    const minX = actualMinX - (182.5 * 24 * 60 * 60 * 1000);
+    // Add 1 month gap on the left
+    const minX = actualMinX - (30 * 24 * 60 * 60 * 1000);
     
     const minY = 0;
     const maxY = 1;
