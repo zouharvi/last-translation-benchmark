@@ -49,8 +49,8 @@ async def main():
         reviewed_subs = [sub for sub in submissions if sub["reviewed_by"] == username]
 
         # FILTER: has reviewed in the past
-        if len(reviewed_subs) < 1:
-            continue
+        # if len(reviewed_subs) < 1:
+        #     continue
         
         last_review_date = datetime.min
         for sub in reviewed_subs:
@@ -60,7 +60,7 @@ async def main():
                     if dt > last_review_date:
                         last_review_date = dt
 
-        if last_review_date != datetime.min and last_review_date < two_weeks_ago:
+        if last_review_date < two_weeks_ago:
             print(f"{user['name']:<30} | Accepted: {len(accepted_subs):<3} | Reviewed: {len(reviewed_subs):<3} | Potential: {potential_subs:<3}")
 
 if __name__ == "__main__":
