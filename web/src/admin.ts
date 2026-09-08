@@ -297,11 +297,16 @@ function renderLeaderboardTable(entries: LeaderboardEntry[]): void {
         if (e.status === 'pending') {
             actions = `<button class="btn-underlined lb-score" data-uid="${e.id}">Score</button>`;
         } else if (e.status === 'scored') {
-            if (e.visibility === 'hidden') {
-                actions = `<button class="btn-underlined lb-show" data-uid="${e.id}">Publish</button>`;
-            } else {
-                actions = `<button class="btn-underlined lb-hide" data-uid="${e.id}">Unpublish</button>`;
+            let nextVis = 'visible';
+            let label = 'Make Visible';
+            if (e.visibility === 'visible') {
+                nextVis = 'highlight';
+                label = 'Make Highlight';
+            } else if (e.visibility === 'highlight') {
+                nextVis = 'hidden';
+                label = 'Make Hidden';
             }
+            actions = `<button class="btn-underlined lb-visibility" data-uid="${e.id}" data-next="${nextVis}">${label}</button>`;
         }
 
         let editBtn = `<button class="btn-underlined lb-edit" data-uid="${e.id}">Edit</button>`;
@@ -401,26 +406,15 @@ function renderLeaderboardTable(entries: LeaderboardEntry[]): void {
         } catch (e) { alert(e); }
     });
 
-    $('.lb-show').on('click', async function () {
+    $('.lb-visibility').on('click', async function () {
         const uid = $(this).data('uid');
+        const nextVis = $(this).data('next');
         const entry = allLeaderboard.find(x => x.id === uid);
         if (!entry) return;
         try {
-            await updateLeaderboard(uid, entry.status, 'visible');
-            entry.visibility = 'visible';
-            showToast('Leaderboard entry is now visible');
-            renderLeaderboardTable(allLeaderboard);
-        } catch (e) { alert(e); }
-    });
-
-    $('.lb-hide').on('click', async function () {
-        const uid = $(this).data('uid');
-        const entry = allLeaderboard.find(x => x.id === uid);
-        if (!entry) return;
-        try {
-            await updateLeaderboard(uid, entry.status, 'hidden');
-            entry.visibility = 'hidden';
-            showToast('Leaderboard entry is now hidden');
+            await updateLeaderboard(uid, entry.status, nextVis);
+            entry.visibility = nextVis;
+            showToast(`Leaderboard entry is now ${nextVis}`);
             renderLeaderboardTable(allLeaderboard);
         } catch (e) { alert(e); }
     });

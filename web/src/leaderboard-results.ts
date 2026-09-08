@@ -91,6 +91,7 @@ function renderChart(models: any[]) {
     // Filter models that have valid dates
     const validModels = models.filter(m => {
         if (!m.model_release) return false;
+        if (m.visibility !== 'highlight') return false;
         const ts = new Date(m.model_release).getTime();
         return !isNaN(ts);
     });

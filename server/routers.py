@@ -1350,7 +1350,8 @@ async def get_leaderboard_results(
         if subset == "all" or subset in s.get("tags", [])
     ]
 
-    participants = await get_leaderboard_entries(status="scored", visibility="visible")
+    participants_all = await get_leaderboard_entries(status="scored")
+    participants = [p for p in participants_all if p.get("visibility") in ("visible", "highlight")]
 
     models = []
     for participant in participants:
@@ -1377,6 +1378,7 @@ async def get_leaderboard_results(
             "model_description": participant["info"].get("model_description"),
             "institution": participant["info"].get("institution"),
             "score": statistics.mean(scores) if scores else 0.0,
+            "visibility": participant["visibility"],
         }
         if "display_ha" in participant["info"]:
             model_out["display_ha"] = participant["info"]["display_ha"]
@@ -1396,7 +1398,7 @@ async def admin_update_leaderboard(uid: int, req: LeaderboardUpdateReq, user: Cu
     require_role(user, "admin")
     if req.status not in ("pending", "scoring", "scored"):
         raise HTTPException(status_code=400, detail="Invalid status")
-    if req.visibility not in ("hidden", "visible"):
+    if req.visibility not in ("hidden", "visible", "highlight"):
         raise HTTPException(status_code=400, detail="Invalid visibility")
     current_entry = await get_leaderboard_entry(uid)
     if not current_entry:
