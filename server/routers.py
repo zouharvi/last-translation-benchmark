@@ -1378,10 +1378,10 @@ async def get_leaderboard_results(
             "institution": participant["info"].get("institution"),
             "score": statistics.mean(scores) if scores else 0.0,
         }
-        if "display_dx" in participant["info"]:
-            model_out["display_dx"] = participant["info"]["display_dx"]
-        if "display_dy" in participant["info"]:
-            model_out["display_dy"] = participant["info"]["display_dy"]
+        if "display_ha" in participant["info"]:
+            model_out["display_ha"] = participant["info"]["display_ha"]
+        if "display_va" in participant["info"]:
+            model_out["display_va"] = participant["info"]["display_va"]
         models.append(model_out)
         
     models.sort(key=lambda x: x["score"], reverse=True)

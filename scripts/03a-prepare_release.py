@@ -191,5 +191,6 @@ print(f"LTBv1-eval | human:          {statistics.mean(human_passrate):.2%}")
 
 """
 scp data/v1.json ltb:/home/zouhar/last-translation-benchmark/data/
+scp ltb:/home/zouhar/last-translation-benchmark/data/v1.json data/
 hf upload zouhar/last-translation-benchmark data/v1.json data/v1.json --repo-type dataset
 """

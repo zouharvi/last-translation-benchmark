@@ -103,17 +103,19 @@ function renderChart(models: any[]) {
     container.show();
 
     const w = container.width() || 800;
-    const h = container.height() || 400;
+    const h = container.height() || 500;
     const padding = { top: 40, right: 40, bottom: 60, left: 80 };
 
     const innerW = w - padding.left - padding.right;
     const innerH = h - padding.top - padding.bottom;
 
     const actualMinX = Math.min(...validModels.map(m => new Date(m.model_release).getTime()));
-    const maxX = Math.max(...validModels.map(m => new Date(m.model_release).getTime()));
+    const actualMaxX = Math.max(...validModels.map(m => new Date(m.model_release).getTime()));
     
     // Add 1 month gap on the left
     const minX = actualMinX - (30 * 24 * 60 * 60 * 1000);
+    // Add 2 months gap on the right
+    const maxX = actualMaxX + (60 * 24 * 60 * 60 * 1000);
     
     const minY = 0;
     const maxY = 1;
@@ -126,10 +128,11 @@ function renderChart(models: any[]) {
     
     const scaleY = (val: number) => {
         // SVG y-axis is inverted (0 at top)
-        return padding.top + innerH - ((val - minY) / (maxY - minY)) * innerH;
+        // add tiny offset for better readability
+        return padding.top + innerH - ((val + 0.01 - minY) / (maxY - minY)) * innerH;
     };
 
-    let svg = `<svg width="100%" height="100%" viewBox="0 0 ${w} ${h}">`;
+    let svg = `<svg width="100%" height="100%" style="background: #ddd;" viewBox="0 0 ${w} ${h}">`;
     
     // Axes
     svg += `<line x1="${padding.left}" y1="${padding.top + innerH}" x2="${padding.left + innerW}" y2="${padding.top + innerH}" stroke="black" stroke-width="2"/>`; // Bottom
@@ -159,24 +162,66 @@ function renderChart(models: any[]) {
         }
     }
 
+    const parseDisplayProp = (val: string, defaultAlign: string) => {
+        if (!val) return { offset: 0, align: defaultAlign };
+        let offset = 0;
+        let align = defaultAlign;
+        const parts = val.split(',');
+        for (const p of parts) {
+            const t = p.trim();
+            if (t.endsWith('px')) {
+                offset = parseInt(t.substring(0, t.length - 2), 10) || 0;
+            } else if (t) {
+                align = t;
+            }
+        }
+        return { offset, align };
+    };
+
+    let textSvg = '';
+    let circleSvg = '';
+
     // Points
     validModels.forEach((m, i) => {
         const cx = scaleX(new Date(m.model_release).getTime());
         const cy = scaleY(m.score);
         let color = 'black';
         if (m.model_type === 'closed') {
-            color = '#a22';
+            color = '#a33';
         } else if (m.model_type === 'open') {
             color = '#2a2';
         }
-        svg += `<circle class="chart-point" data-idx="${i}" cx="${cx}" cy="${cy}" r="5" fill="${color}" style="cursor: pointer;" />`;
+        circleSvg += `<circle class="chart-point" data-idx="${i}" cx="${cx}" cy="${cy}" r="5" fill="${color}" style="cursor: pointer;" />`;
         
-        const labelX = cx + (m.display_dx || 0);
-        const labelY = cy + (m.display_dy !== undefined ? m.display_dy : -10);
-        svg += `<text x="${labelX}" y="${labelY}" text-anchor="middle" font-size="10" fill="black" pointer-events="none">${m.model_name || '?'}</text>`;
+        const haParsed = parseDisplayProp(m.display_ha, 'center');
+        const vaParsed = parseDisplayProp(m.display_va, 'top');
+        
+        let ha = haParsed.align;
+        let va = vaParsed.align;
+        
+        let textAnchor = 'middle';
+        let labelX = cx;
+        if (ha === 'left') {
+            textAnchor = 'end';
+            labelX = cx - 8;
+        } else if (ha === 'right') {
+            textAnchor = 'start';
+            labelX = cx + 8;
+        }
+        labelX += haParsed.offset;
+
+        let labelY = cy - 10;
+        if (va === 'bottom') {
+            labelY = cy + 15;
+        } else if (va === 'horizon') {
+            labelY = cy + 4;
+        }
+        labelY += vaParsed.offset;
+
+        textSvg += `<text x="${labelX}" y="${labelY}" text-anchor="${textAnchor}" font-size="10" fill="black" pointer-events="none">${m.model_name || '?'}</text>`;
     });
 
-    svg += `</svg>`;
+    svg += textSvg + circleSvg + `</svg>`;
     container.html(svg);
 
     // Hover logic
