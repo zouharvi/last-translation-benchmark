@@ -57,7 +57,7 @@ async def main():
                 payload["source_media"] = sub_obj["source_media"]
             
             try:    
-                r = await utils.request_post_with_backoff(url=get_config("LTB_API_URL"), json=payload, cookies=COOKIES)
+                r = await utils.request_post_with_backoff(delay=0.1, url=get_config("LTB_API_URL"), json=payload, cookies=COOKIES)
                 await asyncio.sleep(1)
             except Exception as e:
                 rule_results.append(None)

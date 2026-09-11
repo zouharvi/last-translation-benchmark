@@ -10,11 +10,10 @@ def estimate_tokens(text: str) -> int:
     encoder = tiktoken.get_encoding("cl100k_base")
     return len(encoder.encode(text))
 
-async def request_post_with_backoff(**kwargs):
+async def request_post_with_backoff(delay=0.1, **kwargs):
     import asyncio
 
     import requests
-    delay = 0.1
     for _ in range(8):
         await asyncio.sleep(delay * random.uniform(0.5, 1.5))
         response = await asyncio.to_thread(requests.post, timeout=30, **kwargs)
