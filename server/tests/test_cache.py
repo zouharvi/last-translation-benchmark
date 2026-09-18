@@ -106,3 +106,24 @@ def test_cache_storage_failure_falls_back_to_computation(monkeypatch):
         assert calls == 1
 
     asyncio.run(scenario())
+
+
+def test_cache_without_ttl_remains_persistent(tmp_path, monkeypatch):
+    monkeypatch.setattr(db, "DB_CACHE_PATH", str(tmp_path / "cache.sqlite"))
+    clock = [1000.0]
+    monkeypatch.setattr(db.time, "time", lambda: clock[0])
+    calls = 0
+
+    @db.sqlite_cache(namespace="test_legacy")
+    async def calculate() -> int:
+        nonlocal calls
+        calls += 1
+        return calls
+
+    async def scenario() -> None:
+        assert await calculate() == 1
+        clock[0] = 100000.0
+        assert await calculate() == 1
+        assert calls == 1
+
+    asyncio.run(scenario())
