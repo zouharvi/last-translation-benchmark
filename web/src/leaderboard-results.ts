@@ -191,15 +191,19 @@ function renderChart(models: any[]) {
     const mainW = innerW + padding.right;
     const innerH = h - padding.top - padding.bottom;
 
-    hint.prop('hidden', chartW <= viewportW);
+    hint.text(chartW > viewportW
+        ? 'Hover or focus a point to see model details. Scroll horizontally to inspect the full timeline.'
+        : 'Hover or focus a point to see model details.');
+    hint.prop('hidden', false);
 
     const minY = 0;
     const maxY = 1;
+    const xEdgePadding = 28;
 
     // Simple linear scale functions, preventing division by zero if all values are identical.
     const scaleX = (val: number) => {
         if (maxX === minX) return innerW / 2;
-        return ((val - minX) / (maxX - minX)) * innerW;
+        return xEdgePadding + ((val - minX) / (maxX - minX)) * (innerW - xEdgePadding * 2);
     };
     
     const scaleY = (val: number) => {
@@ -243,38 +247,14 @@ function renderChart(models: any[]) {
         svg += `<text x="${tx}" y="${padding.top + innerH + 20}" text-anchor="middle" font-size="12" fill="black">${tickLabel}</text>`;
     }
 
-    const parseDisplayProp = (val: string, defaultAlign: string) => {
-        if (!val) return { offset: 0, align: defaultAlign };
-        let offset = 0;
-        let align = defaultAlign;
-        const parts = val.split(',');
-        for (const p of parts) {
-            const t = p.trim();
-            if (t.endsWith('px')) {
-                offset = parseInt(t.substring(0, t.length - 2), 10) || 0;
-            } else if (t) {
-                align = t;
-            }
-        }
-        return { offset, align };
-    };
-
-    const labelBoxes: Array<{ left: number; right: number; top: number; bottom: number }> = [];
     const pointPositions = validModels.map(m => ({
         cx: scaleX(new Date(m.model_release).getTime()),
         cy: scaleY(m.score)
     }));
-    const pointBoxes = pointPositions.map(({ cx, cy }) => ({
-        left: cx - 7,
-        right: cx + 7,
-        top: cy - 7,
-        bottom: cy + 7
-    }));
-    let textSvg = '';
-    let leaderSvg = '';
     let circleSvg = '';
 
-    // Place each label near its point, trying alternate positions until it no longer overlaps a label.
+    // Keep the plot readable at a glance. Model names are available through the
+    // focused point tooltip and the detailed table below the chart.
     validModels.forEach((m, i) => {
         const { cx, cy } = pointPositions[i];
         let color = 'black';
@@ -285,55 +265,13 @@ function renderChart(models: any[]) {
         } else if (m.model_type === 'open-source') {
             color = '#2a2';
         }
-        circleSvg += `<circle class="chart-point" data-idx="${i}" cx="${cx}" cy="${cy}" r="5" fill="${color}" style="cursor: pointer;" />`;
-        
-        const label = String(m.model_name || '?');
-        const haParsed = parseDisplayProp(m.display_ha, 'center');
-        const vaParsed = parseDisplayProp(m.display_va, 'top');
-        const textAnchor = haParsed.align === 'left' ? 'end' : (haParsed.align === 'right' ? 'start' : 'middle');
-        const baseX = cx + (haParsed.align === 'left' ? -8 : (haParsed.align === 'right' ? 8 : 0)) + haParsed.offset;
-        const baseY = cy + (vaParsed.align === 'bottom' ? 15 : (vaParsed.align === 'horizon' ? 4 : -10)) + vaParsed.offset;
-        const labelWidth = Math.min(220, Math.max(30, label.length * 5.8));
-        const labelHeight = 14;
-
-        const makeBox = (x: number, y: number, anchor: string) => {
-            const left = anchor === 'start' ? x : (anchor === 'end' ? x - labelWidth : x - labelWidth / 2);
-            return { left, right: left + labelWidth, top: y - labelHeight + 2, bottom: y + 2 };
-        };
-        const overlaps = (box: { left: number; right: number; top: number; bottom: number }) =>
-            labelBoxes.some(existing => box.left < existing.right + 3 && box.right + 3 > existing.left && box.top < existing.bottom + 2 && box.bottom + 2 > existing.top)
-            || pointBoxes.some(point => box.left < point.right + 3 && box.right + 3 > point.left && box.top < point.bottom + 3 && box.bottom + 3 > point.top);
-        const candidates: Array<{ x: number; y: number; anchor: string }> = [{ x: baseX, y: baseY, anchor: textAnchor }];
-        for (let distance = 1; distance <= 8; distance++) {
-            const offset = distance * (labelHeight + 2);
-            candidates.push(
-                { x: baseX, y: baseY - offset, anchor: textAnchor },
-                { x: baseX, y: baseY + offset, anchor: textAnchor },
-                { x: cx + 10 + offset / 2, y: cy + 4, anchor: 'start' },
-                { x: cx - 10 - offset / 2, y: cy + 4, anchor: 'end' },
-            );
-        }
-
-        let chosen = candidates[0];
-        let chosenBox = makeBox(chosen.x, chosen.y, chosen.anchor);
-        for (const candidate of candidates) {
-            const box = makeBox(candidate.x, candidate.y, candidate.anchor);
-            if (box.left >= -4 && box.right <= innerW + 4 && box.top >= padding.top - 4 && box.bottom <= padding.top + innerH + 4 && !overlaps(box)) {
-                chosen = candidate;
-                chosenBox = box;
-                break;
-            }
-        }
-        labelBoxes.push(chosenBox);
-
-        if (Math.abs(chosen.x - cx) > 14 || Math.abs(chosen.y - cy) > 18) {
-            const lineX = chosen.anchor === 'start' ? chosenBox.left : (chosen.anchor === 'end' ? chosenBox.right : chosen.x);
-            leaderSvg += `<line x1="${cx}" y1="${cy}" x2="${lineX}" y2="${chosen.y - 3}" stroke="#64748b" stroke-width="0.75"/>`;
-        }
-        textSvg += `<text x="${chosen.x}" y="${chosen.y}" text-anchor="${chosen.anchor}" font-size="10" fill="black" pointer-events="none" style="paint-order: stroke; stroke: white; stroke-width: 3px;">${escapeMarkup(label)}</text>`;
+        const label = String(m.model_name || 'Unknown model');
+        const score = `${(m.score * 100).toFixed(2)}%`;
+        const release = String(m.model_release || 'Unknown release');
+        circleSvg += `<circle class="chart-point" data-idx="${i}" cx="${cx}" cy="${cy}" r="6" fill="${color}" tabindex="0" role="img" aria-label="${escapeMarkup(`${label}, ${score}, released ${release}`)}" style="cursor: pointer;"><title>${escapeMarkup(label)}</title></circle>`;
     });
 
-    svg += leaderSvg + circleSvg + textSvg + `</svg>`;
+    svg += circleSvg + `</svg>`;
     axisSvg += `</svg>`;
     container.html(`
         <div class="leaderboard-chart-axis" style="width: ${padding.left}px;">${axisSvg}</div>
@@ -342,10 +280,8 @@ function renderChart(models: any[]) {
 
     // Hover logic
     const tooltip = $('#leaderboard-tooltip');
-    
-    container.find('.chart-point').on('mouseenter', function(e) {
-        const idx = parseInt($(this).attr('data-idx') || '0');
-        const m = validModels[idx];
+
+    const showTooltip = (m: any, left: number, top: number) => {
         const desc = m.model_description || 'No description provided.';
         const size = m.model_size || 'Unknown size';
         const typeStr = m.model_type ? (m.model_type === 'open-source' ? 'Open Source' : (m.model_type === 'open-weight' ? 'Open Weight' : (m.model_type === 'closed' ? 'Closed' : m.model_type))) : 'Unknown type';
@@ -360,20 +296,27 @@ function renderChart(models: any[]) {
             Released: ${escapeMarkup(date)}<br>
             Score: ${(m.score * 100).toFixed(2)}%
         `);
-        
         tooltip.show();
-        
         tooltip.css({
-            left: e.clientX + 'px',
-            top: (e.clientY + 20) + 'px'
+            left: `${left}px`,
+            top: `${top + 20}px`
         });
+    };
+
+    container.find('.chart-point').on('mouseenter', function(e) {
+        const idx = parseInt($(this).attr('data-idx') || '0');
+        showTooltip(validModels[idx], e.clientX, e.clientY);
     }).on('mousemove', function(e) {
         tooltip.css({
             left: e.clientX + 'px',
             top: (e.clientY + 20) + 'px'
         });
-    }).on('mouseleave', function() {
+    }).on('mouseleave blur', function() {
         tooltip.hide();
+    }).on('focus', function() {
+        const point = this.getBoundingClientRect();
+        const idx = parseInt($(this).attr('data-idx') || '0');
+        showTooltip(validModels[idx], point.right, point.top);
     });
 }
 
