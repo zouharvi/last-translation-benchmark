@@ -19,6 +19,9 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Query, Response
 
 from .auth import get_current_user, require_role
 from .db import (
+    PUBLIC_CACHE_TTL_SECONDS,
+    PUBLIC_CONTRIBUTORS_CACHE,
+    PUBLIC_LEADERBOARD_CACHE,
     create_leaderboard_entry,
     delete_leaderboard_entry,
     delete_submission,
@@ -32,6 +35,7 @@ from .db import (
     get_users,
     save_submission,
     save_user,
+    sqlite_cache,
     update_leaderboard_entry,
     update_leaderboard_info,
 )
@@ -412,8 +416,8 @@ async def admin_overview(user: CurrentUser):
     }
 
 
-@router.get("/api/contributors")
-async def get_contributors():
+@sqlite_cache(ttl_seconds=PUBLIC_CACHE_TTL_SECONDS, namespace=PUBLIC_CONTRIBUTORS_CACHE)
+async def get_public_contributors():
     users = await get_users()
     submissions = await db_get_submissions()
     submissions = [s for s in submissions if s.get("status") == "accept"]
@@ -494,6 +498,11 @@ async def get_contributors():
         "total_authors": total_authors,
         "languages": formatted_languages,
     }
+
+
+@router.get("/api/contributors")
+async def get_contributors():
+    return await get_public_contributors()
 
 
 @router.delete("/api/admin/users/{uid}", status_code=200)
@@ -1317,8 +1326,8 @@ async def get_leaderboard(user: CurrentUser, status: str | None = Query(None)):
     return entries
 
 
-@router.get("/api/leaderboard/results")
-async def get_leaderboard_results(
+@sqlite_cache(ttl_seconds=PUBLIC_CACHE_TTL_SECONDS, namespace=PUBLIC_LEADERBOARD_CACHE)
+async def get_public_leaderboard_results(
     mode: str,
     subset: str,
     lang1: str | None = None,
@@ -1394,6 +1403,16 @@ async def get_leaderboard_results(
         "lang1s": lang1s,
         "lang2s": lang2s
     }
+
+
+@router.get("/api/leaderboard/results")
+async def get_leaderboard_results(
+    mode: str,
+    subset: str,
+    lang1: str | None = None,
+    lang2: str | None = None,
+):
+    return await get_public_leaderboard_results(mode, subset, lang1, lang2)
 
 @router.post("/api/admin/leaderboard/{uid}")
 async def admin_update_leaderboard(uid: int, req: LeaderboardUpdateReq, user: CurrentUser):

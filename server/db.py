@@ -1,7 +1,9 @@
+import asyncio
 import hashlib
 import json
 import os
 import secrets
+import time
 from functools import wraps
 
 import aiosqlite
@@ -24,6 +26,10 @@ def _open_cache_db():
 
 
 _TABLES = {"users", "submissions", "leaderboard"}
+PUBLIC_CACHE_TTL_SECONDS = 10 * 60
+CACHE_EVICTION_INTERVAL_SECONDS = 60
+PUBLIC_CONTRIBUTORS_CACHE = "public_contributors"
+PUBLIC_LEADERBOARD_CACHE = "public_leaderboard_results"
 
 
 
@@ -57,12 +63,14 @@ async def save_user(user: dict) -> None:
             (user["id"], json.dumps(user)),
         )
         await db.commit()
+    await invalidate_cache(PUBLIC_CONTRIBUTORS_CACHE)
 
 
 async def delete_user(uid: int) -> None:
     async with _open_db() as db:
         await db.execute("DELETE FROM users WHERE id = ?", (uid,))
         await db.commit()
+    await invalidate_cache(PUBLIC_CONTRIBUTORS_CACHE)
 
 
 async def create_user(user: dict) -> int:
@@ -81,6 +89,7 @@ async def create_user(user: dict) -> int:
             (json.dumps(user), new_id),
         )
         await db.commit()
+        await invalidate_cache(PUBLIC_CONTRIBUTORS_CACHE)
         return new_id
 
 
@@ -114,12 +123,14 @@ async def save_submission(submission: dict) -> None:
             (submission["id"], json.dumps(submission)),
         )
         await db.commit()
+    await invalidate_cache(PUBLIC_CONTRIBUTORS_CACHE)
 
 
 async def delete_submission(sid: int) -> None:
     async with _open_db() as db:
         await db.execute("DELETE FROM submissions WHERE id = ?", (sid,))
         await db.commit()
+    await invalidate_cache(PUBLIC_CONTRIBUTORS_CACHE)
 
 
 
@@ -139,6 +150,7 @@ async def create_submission(submission: dict) -> int:
             (json.dumps(submission), new_id),
         )
         await db.commit()
+        await invalidate_cache(PUBLIC_CONTRIBUTORS_CACHE)
         return new_id
 
 
@@ -172,6 +184,7 @@ async def create_leaderboard_entry(submissions: list, info: dict) -> int:
         new_id = cur.lastrowid
         await db.commit()
         assert new_id is not None, "Failed to save the leaderboard entry."
+        await invalidate_cache(PUBLIC_LEADERBOARD_CACHE)
         return new_id
 
 
@@ -218,11 +231,13 @@ async def update_leaderboard_entry(uid: int, status: str, visibility: str) -> No
             (status, visibility, uid)
         )
         await db.commit()
+    await invalidate_cache(PUBLIC_LEADERBOARD_CACHE)
 
 async def delete_leaderboard_entry(uid: int) -> None:
     async with _open_db() as db:
         await db.execute("DELETE FROM leaderboard WHERE id = ?", (uid,))
         await db.commit()
+    await invalidate_cache(PUBLIC_LEADERBOARD_CACHE)
 
 async def update_leaderboard_info(uid: int, info: dict) -> None:
     async with _open_db() as db:
@@ -231,6 +246,7 @@ async def update_leaderboard_info(uid: int, info: dict) -> None:
             (json.dumps(info), uid)
         )
         await db.commit()
+    await invalidate_cache(PUBLIC_LEADERBOARD_CACHE)
 
 
 # --- Init ---
@@ -239,9 +255,7 @@ async def init_db() -> None:
     async with _open_cache_db() as cache_db:
         await cache_db.execute("PRAGMA journal_mode=WAL;")
         await cache_db.execute("PRAGMA busy_timeout=15000;")
-        await cache_db.execute(
-            "CREATE TABLE IF NOT EXISTS api_cache (query_hash TEXT PRIMARY KEY, response_text TEXT NOT NULL)"
-        )
+        await _ensure_cache_schema(cache_db)
         await cache_db.commit()
 
     async with _open_db() as db:
@@ -300,12 +314,71 @@ async def init_db() -> None:
             await db.commit()
 
 
-def sqlite_cache(discard_none: bool = False):
+async def _ensure_cache_schema(cache_db) -> None:
+    await cache_db.execute(
+        "CREATE TABLE IF NOT EXISTS api_cache ("
+        "query_hash TEXT PRIMARY KEY, response_text TEXT NOT NULL, "
+        "expires_at REAL NOT NULL DEFAULT 0, namespace TEXT NOT NULL DEFAULT ''"
+        ")"
+    )
+    async with cache_db.execute("PRAGMA table_info(api_cache)") as cur:
+        columns = {row[1] for row in await cur.fetchall()}
+    if "expires_at" not in columns:
+        await cache_db.execute(
+            "ALTER TABLE api_cache ADD COLUMN expires_at REAL NOT NULL DEFAULT 0"
+        )
+    if "namespace" not in columns:
+        await cache_db.execute(
+            "ALTER TABLE api_cache ADD COLUMN namespace TEXT NOT NULL DEFAULT ''"
+        )
+
+
+async def evict_expired_cache() -> int:
+    async with _open_cache_db() as db:
+        await _ensure_cache_schema(db)
+        cursor = await db.execute(
+            "DELETE FROM api_cache WHERE expires_at > 0 AND expires_at <= ?",
+            (time.time(),),
+        )
+        await db.commit()
+        return cursor.rowcount
+
+
+async def invalidate_cache(*namespaces: str) -> None:
+    if not namespaces:
+        return
+    placeholders = ", ".join("?" for _ in namespaces)
+    try:
+        async with _open_cache_db() as db:
+            await _ensure_cache_schema(db)
+            await db.execute(
+                f"DELETE FROM api_cache WHERE namespace IN ({placeholders})",
+                namespaces,
+            )
+            await db.commit()
+    except (OSError, aiosqlite.Error):
+        pass
+
+
+async def schedule_cache_eviction() -> None:
+    while True:
+        try:
+            await evict_expired_cache()
+            await asyncio.sleep(CACHE_EVICTION_INTERVAL_SECONDS)
+        except asyncio.CancelledError:
+            raise
+        except (OSError, RuntimeError, aiosqlite.Error):
+            await asyncio.sleep(CACHE_EVICTION_INTERVAL_SECONDS)
+
+
+def sqlite_cache(discard_none: bool = False, ttl_seconds: float | None = None, namespace: str | None = None):
     """
     A decorator that caches the output of an async function in the SQLite database.
     It expects the function to be async.
     """
     def decorator(func):
+        cache_namespace = namespace or func.__name__
+
         @wraps(func)
         async def wrapper(*args, **kwargs):
             cache = kwargs.get('cache', True)
@@ -322,16 +395,28 @@ def sqlite_cache(discard_none: bool = False):
             query_hash = hashlib.sha256(payload_str.encode('utf-8')).hexdigest()
             
             if cache:
-                async with _open_cache_db() as db:
-                    async with db.execute(
-                        "SELECT response_text FROM api_cache WHERE query_hash = ?", 
-                        (query_hash,)
-                    ) as cur:
-                        cached_result = await cur.fetchone()
-                    
-                    if cached_result:
-                        # Cache hit
-                        return json.loads(cached_result[0])
+                try:
+                    async with _open_cache_db() as db:
+                        await _ensure_cache_schema(db)
+                        async with db.execute(
+                            "SELECT response_text, expires_at FROM api_cache WHERE query_hash = ?",
+                            (query_hash,)
+                        ) as cur:
+                            cached_result = await cur.fetchone()
+
+                        is_fresh = cached_result and (
+                            ttl_seconds is None or cached_result[1] > time.time()
+                        )
+                        if is_fresh:
+                            # Cache hit
+                            return json.loads(cached_result[0])
+                        if cached_result:
+                            await db.execute(
+                                "DELETE FROM api_cache WHERE query_hash = ?", (query_hash,)
+                            )
+                            await db.commit()
+                except (OSError, aiosqlite.Error, json.JSONDecodeError):
+                    pass
             
             # Cache miss or cache override: call the actual async function
             actual_response = await func(*args, **kwargs)
@@ -339,13 +424,23 @@ def sqlite_cache(discard_none: bool = False):
             if discard_none and actual_response is None:
                 return actual_response
 
-            async with _open_cache_db() as db:
-                # Use INSERT OR REPLACE in case multiple identical queries run concurrently
-                await db.execute(
-                    "INSERT OR REPLACE INTO api_cache (query_hash, response_text) VALUES (?, ?)", 
-                    (query_hash, json.dumps(actual_response))
-                )
-                await db.commit()
+            try:
+                async with _open_cache_db() as db:
+                    await _ensure_cache_schema(db)
+                    # Use INSERT OR REPLACE in case multiple identical queries run concurrently
+                    await db.execute(
+                        "INSERT OR REPLACE INTO api_cache "
+                        "(query_hash, response_text, expires_at, namespace) VALUES (?, ?, ?, ?)",
+                        (
+                            query_hash,
+                            json.dumps(actual_response),
+                            time.time() + ttl_seconds if ttl_seconds is not None else 0,
+                            cache_namespace,
+                        )
+                    )
+                    await db.commit()
+            except (OSError, aiosqlite.Error):
+                pass
                 
             return actual_response
             

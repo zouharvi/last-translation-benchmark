@@ -69,6 +69,22 @@ export interface ContributorsData {
     languages: [string, number][];
 }
 
+export interface LeaderboardModel {
+    model_name: string | null;
+    model_size: string | null;
+    model_type: string | null;
+    institution: string | null;
+    model_release: string | null;
+    model_description: string | null;
+    score: number;
+}
+
+export interface LeaderboardResultsData {
+    models: LeaderboardModel[];
+    lang1s: string[];
+    lang2s: string[];
+}
+
 // ---------- Cookie helpers ----------
 
 function setCookie(name: string, value: string): void {
@@ -234,7 +250,7 @@ export function getLeaderboard(status?: string, visibility?: string): Promise<Le
     return apiCall<LeaderboardEntry[]>('GET', url);
 }
 
-export function fetchLeaderboardResults(mode: string, subset: string, lang1: string, lang2: string): Promise<any> {
+export function fetchLeaderboardResults(mode: string, subset: string, lang1: string, lang2: string): Promise<LeaderboardResultsData> {
     const params = new URLSearchParams({ mode, subset });
     if (lang1) params.append('lang1', lang1);
     if (lang2) params.append('lang2', lang2);

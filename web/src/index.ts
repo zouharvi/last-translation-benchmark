@@ -1,7 +1,7 @@
 import './assets/style.css';
 import $ from 'jquery';
 
-import { getContributors, getCookie, getMe, logout, User, handleNotifications } from './api';
+import { fetchLeaderboardResults, getContributors, getCookie, getMe, logout, User, handleNotifications } from './api';
 import { esc as escHtml } from './utils';
 
 $(async () => {
@@ -26,6 +26,8 @@ $(async () => {
     } else {
         $('#cta-info-unauth').show();
     }
+
+    loadLeaderboardPreview();
 
     try {
         const data = await getContributors();
@@ -67,6 +69,43 @@ $(async () => {
         $('#contributors-body').html('<tr><td colspan="3" class="empty">Failed to load contributors data.</td></tr>');
     }
 });
+
+async function loadLeaderboardPreview(): Promise<void> {
+    try {
+        const data = await fetchLeaderboardResults('blind', 'LTBv1-eval', '', '');
+        const models = data.models.slice(0, 5);
+        if (!models.length) {
+            $('#leaderboard-preview-content').html('<div class="empty">No public leaderboard results yet.</div>');
+            return;
+        }
+
+        $('#leaderboard-preview-content').html(`
+            <table style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr>
+                        <th style="text-align:left; padding:3px 3px 3px 0;">Model</th>
+                        <th style="text-align:left; padding:3px;">Institution</th>
+                        <th style="text-align:right; padding:3px;">Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${models.map((model) => `
+                        <tr>
+                            <td style="padding:3px 3px 3px 0; border-bottom:1px solid #f1f5f9;">${escHtml(model.model_name || '—')}</td>
+                            <td style="padding:3px; border-bottom:1px solid #f1f5f9;">${escHtml(model.institution || '—')}</td>
+                            <td style="padding:3px; border-bottom:1px solid #f1f5f9; text-align:right;">${(model.score * 100).toFixed(2)}%</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            <p style="margin:15px 0 0; text-align:center;">
+                <a href="leaderboard-results" class="btn btn-success">View full leaderboard</a>
+            </p>
+        `);
+    } catch {
+        $('#leaderboard-preview-content').html('<div class="empty">Leaderboard preview is temporarily unavailable.</div>');
+    }
+}
 
 function showRoleButtons(user: User): void {
     $('#register-btn').hide();
