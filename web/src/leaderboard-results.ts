@@ -156,6 +156,7 @@ function renderChart(models: any[]) {
     // Give dense timelines more pixels and let the native scrollbar provide navigation.
     const chartW = Math.max(viewportW, Math.min(3200, 960 + timelineMonths * 100));
     const innerW = chartW - padding.left - padding.right;
+    const mainW = innerW + padding.right;
     const innerH = h - padding.top - padding.bottom;
 
     hint.prop('hidden', chartW <= viewportW);
@@ -165,8 +166,8 @@ function renderChart(models: any[]) {
 
     // Simple linear scale functions, preventing division by zero if all values are identical.
     const scaleX = (val: number) => {
-        if (maxX === minX) return padding.left + innerW / 2;
-        return padding.left + ((val - minX) / (maxX - minX)) * innerW;
+        if (maxX === minX) return innerW / 2;
+        return ((val - minX) / (maxX - minX)) * innerW;
     };
     
     const scaleY = (val: number) => {
@@ -174,22 +175,24 @@ function renderChart(models: any[]) {
         return padding.top + innerH - ((val + 0.01 - minY) / (maxY - minY)) * innerH;
     };
 
-    let svg = `<svg width="${chartW}" height="${h}" style="background: #ddd;" viewBox="0 0 ${chartW} ${h}" role="img" aria-label="Leaderboard scores by model release date">`;
+    let axisSvg = `<svg width="${padding.left}" height="${h}" style="background: #ddd;" viewBox="0 0 ${padding.left} ${h}" aria-hidden="true">`;
+    axisSvg += `<line x1="${padding.left - 1}" y1="${padding.top}" x2="${padding.left - 1}" y2="${padding.top + innerH}" stroke="black" stroke-width="2"/>`;
+    axisSvg += `<text x="25" y="${padding.top + innerH / 2}" text-anchor="middle" font-size="14" font-weight="bold" fill="black" transform="rotate(-90 25 ${padding.top + innerH / 2})">Score</text>`;
+
+    let svg = `<svg width="${mainW}" height="${h}" style="background: #ddd;" viewBox="0 0 ${mainW} ${h}" role="img" aria-label="Leaderboard scores by model release date">`;
     
-    // Axes
-    svg += `<line x1="${padding.left}" y1="${padding.top + innerH}" x2="${padding.left + innerW}" y2="${padding.top + innerH}" stroke="black" stroke-width="2"/>`;
-    svg += `<line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${padding.top + innerH}" stroke="black" stroke-width="2"/>`;
+    // Main plot axes. The y-axis is rendered separately so it stays fixed while this SVG scrolls.
+    svg += `<line x1="0" y1="${padding.top + innerH}" x2="${innerW}" y2="${padding.top + innerH}" stroke="black" stroke-width="2"/>`;
 
     // Axis Labels
-    svg += `<text x="${padding.left + innerW / 2}" y="${h - 15}" text-anchor="middle" font-size="14" font-weight="bold" fill="black">Released</text>`;
-    svg += `<text x="25" y="${padding.top + innerH / 2}" text-anchor="middle" font-size="14" font-weight="bold" fill="black" transform="rotate(-90 25 ${padding.top + innerH / 2})">Score</text>`;
+    svg += `<text x="${innerW / 2}" y="${h - 15}" text-anchor="middle" font-size="14" font-weight="bold" fill="black">Released</text>`;
 
     // Y-axis ticks
     const yTicks = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
     for (const tick of yTicks) {
         const ty = scaleY(tick);
-        svg += `<line x1="${padding.left - 5}" y1="${ty}" x2="${padding.left}" y2="${ty}" stroke="black" stroke-width="1"/>`;
-        svg += `<text x="${padding.left - 10}" y="${ty + 4}" text-anchor="end" font-size="12" fill="black">${Math.round(tick * 100)}%</text>`;
+        axisSvg += `<line x1="${padding.left - 6}" y1="${ty}" x2="${padding.left - 1}" y2="${ty}" stroke="black" stroke-width="1"/>`;
+        axisSvg += `<text x="${padding.left - 10}" y="${ty + 4}" text-anchor="end" font-size="12" fill="black">${Math.round(tick * 100)}%</text>`;
     }
 
     // Use monthly or quarterly ticks so the wider chart exposes the time scale.
@@ -271,7 +274,7 @@ function renderChart(models: any[]) {
         let chosenBox = makeBox(chosen.x, chosen.y, chosen.anchor);
         for (const candidate of candidates) {
             const box = makeBox(candidate.x, candidate.y, candidate.anchor);
-            if (box.left >= padding.left - 4 && box.right <= padding.left + innerW + 4 && box.top >= padding.top - 4 && box.bottom <= padding.top + innerH + 4 && !overlaps(box)) {
+            if (box.left >= -4 && box.right <= innerW + 4 && box.top >= padding.top - 4 && box.bottom <= padding.top + innerH + 4 && !overlaps(box)) {
                 chosen = candidate;
                 chosenBox = box;
                 break;
@@ -287,7 +290,11 @@ function renderChart(models: any[]) {
     });
 
     svg += leaderSvg + textSvg + circleSvg + `</svg>`;
-    container.html(svg);
+    axisSvg += `</svg>`;
+    container.html(`
+        <div class="leaderboard-chart-axis" style="width: ${padding.left}px;">${axisSvg}</div>
+        <div class="leaderboard-chart-scroll" style="margin-left: ${padding.left}px;">${svg}</div>
+    `);
 
     // Hover logic
     const tooltip = $('#leaderboard-tooltip');

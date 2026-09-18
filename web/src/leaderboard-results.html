@@ -36,6 +36,20 @@
     }
 
     #leaderboard-chart-container {
+      overflow: hidden;
+      position: relative;
+    }
+
+    .leaderboard-chart-axis {
+      position: absolute;
+      inset: 0 auto 0 0;
+      z-index: 2;
+      background: #ddd;
+      box-shadow: 5px 0 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .leaderboard-chart-scroll {
+      height: 100%;
       overflow-x: auto;
       overflow-y: hidden;
       scrollbar-color: #64748b #e2e8f0;
