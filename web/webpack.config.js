@@ -34,7 +34,7 @@ module.exports = (env, argv) => ({
     rules: [
       { test: /\.ts$/, use: 'ts-loader', exclude: /node_modules/ },
       { test: /\.css$/, use: [MiniCssExtractPlugin.loader, 'css-loader'] },
-      { test: /src\/assets\/.*\.html$/, type: 'asset/source' }
+      { test: /src[\\/]assets[\\/].*\.html$/, type: 'asset/source' }
     ],
   },
   resolve: { extensions: ['.ts', '.js'] },
