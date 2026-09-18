@@ -4,6 +4,8 @@ import { fetchLeaderboardResults, getMe, renderRoleSwitcher } from './api';
 import { renderHeaderStatus } from './utils';
 
 let languagesPopulated = false;
+let chartModels: any[] = [];
+let selectedChartYear: string | null = null;
 
 async function loadLeaderboard() {
     $('#leaderboard-content').html('<div class="empty">Loading...</div>');
@@ -63,6 +65,7 @@ async function loadLeaderboard() {
 
         if (models.length === 0) {
             $('#leaderboard-content').html('<div class="empty">No models match the selected filters.</div>');
+            $('#leaderboard-chart-controls').prop('hidden', true).hide();
             $('#leaderboard-chart-container').hide();
             return;
         }
@@ -101,6 +104,7 @@ async function loadLeaderboard() {
         `;
 
         $('#leaderboard-content').html(tableHtml);
+        chartModels = models;
         renderChart(models);
     } catch (e) {
         console.error(e);
@@ -121,22 +125,46 @@ function escapeMarkup(value: unknown): string {
 
 function renderChart(models: any[]) {
     const container = $('#leaderboard-chart-container');
+    const controls = $('#leaderboard-chart-controls');
+    const yearSelect = $('#leaderboard-year');
     const hint = $('#leaderboard-chart-hint');
     container.empty();
     hint.prop('hidden', true);
     
     // Filter models that have valid dates
-    const validModels = models.filter(m => {
+    const datedModels = models.filter(m => {
         if (!m.model_release) return false;
         if (m.visibility !== 'highlight') return false;
         const ts = new Date(m.model_release).getTime();
         return !isNaN(ts);
     });
 
-    if (validModels.length === 0) {
+    if (datedModels.length === 0) {
+        controls.prop('hidden', true).hide();
         container.hide();
         return;
     }
+
+    const years = Array.from(new Set(datedModels.map(m => new Date(m.model_release).getUTCFullYear())))
+        .sort((a, b) => b - a);
+    const availableSelections = new Set(['all', ...years.map(year => String(year))]);
+    if (!selectedChartYear || !availableSelections.has(selectedChartYear)) {
+        selectedChartYear = String(years[0]);
+    }
+    const yearOptions = [
+        '<option value="all">All years</option>',
+        ...years.map(year => `<option value="${year}">${year}</option>`)
+    ].join('');
+    if (yearSelect.html() !== yearOptions) {
+        yearSelect.html(yearOptions);
+    }
+    yearSelect.val(selectedChartYear);
+    controls.prop('hidden', false).show();
+
+    const selectedYear = selectedChartYear === 'all' ? null : Number(selectedChartYear);
+    const validModels = selectedYear === null
+        ? datedModels
+        : datedModels.filter(m => new Date(m.model_release).getUTCFullYear() === selectedYear);
     
     container.show();
 
@@ -144,17 +172,21 @@ function renderChart(models: any[]) {
     const h = container.height() || 450;
     const padding = { top: 40, right: 40, bottom: 60, left: 80 };
 
-    const actualMinX = Math.min(...validModels.map(m => new Date(m.model_release).getTime()));
-    const actualMaxX = Math.max(...validModels.map(m => new Date(m.model_release).getTime()));
+    const actualMinX = selectedYear === null
+        ? Math.min(...validModels.map(m => new Date(m.model_release).getTime()))
+        : Date.UTC(selectedYear, 0, 1);
+    const actualMaxX = selectedYear === null
+        ? Math.max(...validModels.map(m => new Date(m.model_release).getTime()))
+        : Date.UTC(selectedYear + 1, 0, 1);
     const dayMs = 24 * 60 * 60 * 1000;
     
     // Add a little breathing room around the first and last release.
-    const minX = actualMinX - (30 * dayMs);
-    const maxX = actualMaxX + (60 * dayMs);
-    const timelineMonths = Math.max(1, Math.ceil((maxX - minX) / (30 * dayMs)));
+    const minX = selectedYear === null ? actualMinX - (30 * dayMs) : actualMinX;
+    const maxX = selectedYear === null ? actualMaxX + (60 * dayMs) : actualMaxX;
+    const timelineMonths = selectedYear === null ? Math.max(1, Math.ceil((maxX - minX) / (30 * dayMs))) : 12;
 
     // Give dense timelines more pixels and let the native scrollbar provide navigation.
-    const chartW = Math.max(viewportW, Math.min(3200, 960 + timelineMonths * 100));
+    const chartW = selectedYear === null ? Math.max(viewportW, Math.min(3200, 960 + timelineMonths * 100)) : viewportW;
     const innerW = chartW - padding.left - padding.right;
     const mainW = innerW + padding.right;
     const innerH = h - padding.top - padding.bottom;
@@ -197,14 +229,16 @@ function renderChart(models: any[]) {
 
     // Use monthly or quarterly ticks so the wider chart exposes the time scale.
     const tickStepMonths = timelineMonths > 30 ? 3 : (timelineMonths > 18 ? 2 : 1);
-    const firstTick = new Date(minX);
-    firstTick.setUTCDate(1);
-    firstTick.setUTCMonth(firstTick.getUTCMonth() + 1);
-    for (const tickDate = firstTick; tickDate.getTime() <= maxX; tickDate.setUTCMonth(tickDate.getUTCMonth() + tickStepMonths)) {
+    const firstTick = selectedYear === null ? new Date(minX) : new Date(Date.UTC(selectedYear, 0, 1));
+    if (selectedYear === null) {
+        firstTick.setUTCDate(1);
+        firstTick.setUTCMonth(firstTick.getUTCMonth() + 1);
+    }
+    for (const tickDate = firstTick; tickDate.getTime() < maxX; tickDate.setUTCMonth(tickDate.getUTCMonth() + tickStepMonths)) {
         const tickTs = tickDate.getTime();
         const tx = scaleX(tickTs);
         const month = tickDate.toLocaleString('en', { month: 'short', timeZone: 'UTC' });
-        const tickLabel = timelineMonths > 30 ? `${month} ${tickDate.getUTCFullYear()}` : `${month}`;
+        const tickLabel = selectedYear === null && timelineMonths > 30 ? `${month} ${tickDate.getUTCFullYear()}` : `${month}`;
         svg += `<line x1="${tx}" y1="${padding.top + innerH}" x2="${tx}" y2="${padding.top + innerH + 5}" stroke="black" stroke-width="1"/>`;
         svg += `<text x="${tx}" y="${padding.top + innerH + 20}" text-anchor="middle" font-size="12" fill="black">${tickLabel}</text>`;
     }
@@ -226,14 +260,23 @@ function renderChart(models: any[]) {
     };
 
     const labelBoxes: Array<{ left: number; right: number; top: number; bottom: number }> = [];
+    const pointPositions = validModels.map(m => ({
+        cx: scaleX(new Date(m.model_release).getTime()),
+        cy: scaleY(m.score)
+    }));
+    const pointBoxes = pointPositions.map(({ cx, cy }) => ({
+        left: cx - 7,
+        right: cx + 7,
+        top: cy - 7,
+        bottom: cy + 7
+    }));
     let textSvg = '';
     let leaderSvg = '';
     let circleSvg = '';
 
     // Place each label near its point, trying alternate positions until it no longer overlaps a label.
     validModels.forEach((m, i) => {
-        const cx = scaleX(new Date(m.model_release).getTime());
-        const cy = scaleY(m.score);
+        const { cx, cy } = pointPositions[i];
         let color = 'black';
         if (m.model_type === 'closed') {
             color = '#a33';
@@ -258,7 +301,8 @@ function renderChart(models: any[]) {
             return { left, right: left + labelWidth, top: y - labelHeight + 2, bottom: y + 2 };
         };
         const overlaps = (box: { left: number; right: number; top: number; bottom: number }) =>
-            labelBoxes.some(existing => box.left < existing.right + 3 && box.right + 3 > existing.left && box.top < existing.bottom + 2 && box.bottom + 2 > existing.top);
+            labelBoxes.some(existing => box.left < existing.right + 3 && box.right + 3 > existing.left && box.top < existing.bottom + 2 && box.bottom + 2 > existing.top)
+            || pointBoxes.some(point => box.left < point.right + 3 && box.right + 3 > point.left && box.top < point.bottom + 3 && box.bottom + 3 > point.top);
         const candidates: Array<{ x: number; y: number; anchor: string }> = [{ x: baseX, y: baseY, anchor: textAnchor }];
         for (let distance = 1; distance <= 8; distance++) {
             const offset = distance * (labelHeight + 2);
@@ -289,7 +333,7 @@ function renderChart(models: any[]) {
         textSvg += `<text x="${chosen.x}" y="${chosen.y}" text-anchor="${chosen.anchor}" font-size="10" fill="black" pointer-events="none" style="paint-order: stroke; stroke: white; stroke-width: 3px;">${escapeMarkup(label)}</text>`;
     });
 
-    svg += leaderSvg + textSvg + circleSvg + `</svg>`;
+    svg += leaderSvg + circleSvg + textSvg + `</svg>`;
     axisSvg += `</svg>`;
     container.html(`
         <div class="leaderboard-chart-axis" style="width: ${padding.left}px;">${axisSvg}</div>
@@ -345,5 +389,9 @@ $(async () => {
     }
 
     $('#filter-mode, #filter-tag, #filter-lang, #filter-size, #filter-type').on('change', loadLeaderboard);
+    $('#leaderboard-year').on('change', function() {
+        selectedChartYear = $(this).val() as string;
+        renderChart(chartModels);
+    });
     loadLeaderboard();
 });
