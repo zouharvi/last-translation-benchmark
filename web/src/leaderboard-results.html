@@ -34,6 +34,23 @@
     #leaderboard-table th:hover {
       background-color: #ddd;
     }
+
+    #leaderboard-chart-container {
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-color: #64748b #e2e8f0;
+    }
+
+    #leaderboard-chart-container svg {
+      display: block;
+      max-width: none;
+    }
+
+    #leaderboard-chart-hint {
+      color: #64748b;
+      font-size: 0.8em;
+      margin: -12px 0 20px;
+    }
     
     table {
       width: 100%;
@@ -133,6 +150,7 @@
       </div>
 
       <div id="leaderboard-chart-container" style="width: 100%; height: 450px; margin-bottom: 20px; position: relative;"></div>
+      <div id="leaderboard-chart-hint" hidden>Scroll horizontally to inspect the timeline in more detail.</div>
       <div id="leaderboard-tooltip" style="position: fixed; display: none; background: black; color: white; padding: 10px; border-radius: 4px; z-index: 10; font-size: 0.85em; max-width: 300px; box-shadow: 2px 2px 5px rgba(0,0,0,0.3); pointer-events: none; transform: translateX(-50%);"></div>
 
       <div class="filter-container">

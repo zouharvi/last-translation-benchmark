@@ -108,9 +108,22 @@ async function loadLeaderboard() {
     }
 }
 
+function escapeMarkup(value: unknown): string {
+    const entities: Record<string, string> = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    };
+    return String(value ?? '').replace(/[&<>"']/g, character => entities[character]);
+}
+
 function renderChart(models: any[]) {
     const container = $('#leaderboard-chart-container');
+    const hint = $('#leaderboard-chart-hint');
     container.empty();
+    hint.prop('hidden', true);
     
     // Filter models that have valid dates
     const validModels = models.filter(m => {
@@ -127,41 +140,45 @@ function renderChart(models: any[]) {
     
     container.show();
 
-    const w = container.width() || 800;
-    const h = container.height() || 500;
+    const viewportW = container.width() || 800;
+    const h = container.height() || 450;
     const padding = { top: 40, right: 40, bottom: 60, left: 80 };
-
-    const innerW = w - padding.left - padding.right;
-    const innerH = h - padding.top - padding.bottom;
 
     const actualMinX = Math.min(...validModels.map(m => new Date(m.model_release).getTime()));
     const actualMaxX = Math.max(...validModels.map(m => new Date(m.model_release).getTime()));
+    const dayMs = 24 * 60 * 60 * 1000;
     
-    // Add 1 month gap on the left
-    const minX = actualMinX - (30 * 24 * 60 * 60 * 1000);
-    // Add 2 months gap on the right
-    const maxX = actualMaxX + (60 * 24 * 60 * 60 * 1000);
-    
+    // Add a little breathing room around the first and last release.
+    const minX = actualMinX - (30 * dayMs);
+    const maxX = actualMaxX + (60 * dayMs);
+    const timelineMonths = Math.max(1, Math.ceil((maxX - minX) / (30 * dayMs)));
+
+    // Give dense timelines more pixels and let the native scrollbar provide navigation.
+    const chartW = Math.max(viewportW, Math.min(3200, 960 + timelineMonths * 100));
+    const innerW = chartW - padding.left - padding.right;
+    const innerH = h - padding.top - padding.bottom;
+
+    hint.prop('hidden', chartW <= viewportW);
+
     const minY = 0;
     const maxY = 1;
 
-    // simple linear scale functions, preventing division by zero if all values are identical
+    // Simple linear scale functions, preventing division by zero if all values are identical.
     const scaleX = (val: number) => {
         if (maxX === minX) return padding.left + innerW / 2;
         return padding.left + ((val - minX) / (maxX - minX)) * innerW;
     };
     
     const scaleY = (val: number) => {
-        // SVG y-axis is inverted (0 at top)
-        // add tiny offset for better readability
+        // SVG y-axis is inverted (0 at top).
         return padding.top + innerH - ((val + 0.01 - minY) / (maxY - minY)) * innerH;
     };
 
-    let svg = `<svg width="100%" height="100%" style="background: #ddd;" viewBox="0 0 ${w} ${h}">`;
+    let svg = `<svg width="${chartW}" height="${h}" style="background: #ddd;" viewBox="0 0 ${chartW} ${h}" role="img" aria-label="Leaderboard scores by model release date">`;
     
     // Axes
-    svg += `<line x1="${padding.left}" y1="${padding.top + innerH}" x2="${padding.left + innerW}" y2="${padding.top + innerH}" stroke="black" stroke-width="2"/>`; // Bottom
-    svg += `<line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${padding.top + innerH}" stroke="black" stroke-width="2"/>`; // Left
+    svg += `<line x1="${padding.left}" y1="${padding.top + innerH}" x2="${padding.left + innerW}" y2="${padding.top + innerH}" stroke="black" stroke-width="2"/>`;
+    svg += `<line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${padding.top + innerH}" stroke="black" stroke-width="2"/>`;
 
     // Axis Labels
     svg += `<text x="${padding.left + innerW / 2}" y="${h - 15}" text-anchor="middle" font-size="14" font-weight="bold" fill="black">Released</text>`;
@@ -175,16 +192,18 @@ function renderChart(models: any[]) {
         svg += `<text x="${padding.left - 10}" y="${ty + 4}" text-anchor="end" font-size="12" fill="black">${Math.round(tick * 100)}%</text>`;
     }
 
-    // X-axis ticks (Years)
-    const startYear = new Date(minX).getFullYear();
-    const endYear = new Date(maxX).getFullYear();
-    for (let y = startYear; y <= endYear + 1; y++) {
-        const yearTs = new Date(`${y}-01-01`).getTime();
-        if (yearTs >= minX && yearTs <= maxX) {
-            const tx = scaleX(yearTs);
-            svg += `<line x1="${tx}" y1="${padding.top + innerH}" x2="${tx}" y2="${padding.top + innerH + 5}" stroke="black" stroke-width="1"/>`;
-            svg += `<text x="${tx}" y="${padding.top + innerH + 20}" text-anchor="middle" font-size="12" fill="black">${y}</text>`;
-        }
+    // Use monthly or quarterly ticks so the wider chart exposes the time scale.
+    const tickStepMonths = timelineMonths > 30 ? 3 : (timelineMonths > 18 ? 2 : 1);
+    const firstTick = new Date(minX);
+    firstTick.setUTCDate(1);
+    firstTick.setUTCMonth(firstTick.getUTCMonth() + 1);
+    for (const tickDate = firstTick; tickDate.getTime() <= maxX; tickDate.setUTCMonth(tickDate.getUTCMonth() + tickStepMonths)) {
+        const tickTs = tickDate.getTime();
+        const tx = scaleX(tickTs);
+        const month = tickDate.toLocaleString('en', { month: 'short', timeZone: 'UTC' });
+        const tickLabel = timelineMonths > 30 ? `${month} ${tickDate.getUTCFullYear()}` : `${month}`;
+        svg += `<line x1="${tx}" y1="${padding.top + innerH}" x2="${tx}" y2="${padding.top + innerH + 5}" stroke="black" stroke-width="1"/>`;
+        svg += `<text x="${tx}" y="${padding.top + innerH + 20}" text-anchor="middle" font-size="12" fill="black">${tickLabel}</text>`;
     }
 
     const parseDisplayProp = (val: string, defaultAlign: string) => {
@@ -203,10 +222,12 @@ function renderChart(models: any[]) {
         return { offset, align };
     };
 
+    const labelBoxes: Array<{ left: number; right: number; top: number; bottom: number }> = [];
     let textSvg = '';
+    let leaderSvg = '';
     let circleSvg = '';
 
-    // Points
+    // Place each label near its point, trying alternate positions until it no longer overlaps a label.
     validModels.forEach((m, i) => {
         const cx = scaleX(new Date(m.model_release).getTime());
         const cy = scaleY(m.score);
@@ -220,35 +241,52 @@ function renderChart(models: any[]) {
         }
         circleSvg += `<circle class="chart-point" data-idx="${i}" cx="${cx}" cy="${cy}" r="5" fill="${color}" style="cursor: pointer;" />`;
         
+        const label = String(m.model_name || '?');
         const haParsed = parseDisplayProp(m.display_ha, 'center');
         const vaParsed = parseDisplayProp(m.display_va, 'top');
-        
-        let ha = haParsed.align;
-        let va = vaParsed.align;
-        
-        let textAnchor = 'middle';
-        let labelX = cx;
-        if (ha === 'left') {
-            textAnchor = 'end';
-            labelX = cx - 8;
-        } else if (ha === 'right') {
-            textAnchor = 'start';
-            labelX = cx + 8;
-        }
-        labelX += haParsed.offset;
+        const textAnchor = haParsed.align === 'left' ? 'end' : (haParsed.align === 'right' ? 'start' : 'middle');
+        const baseX = cx + (haParsed.align === 'left' ? -8 : (haParsed.align === 'right' ? 8 : 0)) + haParsed.offset;
+        const baseY = cy + (vaParsed.align === 'bottom' ? 15 : (vaParsed.align === 'horizon' ? 4 : -10)) + vaParsed.offset;
+        const labelWidth = Math.min(220, Math.max(30, label.length * 5.8));
+        const labelHeight = 14;
 
-        let labelY = cy - 10;
-        if (va === 'bottom') {
-            labelY = cy + 15;
-        } else if (va === 'horizon') {
-            labelY = cy + 4;
+        const makeBox = (x: number, y: number, anchor: string) => {
+            const left = anchor === 'start' ? x : (anchor === 'end' ? x - labelWidth : x - labelWidth / 2);
+            return { left, right: left + labelWidth, top: y - labelHeight + 2, bottom: y + 2 };
+        };
+        const overlaps = (box: { left: number; right: number; top: number; bottom: number }) =>
+            labelBoxes.some(existing => box.left < existing.right + 3 && box.right + 3 > existing.left && box.top < existing.bottom + 2 && box.bottom + 2 > existing.top);
+        const candidates: Array<{ x: number; y: number; anchor: string }> = [{ x: baseX, y: baseY, anchor: textAnchor }];
+        for (let distance = 1; distance <= 8; distance++) {
+            const offset = distance * (labelHeight + 2);
+            candidates.push(
+                { x: baseX, y: baseY - offset, anchor: textAnchor },
+                { x: baseX, y: baseY + offset, anchor: textAnchor },
+                { x: cx + 10 + offset / 2, y: cy + 4, anchor: 'start' },
+                { x: cx - 10 - offset / 2, y: cy + 4, anchor: 'end' },
+            );
         }
-        labelY += vaParsed.offset;
 
-        textSvg += `<text x="${labelX}" y="${labelY}" text-anchor="${textAnchor}" font-size="10" fill="black" pointer-events="none">${m.model_name || '?'}</text>`;
+        let chosen = candidates[0];
+        let chosenBox = makeBox(chosen.x, chosen.y, chosen.anchor);
+        for (const candidate of candidates) {
+            const box = makeBox(candidate.x, candidate.y, candidate.anchor);
+            if (box.left >= padding.left - 4 && box.right <= padding.left + innerW + 4 && box.top >= padding.top - 4 && box.bottom <= padding.top + innerH + 4 && !overlaps(box)) {
+                chosen = candidate;
+                chosenBox = box;
+                break;
+            }
+        }
+        labelBoxes.push(chosenBox);
+
+        if (Math.abs(chosen.x - cx) > 14 || Math.abs(chosen.y - cy) > 18) {
+            const lineX = chosen.anchor === 'start' ? chosenBox.left : (chosen.anchor === 'end' ? chosenBox.right : chosen.x);
+            leaderSvg += `<line x1="${cx}" y1="${cy}" x2="${lineX}" y2="${chosen.y - 3}" stroke="#64748b" stroke-width="0.75"/>`;
+        }
+        textSvg += `<text x="${chosen.x}" y="${chosen.y}" text-anchor="${chosen.anchor}" font-size="10" fill="black" pointer-events="none" style="paint-order: stroke; stroke: white; stroke-width: 3px;">${escapeMarkup(label)}</text>`;
     });
 
-    svg += textSvg + circleSvg + `</svg>`;
+    svg += leaderSvg + textSvg + circleSvg + `</svg>`;
     container.html(svg);
 
     // Hover logic
@@ -263,12 +301,12 @@ function renderChart(models: any[]) {
         const date = m.model_release || 'Unknown date';
         
         tooltip.html(`
-            <strong>${m.model_name}</strong><br>
-            <div style="margin-top: 5px; margin-bottom: 5px;">${desc}</div>
+            <strong>${escapeMarkup(m.model_name)}</strong><br>
+            <div style="margin-top: 5px; margin-bottom: 5px;">${escapeMarkup(desc)}</div>
             <hr style="margin: 5px 0; border-color: #444;">
-            Size: ${size}<br>
-            Type: ${typeStr}<br>
-            Released: ${date}<br>
+            Size: ${escapeMarkup(size)}<br>
+            Type: ${escapeMarkup(typeStr)}<br>
+            Released: ${escapeMarkup(date)}<br>
             Score: ${(m.score * 100).toFixed(2)}%
         `);
         
