@@ -47,6 +47,8 @@ async function loadLeaderboard() {
                 else if (m.model_size === '<10B') sizeVal = 10;
                 else if (m.model_size === '<100B') sizeVal = 100;
                 else if (m.model_size === '<1T') sizeVal = 1000;
+                else if (m.model_size === '<10T') sizeVal = 10000;
+                else if (m.model_size === '<100T') sizeVal = 100000;
                 // legacy values
                 else if (m.model_size === '1B-3B') sizeVal = 3;
                 else if (m.model_size === '3B-10B') sizeVal = 10;
