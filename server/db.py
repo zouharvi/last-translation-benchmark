@@ -29,7 +29,7 @@ _TABLES = {"users", "submissions", "leaderboard"}
 PUBLIC_CACHE_TTL_SECONDS = 10 * 60
 CACHE_EVICTION_INTERVAL_SECONDS = 60
 PUBLIC_CONTRIBUTORS_CACHE = "public_contributors"
-PUBLIC_LEADERBOARD_CACHE = "public_leaderboard_results"
+PUBLIC_LEADERBOARD_CACHE = "public_leaderboard_results_v2"
 
 
 

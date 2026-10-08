@@ -81,6 +81,7 @@ export interface LeaderboardModel {
 
 export interface LeaderboardResultsData {
     models: LeaderboardModel[];
+    human_score: number | null;
     lang1s: string[];
     lang2s: string[];
 }
@@ -254,7 +255,7 @@ export function fetchLeaderboardResults(mode: string, subset: string, lang1: str
     const params = new URLSearchParams({ mode, subset });
     if (lang1) params.append('lang1', lang1);
     if (lang2) params.append('lang2', lang2);
-    return apiCall<any>('GET', `api/leaderboard/results?${params.toString()}`);
+    return apiCall<LeaderboardResultsData>('GET', `api/leaderboard/results?${params.toString()}`);
 }
 
 export function updateLeaderboard(id: number, status: string, visibility: string): Promise<void> {

@@ -1326,6 +1326,22 @@ async def get_leaderboard(user: CurrentUser, status: str | None = Query(None)):
     return entries
 
 
+def _calculate_human_score(submissions: list[dict]) -> float | None:
+    scores = []
+    for submission in submissions:
+        human_translation = next(
+            (
+                translation
+                for translation in submission.get("translations", [])
+                if translation.get("model") == "human"
+            ),
+            None,
+        )
+        verification = human_translation.get("verified") if human_translation else None
+        scores.append(1 if verification and all(verification) else 0)
+    return statistics.mean(scores) if scores else None
+
+
 @sqlite_cache(ttl_seconds=PUBLIC_CACHE_TTL_SECONDS, namespace=PUBLIC_LEADERBOARD_CACHE)
 async def get_public_leaderboard_results(
     mode: str,
@@ -1336,7 +1352,7 @@ async def get_public_leaderboard_results(
     v1_path = os.path.dirname(__file__) + "/../data/v1.json"
     if not os.path.exists(v1_path):
         raise HTTPException(status_code=500, detail="Leaderboard data not found")
-    with open(v1_path, "r") as f:
+    with open(v1_path, "r", encoding="utf-8") as f:
         v1_subs = json.load(f)
 
     # extract language pairs from all subsets (or maybe just the filtered subset? The prompt said "The language pairs should also already be simplified...")
@@ -1360,6 +1376,8 @@ async def get_public_leaderboard_results(
         s for s in v1_subs
         if subset == "all" or subset in s.get("tags", [])
     ]
+
+    human_score = _calculate_human_score(v1_subs)
 
     participants_all = await get_leaderboard_entries(status="scored")
     participants = [p for p in participants_all if p.get("visibility") in ("visible", "highlight")]
@@ -1400,6 +1418,7 @@ async def get_public_leaderboard_results(
     models.sort(key=lambda x: x["score"], reverse=True)
     return {
         "models": models,
+        "human_score": human_score,
         "lang1s": lang1s,
         "lang2s": lang2s
     }

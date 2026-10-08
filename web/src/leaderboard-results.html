@@ -60,6 +60,183 @@
       max-width: none;
     }
 
+    #leaderboard-chart-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(190px, 230px);
+      align-items: start;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .leaderboard-chart-main {
+      min-width: 0;
+    }
+
+    #leaderboard-human-summary {
+      border: 2px solid #111;
+      background: #fff;
+      padding: 12px;
+      color: #111;
+      font-family: "Arial Narrow", "Roboto Condensed", Arial, sans-serif;
+      font-size: 0.9em;
+      line-height: 1.35;
+    }
+
+    #leaderboard-human-summary h3,
+    #leaderboard-human-summary h4 {
+      margin: 0;
+      color: #111;
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 700;
+    }
+
+    #leaderboard-human-summary h3 {
+      border-bottom: 1px solid #111;
+      padding-bottom: 7px;
+      margin-bottom: 9px;
+      font-size: 1.1em;
+    }
+
+    #leaderboard-human-summary h4 {
+      margin-top: 13px;
+      font-size: 1em;
+    }
+
+    .human-reference-legend {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: #475569;
+      font-size: 0.85em;
+    }
+
+    .human-reference-swatch {
+      flex: 0 0 25px;
+      border-top: 3px dashed #9a4f5d;
+    }
+
+    .human-reference-score {
+      display: block;
+      margin: 5px 0 3px;
+      color: #8b3c4a;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.8em;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .human-reference-gap {
+      margin-top: 8px;
+      border-top: 1px solid #e6d0d2;
+      padding-top: 8px;
+      font-weight: 600;
+    }
+
+    .leaderboard-podium {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .leaderboard-podium li {
+      border-top: 1px solid #e6d0d2;
+      padding: 7px 0;
+    }
+
+    .leaderboard-podium li:first-child {
+      margin-top: 6px;
+    }
+
+    .podium-rank {
+      color: #8b3c4a;
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 700;
+    }
+
+    .podium-score {
+      float: right;
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+    }
+
+    .podium-praise {
+      display: block;
+      margin-top: 2px;
+      color: #64748b;
+      font-size: 0.85em;
+    }
+
+    .human-reference-line {
+      stroke: #9a4f5d;
+      stroke-width: 3;
+      stroke-dasharray: 8 5;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .human-reference-label {
+      fill: #7c3441;
+      font-size: 11px;
+      font-weight: 700;
+      paint-order: stroke;
+      stroke: #ddd;
+      stroke-width: 4px;
+    }
+
+    @media (max-width: 720px) {
+      #leaderboard-chart-layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .chart-point {
+      cursor: pointer;
+      outline: none;
+    }
+
+    .chart-point-marker {
+      stroke: #fff;
+      stroke-width: 1.5;
+    }
+
+    .chart-point-label {
+      fill: #fff;
+      font-size: 8px;
+      font-weight: 700;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+    }
+
+    .chart-point.is-linked .chart-point-marker,
+    .chart-point:focus .chart-point-marker {
+      stroke: #111;
+      stroke-width: 3;
+    }
+
+    .leaderboard-chart-key {
+      min-width: 2.2em;
+      padding: 3px 4px;
+      border: 1px solid #64748b;
+      border-radius: 999px;
+      background: #fff;
+      color: #111;
+      font-size: 0.75em;
+      font-weight: 700;
+      line-height: 1.2;
+      cursor: pointer;
+    }
+
+    .leaderboard-chart-key:focus-visible,
+    .leaderboard-chart-key.is-linked {
+      outline: 2px solid #111;
+      outline-offset: 1px;
+      background: #f0cfcf;
+    }
+
+    .leaderboard-model-row.is-linked td {
+      background: #f0cfcf;
+    }
+
     #leaderboard-chart-hint {
       color: #64748b;
       font-size: 0.8em;
@@ -109,24 +286,32 @@
     }
     
     .col-name {
-      width: 20%;
+      width: 18%;
     }
     .col-desc { 
       font-size: 8pt;
       height: 30px;
-      width: 35%;
+      width: 26%;
       overflow: hidden; 
       text-overflow: ellipsis; 
     }
     .col-size {
-      width: 10%;
+      width: 8%;
     }
     .col-type {
-      width: 10%;
+      width: 8%;
     }
     .col-inst {
-      width: 15%;
+      width: 14%;
       text-overflow: ellipsis;
+    }
+    .col-key {
+      width: 6%;
+      text-align: center;
+    }
+    th.col-key,
+    td.col-key {
+      padding: 8px 4px;
     }
     .col-date { width: 10%; }
     .col-score { 
@@ -184,13 +369,21 @@
         </div>
       </div>
 
-      <div id="leaderboard-chart-controls" hidden>
-        <label for="leaderboard-year">Release year</label>
-        <select id="leaderboard-year"></select>
-      </div>
+      <div id="leaderboard-chart-layout">
+        <section class="leaderboard-chart-main" aria-label="Model performance timeline">
+          <div id="leaderboard-chart-controls" hidden>
+            <label for="leaderboard-year">Release year</label>
+            <select id="leaderboard-year"></select>
+          </div>
 
-      <div id="leaderboard-chart-container" style="width: 100%; height: 450px; margin-bottom: 20px; position: relative;"></div>
-      <div id="leaderboard-chart-hint" hidden>Scroll horizontally to inspect the timeline in more detail.</div>
+          <div id="leaderboard-chart-container" style="width: 100%; height: 450px; margin-bottom: 20px; position: relative;"></div>
+          <div id="leaderboard-chart-hint" hidden>Scroll horizontally to inspect the timeline in more detail.</div>
+        </section>
+        <aside id="leaderboard-human-summary" aria-live="polite" aria-label="Human performance and top models">
+          <h3>Human benchmark</h3>
+          <div>Loading human reference…</div>
+        </aside>
+      </div>
       <div id="leaderboard-tooltip" style="position: fixed; display: none; background: black; color: white; padding: 10px; border-radius: 4px; z-index: 10; font-size: 0.85em; max-width: 300px; box-shadow: 2px 2px 5px rgba(0,0,0,0.3); pointer-events: none; transform: translateX(-50%);"></div>
 
       <div class="filter-container">
