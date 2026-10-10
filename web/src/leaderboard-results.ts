@@ -231,18 +231,18 @@ function renderChart(models: any[]) {
         let labelX = cx;
         if (ha === 'left') {
             textAnchor = 'end';
-            labelX = cx - 8;
+            labelX = cx - 6;
         } else if (ha === 'right') {
             textAnchor = 'start';
-            labelX = cx + 8;
+            labelX = cx + 6;
         }
         labelX += haParsed.offset;
 
-        let labelY = cy - 10;
+        let labelY = cy - 8;
         if (va === 'bottom') {
-            labelY = cy + 15;
+            labelY = cy + 12;
         } else if (va === 'horizon') {
-            labelY = cy + 4;
+            labelY = cy + 3;
         }
         labelY += vaParsed.offset;
 
