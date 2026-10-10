@@ -61,7 +61,7 @@ async def main():
             try:    
                 r = await utils.request_post_with_backoff(delay=0.1, url=get_config("LTB_API_URL"), json=payload, cookies=COOKIES)
                 await asyncio.sleep(1)
-            except Exception as e:
+            except Exception:
                 rule_results.append(None)
                 continue
                 

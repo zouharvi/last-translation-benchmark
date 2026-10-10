@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .db import get_users, init_db
 from .routers import router
-from .utils import schedule_daily_backup, schedule_daily_notifications
+from .utils import schedule_daily_notifications, schedule_weekly_backup
 
 
 @asynccontextmanager
@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
     
 
 
-    backup_task = asyncio.create_task(schedule_daily_backup())
+    backup_task = asyncio.create_task(schedule_weekly_backup())
     notif_task = asyncio.create_task(schedule_daily_notifications())
     try:
         yield

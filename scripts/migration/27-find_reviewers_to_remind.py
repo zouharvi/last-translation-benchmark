@@ -1,6 +1,11 @@
 import asyncio
 from datetime import datetime, timedelta
-from last_translation_benchmark.db import get_users, get_submissions, get_latest_sent_email_date
+
+from last_translation_benchmark.db import (
+    get_latest_sent_email_date,
+    get_submissions,
+    get_users,
+)
 
 REVIEW_REMINDER_SUBJECT = "Last Translation Benchmark - Review Request"
 
@@ -57,8 +62,7 @@ async def main():
             for comment in sub["comments"]:
                 if comment["author"] == username and comment["text"] in ("ACCEPT", "RETURN"):
                     dt = datetime.strptime(comment["created_at"], "%Y-%m-%d %H:%M")
-                    if dt > last_review_date:
-                        last_review_date = dt
+                    last_review_date = max(last_review_date, dt)
 
         if last_review_date < two_weeks_ago:
             print(f"{user['name']:<30} | Accepted: {len(accepted_subs):<3} | Reviewed: {len(reviewed_subs):<3} | Potential: {potential_subs:<3}")

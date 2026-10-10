@@ -1,9 +1,9 @@
+import datetime
 import json
 import random
-import json
-import datetime
 
 from last_translation_benchmark.utils import permissive_strptime
+
 
 def estimate_tokens(text: str) -> int:
     import tiktoken

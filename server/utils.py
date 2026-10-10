@@ -65,12 +65,14 @@ EMAIL_PASSWORD = get_config("EMAIL_PASSWORD", "")
 EMAIL_SMTP_SERVER_PORT = get_config("EMAIL_SMTP_SERVER_PORT", None)
 
 
-async def schedule_daily_backup() -> None:
+async def schedule_weekly_backup() -> None:
     while True:
         try:
             now = datetime.datetime.now(datetime.UTC).astimezone()
             target = now.replace(hour=8, minute=0, second=0, microsecond=0)
             if target <= now:
+                target += datetime.timedelta(days=1)
+            while target.weekday() != 0:
                 target += datetime.timedelta(days=1)
             delay = (target - now).total_seconds()
             log(f"Next database backup scheduled in {(target-now).total_seconds() / 3600:.1f} hours at {target.strftime('%Y-%m-%d %H:%M')}")

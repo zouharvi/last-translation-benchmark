@@ -8,7 +8,6 @@ import statistics
 
 import fastchrf
 import numpy as np
-
 from utils import submission_is_before_2026_09_01
 
 os.chdir(os.path.dirname(__file__)+"/..")

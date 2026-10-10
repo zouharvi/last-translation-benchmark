@@ -1,13 +1,14 @@
 import json
-from lara_sdk import AccessKey, Translator
 import os
-import tqdm
+
 import iso639
+import tqdm
+from lara_sdk import AccessKey, Translator
 
 os.chdir(os.path.dirname(__file__)+"/..")
 
-from last_translation_benchmark.utils import get_config, save_compact_json
 from last_translation_benchmark.languages import LANGUAGES
+from last_translation_benchmark.utils import get_config, save_compact_json
 
 with open("data/v1.json", "r") as f:
     data = json.load(f)

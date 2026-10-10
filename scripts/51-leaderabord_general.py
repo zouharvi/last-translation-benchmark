@@ -1,9 +1,10 @@
+import argparse
+import asyncio
 import json
 import os
-import tqdm
-import asyncio
-import argparse
 import urllib.parse
+
+import tqdm
 import utils
 
 os.chdir(os.path.dirname(__file__)+"/..")

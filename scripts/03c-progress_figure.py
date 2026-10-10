@@ -1,15 +1,17 @@
 # %%
 
-import matplotlib.pyplot as plt
-import numpy as np
-import os
+import collections
 import datetime
 import json
-import collections
+import os
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 os.chdir(os.path.dirname(os.path.abspath(__file__))+ "/../")
 
-from last_translation_benchmark.utils import permissive_strptime, save_compact_json
+from last_translation_benchmark.utils import permissive_strptime
+
 
 # progress over time figure
 def date_to_delta(date_str):
