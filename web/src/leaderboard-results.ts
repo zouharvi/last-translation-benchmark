@@ -218,7 +218,8 @@ function renderChart(models: any[]) {
         } else if (m.model_type === 'open-source') {
             color = '#2a2';
         }
-        circleSvg += `<circle class="chart-point" data-idx="${i}" cx="${cx}" cy="${cy}" r="5" fill="${color}" style="cursor: pointer;" />`;
+        circleSvg += `<circle cx="${cx}" cy="${cy}" r="4" fill="${color}" pointer-events="none" />`;
+        circleSvg += `<circle class="chart-point" data-idx="${i}" cx="${cx}" cy="${cy}" r="12" fill="transparent" style="cursor: pointer;" />`;
         
         const haParsed = parseDisplayProp(m.display_ha, 'center');
         const vaParsed = parseDisplayProp(m.display_va, 'top');
@@ -245,7 +246,7 @@ function renderChart(models: any[]) {
         }
         labelY += vaParsed.offset;
 
-        textSvg += `<text x="${labelX}" y="${labelY}" text-anchor="${textAnchor}" font-size="10" fill="black" pointer-events="none">${m.model_name || '?'}</text>`;
+        textSvg += `<text x="${labelX}" y="${labelY}" text-anchor="${textAnchor}" font-size="9" fill="black" pointer-events="none">${m.model_name || '?'}</text>`;
     });
 
     svg += textSvg + circleSvg + `</svg>`;
