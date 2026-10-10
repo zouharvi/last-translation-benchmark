@@ -41,6 +41,16 @@ $(async () => {
     $('#src-langs').html(langOptions);
     $('#tgt-langs').html(langOptions);
 
+    $('#src-lang, #tgt-lang').on('blur', function() {
+        let val = String($(this).val() || '').trim();
+        if (!val) return;
+        val = val.charAt(0).toUpperCase() + val.slice(1);
+        val = val.replace(/([^\s])\(/g, '$1 (');
+        $(this).val(val);
+        // trigger change to invalidate verification if needed, or just let other handlers do it
+        $(this).trigger('change');
+    });
+
     try {
         currentUser = await getMe();
         renderHeaderStatus(currentUser);
