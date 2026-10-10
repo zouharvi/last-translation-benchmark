@@ -8,11 +8,11 @@ from last_translation_benchmark.utils import permissive_strptime, send_email
 
 os.environ["HOST_PUBLIC"] = "https://last-translation-benchmark.vilda.net"
 
-SUBJECT = "Last Translation Benchmark - Action Required: Returned Submissions"
+SUBJECT = "Last Translation Benchmark - Returned Submissions"
 BODY_TEMPLATE = """Dear {name},
 
 We noticed that you have made submissions to the Last Translation Benchmark project, but currently they have been returned for revisions. 
-Please review the feedback left by our reviewers, update your submissions, and submit them again!
+Please review the feedback left by our reviewers, update your submissions, and submit them again.
 
 You can login and review your returned submissions using the following link:
 
