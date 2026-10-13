@@ -753,6 +753,7 @@ def _filter_reviewer_submissions(
 MODEL_LIBRARY = [
     {"name": "Lara", "fn": translate_lara, "support_image": True, "support_audio": False, "support_video": False, "support_textonly": True},
     {"name": "Google Translate", "fn": translate_google_with_api, "support_image": False, "support_audio": False, "support_video": False, "support_textonly": True},
+    {"name": "Gemini 4 Argon", "fn": functools.partial(translate_openrouter, model="google/gemini-4-argon"), "support_image": True, "support_audio": True, "support_video": True, "support_textonly": True},
     {"name": "Gemini 3.1 Pro", "fn": functools.partial(translate_openrouter, model="google/gemini-3.1-pro-preview"), "support_image": True, "support_audio": True, "support_video": True, "support_textonly": True},
     {"name": "Gemma 4", "fn": functools.partial(translate_openrouter, model="google/gemma-4-31b-it"), "support_image": True, "support_audio": True, "support_video": True, "support_textonly": True},
     {"name": "Llama 4 Maverick", "fn": functools.partial(translate_openrouter, model="meta-llama/llama-4-maverick"), "support_image": True, "support_audio": False, "support_video": False, "support_textonly": True},
@@ -762,7 +763,7 @@ MODEL_LIBRARY = [
     # {"name": "Deepseek V4 Pro", "fn": functools.partial(translate_openrouter, model="deepseek/deepseek-v4-pro"), "support_image": True, "support_audio": False, "support_video": False, "support_textonly": True},
     {"name": "Claude Sonnet 4.5", "fn": functools.partial(translate_openrouter, model="anthropic/claude-sonnet-4.5"), "support_image": True, "support_audio": False, "support_video": False, "support_textonly": True},
     {"name": "Gemini 3.8 Flash", "fn": functools.partial(translate_openrouter, model="google/gemini-3.8-flash"), "support_image": True, "support_audio": True, "support_video": True, "support_textonly": True},
-    {"name": "Gemini 3.7 Flash", "fn": functools.partial(translate_openrouter, model="google/gemini-3.7-flash"), "support_image": True, "support_audio": True, "support_video": True, "support_textonly": False},
+    # {"name": "Gemini 3.7 Flash", "fn": functools.partial(translate_openrouter, model="google/gemini-3.7-flash"), "support_image": True, "support_audio": True, "support_video": True, "support_textonly": False},
     # {"name": "Gemini 3.5 Flash Lite", "fn": functools.partial(translate_openrouter, model="google/gemini-3.5-flash-lite"), "support_image": True, "support_audio": True, "support_video": True, "support_textonly": True},
     {"name": "Qwen 3.7 Plus", "fn": functools.partial(translate_openrouter, model="qwen/qwen3.7-plus"), "support_image": False, "support_audio": False, "support_video": True, "support_textonly": False},
     {"name": "Voxtral Small", "fn": functools.partial(translate_openrouter, model="mistralai/voxtral-small-24b-2507"), "support_image": False, "support_audio": True, "support_video": False, "support_textonly": False},
