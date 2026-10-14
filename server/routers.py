@@ -902,7 +902,7 @@ async def translate_submission(req: TranslateReq, user: CurrentUser):
 
 @router.post("/api/verify-submission")
 async def verify_submission(req: VerifyReq, user: CurrentUser):
-    VERIFICATION_MODEL = "google/gemini-3.1-pro-preview"
+    VERIFICATION_MODEL = "google/gemini-3.8-flash"
     quota_used = user["quota_used"]
     quota = user["quota"]
     if quota_used >= quota:
