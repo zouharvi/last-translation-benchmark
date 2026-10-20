@@ -328,7 +328,7 @@ function renderLeaderboardTable(entries: LeaderboardEntry[]): void {
         }
 
         return `<tr>
-            <td>#${e.id}</td>
+            <td><a href="api/admin/leaderboard/${e.id}/download" style="color: black;" download>#${e.id}</a></td>
             <td title="${esc(info.submitter_email || info.institution)}">${instDisplay}</td>
             <td title="${esc(info.model_name)}">${esc(info.model_name || '—')}</td>
             <td>${esc(info.mode || '—')}</td>
@@ -340,7 +340,7 @@ function renderLeaderboardTable(entries: LeaderboardEntry[]): void {
 
     $('#leaderboard-table').html(`<table style="table-layout: fixed; width: 100%;">
         <colgroup>
-            <col style="width: 30px;">
+            <col style="width: 45px;">
             <col style="width: 120px;">
             <col style="width: 200px;">
             <col style="width: 50px;">

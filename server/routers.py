@@ -1439,3 +1439,19 @@ async def admin_update_leaderboard_info(uid: int, req: LeaderboardInfoUpdateReq,
     require_role(user, "admin")
     await update_leaderboard_info(uid, req.info)
     return {"ok": True}
+
+
+@router.get("/api/admin/leaderboard/{uid}")
+@router.get("/api/admin/leaderboard/{uid}/download")
+async def admin_download_leaderboard(uid: int, user: CurrentUser):
+    require_role(user, "admin")
+    entry = await get_leaderboard_entry(uid)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Leaderboard entry not found")
+    content = json.dumps(entry["submissions"], indent=2, ensure_ascii=False)
+    return Response(
+        content=content,
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename=leaderboard_{uid}.json"}
+    )
+
