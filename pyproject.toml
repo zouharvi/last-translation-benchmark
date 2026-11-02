@@ -22,6 +22,7 @@ dependencies = [
     "cohere >= 5.11",
     "openrouter >= 1.1",
     "jsonschema >= 4.26",
+    "inspect_ai >= 0.3.258",
 ]
 
 [project.optional-dependencies]
