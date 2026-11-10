@@ -68,7 +68,13 @@ from .services import (
     translate_openrouter,
     verify_llm,
 )
-from .utils import CONTRIBUTOR_QUOTA_DEFAULT, join_english, send_email, simple_lang
+from .utils import (
+    CONTRIBUTOR_QUOTA_DEFAULT,
+    get_config,
+    join_english,
+    send_email,
+    simple_lang,
+)
 
 router = APIRouter()
 CurrentUser = Annotated[dict, Depends(get_current_user)]
@@ -1304,6 +1310,32 @@ async def leaderboard_submit(req: LeaderboardSubmitReq):
     }
     
     await create_leaderboard_entry(req.submission, info)
+    
+    admin_user = await get_user_by_username(get_config("LTB_ADMIN_USER", ""))
+    if admin_user:
+        admin_email = admin_user["email"]
+    else:
+        return {"ok": True}
+
+    if admin_email:
+        email_body = (
+            f"A new model has been submitted to the leaderboard:\n\n"
+            f"Model name: {req.model_name}\n"
+            f"Institution: {req.institution}\n"
+            f"Submitter email: {req.submitter_email}\n"
+            f"Model size: {req.model_size}\n"
+            f"Model type: {req.model_type}\n"
+            f"Model release: {req.model_release}\n"
+            f"Mode: {req.mode}\n\n"
+            f"Description:\n{req.model_description}\n"
+        )
+        asyncio.create_task(
+            send_email(
+                to_email=admin_email,
+                subject=f"New model submission: {req.model_name}",
+                body=email_body,
+            )
+        )
     
     return {"ok": True}
 

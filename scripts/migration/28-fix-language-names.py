@@ -3,6 +3,7 @@ import re
 
 from last_translation_benchmark.db import get_submissions, save_submission
 
+
 def format_language(lang: str) -> str:
     lang = lang.strip()
     if not lang:

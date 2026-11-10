@@ -15,3 +15,7 @@ DB_PATH_CACHE = "data/db_cache.sqlite"
 EMAIL_SENDER = ""
 EMAIL_PASSWORD = ""
 EMAIL_SMTP_SERVER_PORT = ""
+
+# needed to send emails to the admin when a new submission is made
+LTB_ADMIN_USER = ""
+
